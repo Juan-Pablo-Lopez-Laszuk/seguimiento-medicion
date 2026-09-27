@@ -1,0 +1,21 @@
+name: Ítem técnico
+description: Tarea técnica habilitadora (infraestructura, CI, base de datos, etc.)
+title: "TEC-XX · <título>"
+labels: ["tipo:tecnica"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+      description: Qué se necesita y para qué lo necesita el equipo.
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true

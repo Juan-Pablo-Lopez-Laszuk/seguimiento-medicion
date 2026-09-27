@@ -1,0 +1,51 @@
+name: Historia de usuario
+description: Nueva funcionalidad del Product Backlog
+title: "HU-XX · <título>"
+labels: ["tipo:historia"]
+body:
+  - type: textarea
+    id: historia
+    attributes:
+      label: Historia
+      description: Formato Como / Quiero / Para.
+      value: |
+        **Como** <rol>
+        **quiero** <funcionalidad>
+        **para** <beneficio>
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Criterios de aceptación
+      description: Uno por línea, numerados como CA-XX.1, CA-XX.2, ...
+      value: |
+        - [ ] CA-XX.1
+        - [ ] CA-XX.2
+    validations:
+      required: true
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad
+      options: ["Alta", "Media", "Baja"]
+    validations:
+      required: true
+  - type: dropdown
+    id: story-points
+    attributes:
+      label: Story points (estimación inicial)
+      description: Se re-estima con Planning Poker en la Sprint Planning.
+      options: ["Sin estimar", "0", "1", "2", "3", "5", "8", "13", "21"]
+  - type: textarea
+    id: trazabilidad
+    attributes:
+      label: Trazabilidad
+      value: |
+        - Spec SDD: `specs/HU-XX-....md`
+        - Escenarios BDD: `features/hu-xx-....feature`
+        - Tests: `internal/.../xxx_test.go`
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas y dependencias
