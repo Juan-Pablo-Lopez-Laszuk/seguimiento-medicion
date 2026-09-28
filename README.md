@@ -11,7 +11,7 @@ Trabajo Práctico Integrador de **Ingeniería y Calidad de Software 2026** — U
 |---|---|---|---|
 | López, Juan Pablo | @Juan-Pablo-Lopez-Laszuk | Agile Enabler · Product Builder | E1 Proyectos · E3 Sprints · E9 Reportes · Arquitectura y CI |
 | Piastrellini, Mariano | @MarianoPiastre | Product Builder | E2 Product Backlog · E4 Estimación y Planning Poker · Base de datos · Login |
-| Bravo, Carolina | *(a completar)* | Product Builder | E5 Esfuerzo · E6 Defectos · E7 Métricas · E8 Dashboard · Deploy · Diseño |
+| Bravo, Carolina | @CaritoNBravo | Product Builder | E5 Esfuerzo · E6 Defectos · E7 Métricas · E8 Dashboard · Deploy · Diseño |
 
 Product Architect (Cliente): profesores de la cátedra.
 
