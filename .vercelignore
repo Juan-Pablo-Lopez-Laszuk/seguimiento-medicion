@@ -1,0 +1,5 @@
+# Vercel solo sube lo que la app necesita para funcionar.
+# Primero se ignora todo y después se habilita lo necesario.
+/*
+!/api
+!/vercel.json
