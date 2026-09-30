@@ -20,13 +20,16 @@ Supabase firma los JWT y expone las claves públicas para verificarlos localment
   (cacheado 10 minutos por Supabase — importante para no rechazar tokens válidos por caché
   vencida si rotan las claves).
 - Supabase recomienda algoritmos **asimétricos** (RS256 o ES256) en vez de HS256 (secreto
-  compartido). Los proyectos nuevos (como los nuestros) suelen venir con esto por defecto,
-  pero **hay que confirmarlo** en el dashboard: *Project Settings → API → JWT Settings*.
+  compartido).
 - Cada JWT trae un header `kid` (key ID). Para validar: se busca en el JWKS la clave pública
   cuyo `kid` coincide, y con esa se verifica la firma.
-- **Acción para Mariano antes de Sprint 2**: revisar en ambos proyectos (dev y prod) qué
-  algoritmo está configurado, para saber si vamos por el camino JWKS o por el de secreto
-  compartido (más simple pero desaconsejado por Supabase para compliance).
+- **Confirmado (29/09/2026)**: revisé *Project Settings → JWT Keys* en dev y prod, y ambos
+  proyectos usan el mismo esquema:
+  - **CURRENT KEY**: `ECC (P-256)`, es decir **ES256** (asimétrico) — es la que firma los
+    tokens nuevos. Confirma que el camino JWKS de este documento es el correcto.
+  - **PREVIOUS KEY**: `Legacy HS256 (Shared Secret)` — Supabase la deja solo para poder
+    verificar tokens ya emitidos con el esquema viejo antes de rotar; no firma nada nuevo, así
+    que no la vamos a necesitar.
 
 ## Claims útiles del token
 
@@ -96,11 +99,10 @@ Guía) — eso depende de que exista la tabla `Integrante` con `auth_user_id` (v
 
 ## Pendientes para cuando arranque TEC-05 (Sprint 2)
 
-1. Confirmar algoritmo configurado en Supabase (HS256 vs RS256/ES256) en dev y prod.
-2. Decidir con el equipo si armamos el `Keyfunc` una sola vez al iniciar el servidor o por
+1. Decidir con el equipo si armamos el `Keyfunc` una sola vez al iniciar el servidor o por
    request (por el modelo serverless de Vercel, probablemente conviene inicializarlo en el
    handler de `api/index.go` y reusarlo entre invocaciones "calientes").
-3. Escribir el primer test (RED) para el middleware usando un JWT de prueba firmado con una
+2. Escribir el primer test (RED) para el middleware usando un JWT de prueba firmado con una
    clave propia (no hace falta pegarle a Supabase real en el test unitario).
 
 ## Fuentes
