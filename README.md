@@ -52,4 +52,29 @@ Cómo trabajar en el repositorio (ramas, commits, Pull Requests): ver [CONTRIBUT
 
 ## Cómo correrlo
 
-> Se completa en el Sprint 0 junto con el esqueleto del proyecto (TEC-01).
+Requisitos: [Go](https://go.dev/dl/) 1.24 o superior y Git.
+
+```bash
+go run ./cmd/server          # levanta la app en http://localhost:8080 (salud: /health)
+go test ./...                # tests unitarios + escenarios BDD
+go test ./features/... -v    # solo los escenarios BDD (godog)
+go test -cover ./...         # tests con porcentaje de cobertura
+```
+
+Con `make` instalado también están `make run`, `make test`, `make cover`, `make bdd` y `make lint`.
+
+## Estructura
+
+```text
+api/index.go          función de Vercel: delega cada pedido al router
+cmd/server/           servidor local
+internal/server/      router, handlers y renderizado de páginas
+internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
+internal/service/     casos de uso
+internal/metrics/     cálculos de métricas
+internal/store/       repositorios: memory (tests) y postgres (Supabase)
+web/templates/        layout base (base.html) y una plantilla por página (paginas/)
+features/             escenarios BDD (.feature) y sus pasos en Go
+specs/                especificaciones SDD
+docs/                 métricas, Scrum, registro de IA, plan y guía
+```
