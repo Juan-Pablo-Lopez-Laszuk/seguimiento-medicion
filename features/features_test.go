@@ -12,7 +12,7 @@ import (
 
 // InitializeScenario registra los pasos de todas las historias.
 func InitializeScenario(sc *godog.ScenarioContext) {
-	// Ejemplo: registrarPasosHU31(sc)
+	registrarPasosHU31(sc)
 }
 
 func TestFeatures(t *testing.T) {
