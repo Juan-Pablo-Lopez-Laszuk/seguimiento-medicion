@@ -3,3 +3,8 @@
 /*
 !/api
 !/vercel.json
+# Código Go que importa api/index.go
+!/go.mod
+!/go.sum
+!/internal
+!/web
