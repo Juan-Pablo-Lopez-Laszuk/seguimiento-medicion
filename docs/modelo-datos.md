@@ -17,9 +17,10 @@ erDiagram
     HISTORIA ||--o{ CRITERIO_ACEPTACION : tiene
     HISTORIA ||--o{ REGISTRO_ESFUERZO : acumula
     HISTORIA ||--o{ DEFECTO : "puede tener"
-    HISTORIA }o--o| SPRINT : "asignada a"
+    HISTORIA }o--o| SPRINT : "asignada a (sprint abierto)"
 
-    SPRINT ||--o{ HISTORIA : "compromete"
+    SPRINT ||--o{ SPRINT_HISTORIA : "foto al cerrar"
+    HISTORIA ||--o{ SPRINT_HISTORIA : "participó en"
 
     INTEGRANTE ||--o{ REGISTRO_ESFUERZO : registra
     INTEGRANTE ||--o{ VOTO : emite
@@ -68,8 +69,9 @@ erDiagram
 | estado | text | Pendiente → En sprint → En progreso → Hecho |
 | story_points | int | nullable, escala Fibonacci (0,1,2,3,5,8,13,21) |
 | orden | int | para el orden manual dentro de la misma prioridad (HU-09) |
-| sprint_id | bigint FK | nullable, sprint abierto donde está asignada |
+| sprint_id | bigint FK | nullable, sprint **abierto** donde está asignada ahora (no sirve para historial) |
 | horas_estimadas | numeric | HU-23, suma de tareas si las tiene |
+| completada_en | date | nullable, se completa al pasar a Hecho (HU-13); la usa el burndown |
 
 ### CriterioAceptacion (E2 · Mariano)
 | Campo | Tipo | Notas |
@@ -101,6 +103,21 @@ erDiagram
 | estado | text | Planificado / Activo / Cerrado |
 | sp_planificados | int | foto al cerrar (CA-14.3) |
 | sp_completados | int | foto al cerrar |
+
+### SprintHistoria (foto de cierre, pedido por Juan Pablo en la revisión de esta PR)
+`historia.sprint_id` solo indica el sprint **abierto actual** de una historia; al cerrar el
+sprint esa historia puede volver a Pendiente (HU-14 CA-14.2) y esa referencia se pierde. Esta
+tabla guarda, para cada sprint ya cerrado, qué historias participaron y con qué SP, aunque la
+historia se re-estime después o entre a otro sprint más adelante. La necesitan HU-32
+(% completadas por sprint) y HU-37 (reporte de sprint) para poder calcular sobre sprints
+viejos sin recalcular nada.
+
+| Campo | Tipo | Notas |
+|---|---|---|
+| sprint_id | bigint FK | |
+| historia_id | bigint FK | |
+| story_points | int | SP de la historia en el momento del cierre (no el actual) |
+| completada | bool | si estaba en Hecho cuando se cerró el sprint |
 
 ### SesionPoker / RondaPoker / Voto (E4 · Mariano — Planning Poker)
 | Tabla | Campo | Tipo | Notas |
@@ -141,13 +158,22 @@ erDiagram
 | sprint_deteccion_id | bigint FK | |
 | sprint_resolucion_id | bigint FK | nullable, ≥ sprint_deteccion |
 
+## Restricciones de unicidad (pedidas por Juan Pablo en la revisión de esta PR)
+
+| Tabla | Columnas | Motivo |
+|---|---|---|
+| historia | `(proyecto_id, numero)` | el número de HU es correlativo **por proyecto**, no puede repetirse dentro del mismo |
+| sprint | `(proyecto_id, numero)` | mismo criterio que historia |
+| integrante | `(proyecto_id, email)` | el email no se repite dentro de un proyecto (CA-03.1), pero sí puede pertenecer a otro proyecto distinto |
+| voto | `(ronda_id, integrante_id)` | un integrante vota una sola vez por ronda (CA-18.1); revotar es un `UPDATE`, no un `INSERT` |
+
 ## Puntos para discutir en Sprint 0
 
-1. ¿`auth_user_id` en `Integrante` alcanza, o conviene una tabla puente para permitir que
-   un integrante exista antes de tener login (por ejemplo, cargado por el Agile Enabler
-   antes de que esa persona se registre)?
-2. Confirmar escala de Story Points: Fibonacci 0-21 (+ "?") — está en preguntas abiertas
-   del Plan de trabajo (punto 7).
+1. ~~¿`auth_user_id` en `Integrante` alcanza, o conviene una tabla puente...?~~ **Resuelto
+   (Juan Pablo, revisión de esta PR):** `auth_user_id` nullable alcanza; se completa en el
+   primer login matcheando por email.
+2. ~~Confirmar escala de Story Points~~ **Resuelto por ahora (Juan Pablo):** Fibonacci 0-21,
+   hasta que los profesores confirmen la pregunta abierta #7 del Plan de trabajo.
 3. `Voto.valor` en la tabla real: aunque HTTP/servicio no lo exponga antes de revelar,
    alguien con acceso directo a la base sí lo vería. Para la demo alcanza (es la regla de
    negocio la que se evalúa), pero vale la pena mencionarlo si preguntan por seguridad.
