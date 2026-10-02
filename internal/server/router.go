@@ -3,6 +3,7 @@
 package server
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -11,5 +12,12 @@ import (
 // NewRouter arma el router con todas las rutas de la aplicación.
 func NewRouter() http.Handler {
 	r := chi.NewRouter()
+	r.Get("/health", health)
 	return r
+}
+
+// health indica que la aplicación está viva. Lo usan Vercel y el CI para verificar el deploy.
+func health(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 }
