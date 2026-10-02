@@ -6,5 +6,6 @@
 # Código Go que importa api/index.go
 !/go.mod
 !/go.sum
+!/app
 !/internal
 !/web

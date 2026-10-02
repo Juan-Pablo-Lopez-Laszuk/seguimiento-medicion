@@ -5,11 +5,11 @@ package handler
 import (
 	"net/http"
 
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/app"
 )
 
 // router se arma una sola vez y se reutiliza entre pedidos mientras la función siga activa.
-var router = server.NewRouter()
+var router = app.NewHandler()
 
 // Handler es el punto de entrada que invoca Vercel.
 func Handler(w http.ResponseWriter, r *http.Request) {
