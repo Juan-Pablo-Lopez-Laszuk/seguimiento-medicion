@@ -5,6 +5,9 @@ Planning Poker, registro de esfuerzo, defectos, métricas, dashboard y reportes.
 
 Trabajo Práctico Integrador de **Ingeniería y Calidad de Software 2026** — UTN Facultad Regional San Rafael.
 
+**App publicada:** https://seguimiento-medicion.vercel.app — cada merge a `main` se publica solo; cada Pull Request
+tiene su propio preview (link en el comentario de Vercel del PR).
+
 ## Equipo
 
 | Integrante | GitHub | Rol Scrum | Responsable de |
@@ -20,7 +23,7 @@ Product Architect (Cliente): profesores de la cátedra.
 - **Go** — dominio, reglas de negocio, validaciones y servidor web (`net/http` + `chi`).
 - **HTMX + Bootstrap 5 + Chart.js** — interfaz servida desde Go con `html/template`.
 - **Supabase** (PostgreSQL + Auth) — datos y login.
-- **Vercel** — deploy automático.
+- **Vercel** — deploy automático desde GitHub (producción = `main`, preview por cada PR).
 - **godog** — escenarios BDD en español; `go test` para TDD.
 
 ## Metodología
