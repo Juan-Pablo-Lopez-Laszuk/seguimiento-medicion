@@ -5,6 +5,9 @@ Planning Poker, registro de esfuerzo, defectos, métricas, dashboard y reportes.
 
 Trabajo Práctico Integrador de **Ingeniería y Calidad de Software 2026** — UTN Facultad Regional San Rafael.
 
+**App publicada:** https://seguimiento-medicion.vercel.app — cada merge a `main` se publica solo; cada Pull Request
+tiene su propio preview (link en el comentario de Vercel del PR).
+
 ## Equipo
 
 | Integrante | GitHub | Rol Scrum | Responsable de |
@@ -20,7 +23,7 @@ Product Architect (Cliente): profesores de la cátedra.
 - **Go** — dominio, reglas de negocio, validaciones y servidor web (`net/http` + `chi`).
 - **HTMX + Bootstrap 5 + Chart.js** — interfaz servida desde Go con `html/template`.
 - **Supabase** (PostgreSQL + Auth) — datos y login.
-- **Vercel** — deploy automático.
+- **Vercel** — deploy automático desde GitHub (producción = `main`, preview por cada PR).
 - **godog** — escenarios BDD en español; `go test` para TDD.
 
 ## Metodología
@@ -52,4 +55,29 @@ Cómo trabajar en el repositorio (ramas, commits, Pull Requests): ver [CONTRIBUT
 
 ## Cómo correrlo
 
-> Se completa en el Sprint 0 junto con el esqueleto del proyecto (TEC-01).
+Requisitos: [Go](https://go.dev/dl/) 1.24 o superior y Git.
+
+```bash
+go run ./cmd/server          # levanta la app en http://localhost:8080 (salud: /health)
+go test ./...                # tests unitarios + escenarios BDD
+go test ./features/... -v    # solo los escenarios BDD (godog)
+go test -cover ./...         # tests con porcentaje de cobertura
+```
+
+Con `make` instalado también están `make run`, `make test`, `make cover`, `make bdd` y `make lint`.
+
+## Estructura
+
+```text
+api/index.go          función de Vercel: delega cada pedido al router
+cmd/server/           servidor local
+internal/server/      router, handlers y renderizado de páginas
+internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
+internal/service/     casos de uso
+internal/metrics/     cálculos de métricas
+internal/store/       repositorios: memory (tests) y postgres (Supabase)
+web/templates/        layout base (base.html) y una plantilla por página (paginas/)
+features/             escenarios BDD (.feature) y sus pasos en Go
+specs/                especificaciones SDD
+docs/                 métricas, Scrum, registro de IA, plan y guía
+```

@@ -1,15 +1,17 @@
-// Package handler es la función que Vercel ejecuta cuando alguien entra a la app.
-// Por ahora solo responde "Hola mundo": sirve para probar que el deploy funciona.
-// En el Sprint 1 (TEC-04) acá se conecta el router de la app.
+// Package handler es la función que Vercel ejecuta en cada pedido. vercel.json redirige todas las
+// rutas a esta función, y el router de la aplicación (el mismo que usa el servidor local) decide qué responder.
 package handler
 
 import (
-	"fmt"
 	"net/http"
+
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
 )
 
-// Handler recibe cada pedido del navegador y devuelve una página simple.
+// router se arma una sola vez y se reutiliza entre pedidos mientras la función siga activa.
+var router = server.NewRouter()
+
+// Handler es el punto de entrada que invoca Vercel.
 func Handler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, "<h1>Hola mundo</h1><p>Software Metrics &amp; Estimation · TPI ICSW 2026 · UTN FRSR</p>")
+	router.ServeHTTP(w, r)
 }
