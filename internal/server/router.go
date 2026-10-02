@@ -13,7 +13,13 @@ import (
 func NewRouter() http.Handler {
 	r := chi.NewRouter()
 	r.Get("/health", health)
+	r.Get("/", inicio)
 	return r
+}
+
+// inicio muestra la página principal.
+func inicio(w http.ResponseWriter, _ *http.Request) {
+	render(w, "inicio.html", Pagina{Titulo: "Inicio"})
 }
 
 // health indica que la aplicación está viva. Lo usan Vercel y el CI para verificar el deploy.
