@@ -35,3 +35,31 @@ func TestHealth_RespondeOKEnJSON(t *testing.T) {
 		t.Errorf("status = %q, se esperaba \"ok\"", cuerpo["status"])
 	}
 }
+
+func TestInicio_MuestraLayoutBase(t *testing.T) {
+	rec := pedir(t, "/")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("código = %d, se esperaba %d", rec.Code, http.StatusOK)
+	}
+	if ct := rec.Header().Get("Content-Type"); !strings.HasPrefix(ct, "text/html") {
+		t.Errorf("Content-Type = %q, se esperaba text/html", ct)
+	}
+	html := rec.Body.String()
+	for _, esperado := range []string{
+		"<title>Inicio · Software Metrics</title>", // título armado por el layout base
+		"bootstrap.min.css",                        // estilos
+		"htmx.min.js",                              // pantallas dinámicas
+		"Software Metrics &amp; Estimation",        // contenido propio de la página de inicio
+	} {
+		if !strings.Contains(html, esperado) {
+			t.Errorf("la página no contiene %q", esperado)
+		}
+	}
+}
+
+func TestRutaInexistente_Responde404(t *testing.T) {
+	if rec := pedir(t, "/no-existe"); rec.Code != http.StatusNotFound {
+		t.Errorf("código = %d, se esperaba %d", rec.Code, http.StatusNotFound)
+	}
+}
