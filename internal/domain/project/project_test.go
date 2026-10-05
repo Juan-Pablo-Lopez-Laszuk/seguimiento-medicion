@@ -2,6 +2,7 @@ package project_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -84,5 +85,35 @@ func TestNuevo_QuitaLosEspaciosAlrededorDelNombre(t *testing.T) {
 	}
 	if p.Nombre != "Gestión Ñandú" {
 		t.Errorf("nombre: se esperaba %q y se obtuvo %q", "Gestión Ñandú", p.Nombre)
+	}
+}
+
+// CA-01.1 · casos límite del largo del nombre (RN2: se cuentan caracteres, no bytes)
+func TestNuevo_LargoDelNombre(t *testing.T) {
+	casos := []struct {
+		nombre string
+		valido bool
+	}{
+		{"ab", false},
+		{"abc", true},
+		{"ñú", false}, // 2 caracteres aunque ocupen 4 bytes
+		{"Año", true}, // 3 caracteres aunque ocupen 4 bytes
+		{strings.Repeat("a", 100), true},
+		{strings.Repeat("ñ", 100), true}, // 100 caracteres, 200 bytes
+		{strings.Repeat("a", 101), false},
+		{"   ab   ", false}, // sin los espacios quedan 2
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.Nombre = c.nombre
+
+		_, err := project.Nuevo(d)
+
+		if c.valido && err != nil {
+			t.Errorf("nombre de %d caracteres: no se esperaba error, se obtuvo %v", len([]rune(c.nombre)), err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, project.CampoNombre, project.ErrNombreLargo)
+		}
 	}
 }
