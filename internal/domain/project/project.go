@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Estado es la etapa en la que está un proyecto.
@@ -22,9 +23,16 @@ const (
 	CampoNombre = "nombre"
 )
 
+// Límites del nombre, en caracteres (RN2).
+const (
+	NombreMin = 3
+	NombreMax = 100
+)
+
 // Errores de validación (sección 7 de la spec).
 var (
 	ErrNombreObligatorio = errors.New("el nombre es obligatorio")
+	ErrNombreLargo       = errors.New("el nombre debe tener entre 3 y 100 caracteres")
 )
 
 // ErroresValidacion junta los errores de todos los campos inválidos, por nombre de campo (RN7).
@@ -67,9 +75,13 @@ type Proyecto struct {
 // devuelve ErroresValidacion con todos los campos que fallaron.
 func Nuevo(d Datos) (Proyecto, error) {
 	errs := ErroresValidacion{}
-	nombre := strings.TrimSpace(d.Nombre) // RN1
-	if nombre == "" {
+	nombre := strings.TrimSpace(d.Nombre)   // RN1
+	largo := utf8.RuneCountInString(nombre) // RN2: caracteres, no bytes
+	switch {
+	case nombre == "":
 		errs[CampoNombre] = ErrNombreObligatorio
+	case largo < NombreMin || largo > NombreMax:
+		errs[CampoNombre] = ErrNombreLargo
 	}
 	if len(errs) > 0 {
 		return Proyecto{}, errs
