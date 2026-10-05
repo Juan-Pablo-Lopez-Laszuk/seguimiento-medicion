@@ -69,7 +69,8 @@ Con `make` instalado también están `make run`, `make test`, `make cover`, `mak
 ## Estructura
 
 ```text
-api/index.go          función de Vercel: delega cada pedido al router
+api/index.go          función de Vercel: delega cada pedido al router (a través de app/)
+app/                  puerta de entrada pública al router (Vercel no puede importar internal/)
 cmd/server/           servidor local
 internal/server/      router, handlers y renderizado de páginas
 internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
