@@ -20,19 +20,23 @@ const EstadoPlanificado Estado = "Planificado"
 
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (
-	CampoNombre = "nombre"
+	CampoNombre      = "nombre"
+	CampoDescripcion = "descripcion"
 )
 
 // Límites del nombre, en caracteres (RN2).
 const (
 	NombreMin = 3
 	NombreMax = 100
+	// DescripcionMax es el largo máximo de la descripción, en caracteres.
+	DescripcionMax = 1000
 )
 
 // Errores de validación (sección 7 de la spec).
 var (
 	ErrNombreObligatorio = errors.New("el nombre es obligatorio")
 	ErrNombreLargo       = errors.New("el nombre debe tener entre 3 y 100 caracteres")
+	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 1000 caracteres")
 )
 
 // ErroresValidacion junta los errores de todos los campos inválidos, por nombre de campo (RN7).
@@ -82,6 +86,9 @@ func Nuevo(d Datos) (Proyecto, error) {
 		errs[CampoNombre] = ErrNombreObligatorio
 	case largo < NombreMin || largo > NombreMax:
 		errs[CampoNombre] = ErrNombreLargo
+	}
+	if utf8.RuneCountInString(d.Descripcion) > DescripcionMax {
+		errs[CampoDescripcion] = ErrDescripcionLarga
 	}
 	if len(errs) > 0 {
 		return Proyecto{}, errs
