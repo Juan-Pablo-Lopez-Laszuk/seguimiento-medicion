@@ -22,6 +22,8 @@ const EstadoPlanificado Estado = "Planificado"
 const (
 	CampoNombre      = "nombre"
 	CampoDescripcion = "descripcion"
+	CampoFechaInicio = "fecha_inicio"
+	CampoFechaFin    = "fecha_fin"
 )
 
 // Límites del nombre, en caracteres (RN2).
@@ -37,6 +39,9 @@ var (
 	ErrNombreObligatorio = errors.New("el nombre es obligatorio")
 	ErrNombreLargo       = errors.New("el nombre debe tener entre 3 y 100 caracteres")
 	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 1000 caracteres")
+	ErrFechaInicio       = errors.New("la fecha de inicio es obligatoria y debe ser válida")
+	ErrFechaFin          = errors.New("la fecha de finalización es obligatoria y debe ser válida")
+	ErrFechasInvalidas   = errors.New("la fecha de finalización debe ser posterior a la de inicio")
 )
 
 // ErroresValidacion junta los errores de todos los campos inválidos, por nombre de campo (RN7).
@@ -90,14 +95,34 @@ func Nuevo(d Datos) (Proyecto, error) {
 	if utf8.RuneCountInString(d.Descripcion) > DescripcionMax {
 		errs[CampoDescripcion] = ErrDescripcionLarga
 	}
+	inicio, fin := soloFecha(d.FechaInicio), soloFecha(d.FechaFin)
+	switch {
+	case inicio.IsZero():
+		errs[CampoFechaInicio] = ErrFechaInicio
+	}
+	switch {
+	case fin.IsZero():
+		errs[CampoFechaFin] = ErrFechaFin
+	case !inicio.IsZero() && !fin.After(inicio): // RN4
+		errs[CampoFechaFin] = ErrFechasInvalidas
+	}
 	if len(errs) > 0 {
 		return Proyecto{}, errs
 	}
 	return Proyecto{
 		Nombre:      nombre,
 		Descripcion: d.Descripcion,
-		FechaInicio: d.FechaInicio,
-		FechaFin:    d.FechaFin,
+		FechaInicio: inicio,
+		FechaFin:    fin,
 		Estado:      EstadoPlanificado,
 	}, nil
+}
+
+// soloFecha deja el día de t a medianoche UTC, así la comparación no depende de la hora ni de la zona horaria.
+// La fecha cero (campo vacío) se mantiene en cero.
+func soloFecha(t time.Time) time.Time {
+	if t.IsZero() {
+		return t
+	}
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
