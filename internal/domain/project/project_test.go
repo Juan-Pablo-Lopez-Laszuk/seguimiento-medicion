@@ -1,6 +1,7 @@
 package project_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -27,6 +28,18 @@ func datosValidos(t *testing.T) project.Datos {
 	}
 }
 
+// verificarErrorDeCampo comprueba que err sea un error de validación con el error esperado en ese campo (CA-01.4).
+func verificarErrorDeCampo(t *testing.T, err error, campo string, esperado error) {
+	t.Helper()
+	var errs project.ErroresValidacion
+	if !errors.As(err, &errs) {
+		t.Fatalf("se esperaba project.ErroresValidacion y se obtuvo: %v", err)
+	}
+	if !errors.Is(errs[campo], esperado) {
+		t.Errorf("campo %q: se esperaba %v y se obtuvo %v (todos: %v)", campo, esperado, errs[campo], errs)
+	}
+}
+
 // CA-01.3
 func TestNuevo_DatosValidos_CreaElProyectoEnEstadoPlanificado(t *testing.T) {
 	d := datosValidos(t)
@@ -44,5 +57,32 @@ func TestNuevo_DatosValidos_CreaElProyectoEnEstadoPlanificado(t *testing.T) {
 	}
 	if p.Estado != project.EstadoPlanificado {
 		t.Errorf("estado: se esperaba %q y se obtuvo %q", project.EstadoPlanificado, p.Estado)
+	}
+}
+
+// CA-01.1 y CA-01.4
+func TestNuevo_NombreVacioOSoloEspacios_InformaQueEsObligatorio(t *testing.T) {
+	for _, nombre := range []string{"", "   "} {
+		d := datosValidos(t)
+		d.Nombre = nombre
+
+		_, err := project.Nuevo(d)
+
+		verificarErrorDeCampo(t, err, project.CampoNombre, project.ErrNombreObligatorio)
+	}
+}
+
+// RN1
+func TestNuevo_QuitaLosEspaciosAlrededorDelNombre(t *testing.T) {
+	d := datosValidos(t)
+	d.Nombre = "   Gestión Ñandú   "
+
+	p, err := project.Nuevo(d)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if p.Nombre != "Gestión Ñandú" {
+		t.Errorf("nombre: se esperaba %q y se obtuvo %q", "Gestión Ñandú", p.Nombre)
 	}
 }
