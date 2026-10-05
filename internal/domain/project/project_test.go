@@ -211,3 +211,16 @@ func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
 	verificarErrorDeCampo(t, err, project.CampoNombre, project.ErrNombreObligatorio)
 	verificarErrorDeCampo(t, err, project.CampoFechaInicio, project.ErrFechaInicio)
 }
+
+// El texto del error junta todos los campos, ordenados, con su mensaje.
+func TestErroresValidacion_TextoConTodosLosCamposOrdenados(t *testing.T) {
+	errs := project.ErroresValidacion{
+		project.CampoNombre:      project.ErrNombreObligatorio,
+		project.CampoFechaInicio: project.ErrFechaInicio,
+	}
+
+	esperado := "fecha_inicio: la fecha de inicio es obligatoria y debe ser válida; nombre: el nombre es obligatorio"
+	if errs.Error() != esperado {
+		t.Errorf("se esperaba %q y se obtuvo %q", esperado, errs.Error())
+	}
+}
