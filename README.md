@@ -1,5 +1,7 @@
 # Software Metrics & Estimation
 
+[![CI](https://github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/actions/workflows/ci.yml/badge.svg)](https://github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/actions/workflows/ci.yml)
+
 Aplicación web para **estimar, planificar, seguir y medir proyectos de software**: Product Backlog, Sprints,
 Planning Poker, registro de esfuerzo, defectos, métricas, dashboard y reportes.
 
@@ -65,6 +67,10 @@ go test -cover ./...         # tests con porcentaje de cobertura
 ```
 
 Con `make` instalado también están `make run`, `make test`, `make cover`, `make bdd` y `make lint`.
+
+Cada Pull Request corre el **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): gofmt, go vet, golangci-lint,
+tests con race detector y cobertura, y los escenarios BDD. Si algo falla, el PR no se puede mergear. El reporte de
+cobertura queda en el resumen de la corrida y como artefacto descargable (`cobertura`).
 
 ## Estructura
 
