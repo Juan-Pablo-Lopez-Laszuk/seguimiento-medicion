@@ -61,6 +61,13 @@ func (e ErroresValidacion) Error() string {
 	return strings.Join(partes, "; ")
 }
 
+// agregar registra el error del campo solo si hay error.
+func (e ErroresValidacion) agregar(campo string, err error) {
+	if err != nil {
+		e[campo] = err
+	}
+}
+
 // Datos son los campos que carga el usuario para crear un proyecto.
 type Datos struct {
 	Nombre      string
@@ -83,29 +90,15 @@ type Proyecto struct {
 // Nuevo valida los datos y devuelve el proyecto listo para guardar. Si algún dato es inválido,
 // devuelve ErroresValidacion con todos los campos que fallaron.
 func Nuevo(d Datos) (Proyecto, error) {
-	errs := ErroresValidacion{}
-	nombre := strings.TrimSpace(d.Nombre)   // RN1
-	largo := utf8.RuneCountInString(nombre) // RN2: caracteres, no bytes
-	switch {
-	case nombre == "":
-		errs[CampoNombre] = ErrNombreObligatorio
-	case largo < NombreMin || largo > NombreMax:
-		errs[CampoNombre] = ErrNombreLargo
-	}
-	if utf8.RuneCountInString(d.Descripcion) > DescripcionMax {
-		errs[CampoDescripcion] = ErrDescripcionLarga
-	}
+	nombre := NormalizarNombre(d.Nombre)
 	inicio, fin := soloFecha(d.FechaInicio), soloFecha(d.FechaFin)
-	switch {
-	case inicio.IsZero():
-		errs[CampoFechaInicio] = ErrFechaInicio
-	}
-	switch {
-	case fin.IsZero():
-		errs[CampoFechaFin] = ErrFechaFin
-	case !inicio.IsZero() && !fin.After(inicio): // RN4
-		errs[CampoFechaFin] = ErrFechasInvalidas
-	}
+
+	errs := ErroresValidacion{}
+	errs.agregar(CampoNombre, validarNombre(nombre))
+	errs.agregar(CampoDescripcion, validarDescripcion(d.Descripcion))
+	errInicio, errFin := validarFechas(inicio, fin)
+	errs.agregar(CampoFechaInicio, errInicio)
+	errs.agregar(CampoFechaFin, errFin)
 	if len(errs) > 0 {
 		return Proyecto{}, errs
 	}
@@ -116,6 +109,44 @@ func Nuevo(d Datos) (Proyecto, error) {
 		FechaFin:    fin,
 		Estado:      EstadoPlanificado,
 	}, nil
+}
+
+// NormalizarNombre quita los espacios del inicio y del final (RN1). La usa también el caso de uso para
+// comparar el nombre con los proyectos existentes.
+func NormalizarNombre(nombre string) string {
+	return strings.TrimSpace(nombre)
+}
+
+func validarNombre(nombre string) error {
+	largo := utf8.RuneCountInString(nombre) // RN2: caracteres, no bytes
+	switch {
+	case largo == 0:
+		return ErrNombreObligatorio
+	case largo < NombreMin || largo > NombreMax:
+		return ErrNombreLargo
+	}
+	return nil
+}
+
+func validarDescripcion(descripcion string) error {
+	if utf8.RuneCountInString(descripcion) > DescripcionMax {
+		return ErrDescripcionLarga
+	}
+	return nil
+}
+
+// validarFechas devuelve el error de cada fecha (nil si está bien).
+func validarFechas(inicio, fin time.Time) (errInicio, errFin error) {
+	if inicio.IsZero() {
+		errInicio = ErrFechaInicio
+	}
+	switch {
+	case fin.IsZero():
+		errFin = ErrFechaFin
+	case !inicio.IsZero() && !fin.After(inicio): // RN4
+		errFin = ErrFechasInvalidas
+	}
+	return errInicio, errFin
 }
 
 // soloFecha deja el día de t a medianoche UTC, así la comparación no depende de la hora ni de la zona horaria.
