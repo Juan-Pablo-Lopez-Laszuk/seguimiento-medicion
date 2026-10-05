@@ -108,23 +108,29 @@ func TestCrear_DatosInvalidosYNombreRepetido_InformaTodoJunto(t *testing.T) {
 	}
 }
 
-// repoQueFalla simula una base de datos caída.
-type repoQueFalla struct{ err error }
+// repoQueFalla simula una base de datos caída: falla al buscar el nombre, al guardar o en ambos.
+type repoQueFalla struct{ errBuscar, errGuardar error }
 
-func (r repoQueFalla) ExisteNombre(context.Context, string) (bool, error) { return false, r.err }
+func (r repoQueFalla) ExisteNombre(context.Context, string) (bool, error) { return false, r.errBuscar }
 func (r repoQueFalla) Guardar(_ context.Context, p project.Proyecto) (project.Proyecto, error) {
-	return p, r.err
+	return p, r.errGuardar
 }
 
 // Un error del repositorio no es un error de validación: se devuelve tal cual para que la pantalla
 // muestre un error general.
 func TestCrear_ErrorDelRepositorio_SeDevuelve(t *testing.T) {
 	falla := errors.New("base caída")
-	s := service.NuevoProyectos(repoQueFalla{err: falla}, relojFijo)
+	casos := map[string]repoQueFalla{
+		"al buscar el nombre": {errBuscar: falla},
+		"al guardar":          {errGuardar: falla},
+	}
+	for nombre, repo := range casos {
+		s := service.NuevoProyectos(repo, relojFijo)
 
-	_, err := s.Crear(context.Background(), datosValidos())
+		_, err := s.Crear(context.Background(), datosValidos())
 
-	if !errors.Is(err, falla) {
-		t.Errorf("se esperaba el error del repositorio y se obtuvo: %v", err)
+		if !errors.Is(err, falla) {
+			t.Errorf("%s: se esperaba el error del repositorio y se obtuvo: %v", nombre, err)
+		}
 	}
 }
