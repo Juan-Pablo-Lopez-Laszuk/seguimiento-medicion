@@ -22,6 +22,7 @@ Participantes: López, Piastrellini, Bravo · Product Architect (profesores): po
 | #65 | Plantilla de especificación SDD | — | Mariano | `specs/_plantilla.md` (PR #57) |
 | #66 | Spike Supabase Auth (JWT ES256) | — | Mariano | PR #58 |
 | #51 | Tablero, etiquetas, hitos y plantillas | — | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
+| #52 | Preguntas abiertas con los profesores | — | Juan Pablo | Respuestas en la sección siguiente |
 
 ## No terminado (pasa al Sprint 1)
 
@@ -30,27 +31,29 @@ Participantes: López, Piastrellini, Bravo · Product Architect (profesores): po
 | #37 | TEC-01 · Esqueleto del proyecto | 3 | En revisión: el preview de Vercel falló al importar `internal/`; corregido en el PR #73 |
 | #71 | godog con los escenarios de HU-31 | 2 | En revisión (PR #72), depende de TEC-01 |
 | #38 | TEC-02 · Integración continua | 2 | No se empezó; depende de TEC-01 |
-| #52 | Preguntas abiertas a los profesores | — | Falta la respuesta de la cátedra (ver abajo) |
 
 ## Preguntas abiertas (#52)
 
-Propuesta del equipo; se mantiene salvo que los profesores digan otra cosa.
+Las que dependen de la cátedra se consultaron a los profesores; las que la consigna deja abiertas las decidió el equipo.
 
-| Pregunta | Propuesta | Respuesta de la cátedra |
+| Pregunta | Quién la resolvió | Decisión |
 |---|---|---|
-| Fecha exacta de la presentación final | Semana del 02/11 (cierre del Sprint 4 el 01/11) | |
-| Escala de story points | Fibonacci 0, 1, 2, 3, 5, 8, 13, 21 y "?" | |
-| "Diferencia" en Planning Poker | Hay diferencia si los votos extremos están a más de una posición de la escala | |
-| Horas estimadas: ¿por historia, por tarea o ambas? | Ambas: la historia suma las horas de sus tareas | |
-| Sprints para la velocidad | Promedio de los últimos 3 sprints cerrados | |
-| Cobertura mínima de tests | 80 % en `internal/domain` y `internal/metrics` | |
-| Formato de la documentación final | Markdown en el repositorio + PDF exportado | |
+| Fecha de la presentación final | Profesores | Primeras semanas de noviembre (el Sprint 4 cierra el 01/11) |
+| Cobertura mínima de tests | Profesores | No hay un porcentaje fijo: hay que cubrir con tests todo lo que pide la consigna |
+| Formato de la documentación final | Profesores | Markdown en el repositorio |
+| Escala de story points | Equipo | Fibonacci 0, 1, 2, 3, 5, 8, 13, 21 y "?" |
+| "Diferencia" en Planning Poker | Equipo | Hay diferencia si los votos extremos están a más de una posición de la escala |
+| Horas estimadas: ¿por historia, por tarea o ambas? | Equipo | Ambas: la historia suma las horas de sus tareas (la consigna dice "historia o tarea") |
+| Sprints para la velocidad | Equipo | Promedio de los últimos 3 sprints cerrados |
 
 ## Feedback del cliente
 
-- (completar con lo que digan los profesores)
+- Respuestas a las preguntas abiertas (tabla de arriba).
+- (agregar cualquier otro comentario de los profesores)
 
 ## Cambios en el Product Backlog
 
 - TEC-01, TEC-02 y la tarea de godog de HU-31 pasan al Sprint 1.
+- Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe.
+- Documentación final en Markdown (el reporte PDF que genera la app, HU de la E9, sigue siendo obligatorio).
 - Nuevo aprendizaje técnico: la función de Vercel no puede importar paquetes `internal/`; se entra por el paquete público `app/`.
