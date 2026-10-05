@@ -38,6 +38,7 @@ const (
 var (
 	ErrNombreObligatorio = errors.New("el nombre es obligatorio")
 	ErrNombreLargo       = errors.New("el nombre debe tener entre 3 y 100 caracteres")
+	ErrNombreRepetido    = errors.New("ya existe un proyecto con ese nombre")
 	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 1000 caracteres")
 	ErrFechaInicio       = errors.New("la fecha de inicio es obligatoria y debe ser válida")
 	ErrFechaFin          = errors.New("la fecha de finalización es obligatoria y debe ser válida")
