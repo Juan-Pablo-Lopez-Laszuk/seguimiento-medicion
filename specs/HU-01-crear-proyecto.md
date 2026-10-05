@@ -7,8 +7,7 @@
 
 ## 1. Objetivo
 
-Que el Agile Enabler pueda dar de alta un proyecto con su nombre, descripción y fechas, para empezar a cargar su
-backlog, sus integrantes y sus sprints. Es la primera historia: todas las demás cuelgan de un proyecto.
+Que el Agile Enabler pueda dar de alta un proyecto con su nombre, descripción y fechas, para empezar a cargar su backlog, sus integrantes y sus sprints. Es la primera historia: todas las demás cuelgan de un proyecto.
 
 ## 2. Entradas
 
@@ -40,7 +39,7 @@ backlog, sus integrantes y sus sprints. Es la primera historia: todas las demás
 
 ## 5. Restricciones
 
-- Las validaciones de los datos (RN1, RN2, RN4, RN6) son **funciones puras** en `internal/domain/proyecto`: no usan
+- Las validaciones de los datos (RN1, RN2, RN4, RN6) son **funciones puras** en `internal/domain/project`: no usan
   base de datos ni HTTP, así se prueban con TDD.
 - La unicidad del nombre (RN3) necesita consultar los proyectos existentes: la controla el caso de uso en
   `internal/service`, a través del repositorio (`internal/store/memory` en los tests, `internal/store/postgres` en
@@ -89,6 +88,6 @@ conservan los datos que el usuario ya había cargado.
 
 ## Trazabilidad
 
-Issue: #39 · Feature: `features/hu-01-crear-proyecto.feature` · Tests: `internal/domain/proyecto/proyecto_test.go`,
-`internal/service/proyectos_test.go` · Código: `internal/domain/proyecto/proyecto.go`, `internal/service/proyectos.go`,
+Issue: #39 · Feature: `features/hu-01-crear-proyecto.feature` · Tests: `internal/domain/project/project_test.go`,
+`internal/service/proyectos_test.go` · Código: `internal/domain/project/project.go`, `internal/service/proyectos.go`,
 `internal/server` (pantalla) · PR: #
