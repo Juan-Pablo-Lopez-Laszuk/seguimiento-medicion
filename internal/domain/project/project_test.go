@@ -142,3 +142,72 @@ func TestNuevo_LargoDeLaDescripcion(t *testing.T) {
 		}
 	}
 }
+
+// CA-01.2 y CA-01.4 · fechas faltantes (la fecha cero es la que llega cuando el campo está vacío o no es una fecha)
+func TestNuevo_FechasObligatorias(t *testing.T) {
+	d := datosValidos(t)
+	d.FechaInicio = time.Time{}
+	_, err := project.Nuevo(d)
+	verificarErrorDeCampo(t, err, project.CampoFechaInicio, project.ErrFechaInicio)
+
+	d = datosValidos(t)
+	d.FechaFin = time.Time{}
+	_, err = project.Nuevo(d)
+	verificarErrorDeCampo(t, err, project.CampoFechaFin, project.ErrFechaFin)
+}
+
+// CA-01.2 · casos límite: la fecha de fin tiene que ser estrictamente posterior (RN4)
+func TestNuevo_FechaDeFinPosteriorALaDeInicio(t *testing.T) {
+	casos := []struct {
+		inicio, fin string
+		valido      bool
+	}{
+		{"2026-10-05", "2026-10-05", false}, // mismo día
+		{"2026-10-05", "2026-10-06", true},  // un día después
+		{"2026-10-05", "2026-10-04", false}, // anterior
+		{"2020-01-01", "2020-12-31", true},  // RN5: el inicio puede estar en el pasado
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.FechaInicio, d.FechaFin = fecha(t, c.inicio), fecha(t, c.fin)
+
+		_, err := project.Nuevo(d)
+
+		if c.valido && err != nil {
+			t.Errorf("%s → %s: no se esperaba error, se obtuvo %v", c.inicio, c.fin, err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, project.CampoFechaFin, project.ErrFechasInvalidas)
+		}
+	}
+}
+
+// Las fechas se comparan y se guardan sin hora: dos horarios del mismo día son el mismo día.
+func TestNuevo_LasFechasSeTomanSinHora(t *testing.T) {
+	d := datosValidos(t)
+	d.FechaInicio = time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC)
+	d.FechaFin = time.Date(2026, 10, 5, 18, 0, 0, 0, time.UTC)
+	_, err := project.Nuevo(d)
+	verificarErrorDeCampo(t, err, project.CampoFechaFin, project.ErrFechasInvalidas)
+
+	d.FechaFin = time.Date(2026, 10, 6, 9, 30, 0, 0, time.UTC)
+	p, err := project.Nuevo(d)
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if !p.FechaInicio.Equal(fecha(t, "2026-10-05")) || !p.FechaFin.Equal(fecha(t, "2026-10-06")) {
+		t.Errorf("se esperaban las fechas sin hora y se obtuvo %v → %v", p.FechaInicio, p.FechaFin)
+	}
+}
+
+// RN7 · si hay varios datos inválidos se informan todos juntos
+func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
+	d := datosValidos(t)
+	d.Nombre = ""
+	d.FechaInicio = time.Time{}
+
+	_, err := project.Nuevo(d)
+
+	verificarErrorDeCampo(t, err, project.CampoNombre, project.ErrNombreObligatorio)
+	verificarErrorDeCampo(t, err, project.CampoFechaInicio, project.ErrFechaInicio)
+}
