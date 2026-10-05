@@ -117,3 +117,28 @@ func TestNuevo_LargoDelNombre(t *testing.T) {
 		}
 	}
 }
+
+// Descripción opcional, hasta 1000 caracteres.
+func TestNuevo_LargoDeLaDescripcion(t *testing.T) {
+	casos := []struct {
+		descripcion string
+		valido      bool
+	}{
+		{"", true},
+		{strings.Repeat("ñ", 1000), true},
+		{strings.Repeat("a", 1001), false},
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.Descripcion = c.descripcion
+
+		_, err := project.Nuevo(d)
+
+		if c.valido && err != nil {
+			t.Errorf("descripción de %d caracteres: no se esperaba error, se obtuvo %v", len([]rune(c.descripcion)), err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, project.CampoDescripcion, project.ErrDescripcionLarga)
+		}
+	}
+}
