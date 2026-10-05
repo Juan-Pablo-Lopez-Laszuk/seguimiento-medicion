@@ -1,0 +1,74 @@
+# Integración continua (TEC-02): cada Pull Request y cada push a main pasa por las mismas validaciones
+# que la Definition of Done. Si algún paso falla, el PR no se puede mergear (check obligatorio en main).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Si se sube otro commit al mismo PR, se cancela la corrida anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  calidad:
+    name: Calidad (formato, análisis, tests y BDD)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Usa la misma versión de Go que go.mod (y que Vercel).
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Formato (gofmt)
+        run: |
+          sin_formato=$(gofmt -l .)
+          if [ -n "$sin_formato" ]; then
+            echo "::error::Estos archivos no tienen formato; corré 'gofmt -w .' y volvé a subirlos:"
+            echo "$sin_formato"
+            exit 1
+          fi
+
+      - name: Análisis estático (go vet)
+        run: go vet ./...
+
+      - name: Linter (golangci-lint)
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.14
+
+      - name: Tests unitarios con race detector y cobertura
+        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      - name: Escenarios BDD (godog)
+        run: go test ./features/ -run TestFeatures -v
+
+      - name: Resumen de cobertura
+        if: always()
+        run: |
+          if [ -f coverage.out ]; then
+            go tool cover -html=coverage.out -o coverage.html
+            {
+              echo '### Cobertura por función'
+              echo '```'
+              go tool cover -func=coverage.out
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Publicar cobertura como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: |
+            coverage.out
+            coverage.html
+          if-no-files-found: ignore
