@@ -1,6 +1,7 @@
 package metrics_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
@@ -116,5 +117,29 @@ func TestCalcularVelocidad_ConSprintsCerradosNoMuestraMensaje(t *testing.T) {
 	}
 	if velocidad.Mensaje() != "" {
 		t.Errorf("mensaje = %q, no se esperaba ninguno", velocidad.Mensaje())
+	}
+}
+
+// CA-31.5: una ventana de 0 o negativa es un error.
+func TestCalcularVelocidad_VentanaInvalidaDevuelveError(t *testing.T) {
+	for _, ventana := range []int{0, -1} {
+		_, err := metrics.CalcularVelocidad(cerrados(10, 20), ventana)
+		if !errors.Is(err, metrics.ErrVentanaInvalida) {
+			t.Errorf("ventana %d: error = %v, se esperaba ErrVentanaInvalida", ventana, err)
+		}
+	}
+	if got := metrics.ErrVentanaInvalida.Error(); got != "la ventana de sprints debe ser mayor a cero" {
+		t.Errorf("mensaje del error = %q", got)
+	}
+}
+
+// RG-4: los story points negativos son un error, no un número equivocado.
+func TestCalcularVelocidad_SPNegativosDevuelveError(t *testing.T) {
+	_, err := metrics.CalcularVelocidad(cerrados(10, -5), 3)
+	if !errors.Is(err, metrics.ErrSPNegativos) {
+		t.Errorf("error = %v, se esperaba ErrSPNegativos", err)
+	}
+	if got := metrics.ErrSPNegativos.Error(); got != "los story points no pueden ser negativos" {
+		t.Errorf("mensaje del error = %q", got)
 	}
 }
