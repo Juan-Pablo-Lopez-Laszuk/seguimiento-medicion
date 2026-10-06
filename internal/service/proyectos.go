@@ -16,6 +16,8 @@ type RepositorioProyectos interface {
 	ExisteNombre(ctx context.Context, nombre string) (bool, error)
 	// Guardar guarda el proyecto y lo devuelve con su ID.
 	Guardar(ctx context.Context, p project.Proyecto) (project.Proyecto, error)
+	// Listar devuelve todos los proyectos en el orden en que se crearon.
+	Listar(ctx context.Context) ([]project.Proyecto, error)
 }
 
 // Proyectos agrupa los casos de uso de la épica E1.
@@ -59,4 +61,13 @@ func (s *Proyectos) Crear(ctx context.Context, d project.Datos) (project.Proyect
 		return project.Proyecto{}, fmt.Errorf("guardar el proyecto: %w", err)
 	}
 	return guardado, nil
+}
+
+// Listar devuelve los proyectos en el orden en que se crearon.
+func (s *Proyectos) Listar(ctx context.Context) ([]project.Proyecto, error) {
+	lista, err := s.repo.Listar(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("listar los proyectos: %w", err)
+	}
+	return lista, nil
 }
