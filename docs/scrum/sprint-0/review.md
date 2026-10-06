@@ -23,11 +23,11 @@ Las tablas muestran el estado **al cierre del sprint, el domingo 04/10**. Lo que
 | #64 | Propuesta de modelo de datos | 3 (*) | Mariano | PR #56 |
 | #65 | Plantilla de especificación SDD | 1 (*) | Mariano | `specs/_plantilla.md` (PR #57) |
 | #66 | Spike Supabase Auth (JWT ES256) | 2 (*) | Mariano | PR #58 |
-| #51 | Tablero, etiquetas, hitos y plantillas | — | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
-| #52 | Preguntas abiertas con los profesores | — | Juan Pablo | Respuestas en la sección siguiente |
+| #51 | Tablero, etiquetas, hitos y plantillas | 3 (*) | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
+| #52 | Preguntas abiertas con los profesores | 1 (*) | Juan Pablo | Respuestas en la sección siguiente |
 
-(*) Las tareas de Mariano se cargaron sin story points y se estimaron **después de terminadas**, por eso no estaban en
-los 18 SP comprometidos al inicio del sprint.
+(*) Las tareas de Mariano (#64, #65, #66) y las de Juan Pablo (#51, #52, #53) se cargaron sin story points y se
+estimaron **después de terminadas**, por eso no estaban en los 18 SP comprometidos al inicio del sprint.
 
 ## No terminado al cierre (pasa al Sprint 1)
 
@@ -36,8 +36,10 @@ los 18 SP comprometidos al inicio del sprint.
 | #37 | TEC-01 · Esqueleto del proyecto | 3 | En revisión: el preview de Vercel falló al importar `internal/` | Corregido en el PR #73; mergeado el lunes 05/10 (PR #70) |
 | #71 | godog con los escenarios de HU-31 | 2 | En revisión (PR #72), dependía de TEC-01 | Mergeado el lunes 05/10 (PR #72) |
 | #38 | TEC-02 · Integración continua | 2 | No se había empezado; dependía de TEC-01 | Hecho y mergeado el lunes 05/10 (PR #75) |
+| #53 | Review y Retro del Sprint 0 y Planning del Sprint 1 | 2 (*) | Sin empezar: las ceremonias se hacen al cerrar el sprint | Actas en este PR (#74); falta el acta de la Planning del Sprint 1 |
 
-Como se terminaron el primer día del Sprint 1, en el tablero quedaron asignadas al Sprint 1 y sus SP suman ahí.
+Como #37, #71 y #38 se terminaron el primer día del Sprint 1, en el tablero quedaron asignadas al Sprint 1 y sus SP
+suman ahí. #53 se cierra con la Planning del Sprint 1.
 
 ## Preguntas abiertas (#52)
 
