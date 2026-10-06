@@ -1,6 +1,6 @@
 # SPEC-01 · Crear proyecto
 
-**Historia:** HU-01 (#39) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-01 (#39) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Proyecto de
 > `docs/modelo-datos.md`.
@@ -88,6 +88,18 @@ conservan los datos que el usuario ya había cargado.
 
 ## Trazabilidad
 
-Issue: #39 · Feature: `features/hu-01-crear-proyecto.feature` · Tests: `internal/domain/project/project_test.go`,
-`internal/service/proyectos_test.go` · Código: `internal/domain/project/project.go`, `internal/service/proyectos.go`,
-`internal/server` (pantalla) · PR: #
+Issue: #39 · Feature: `features/hu-01-crear-proyecto.feature` · Pasos BDD: `features/hu01_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/project/project.go` (`Nuevo`, `NormalizarNombre`) | `internal/domain/project/project_test.go` |
+| Repositorio en memoria | `internal/store/memory/proyectos.go` | `internal/store/memory/proyectos_test.go` |
+| Caso de uso | `internal/service/proyectos.go` (`Crear`, `Listar`) | `internal/service/proyectos_test.go` |
+| Pantalla | `internal/server/proyectos.go`, `web/templates/paginas/proyectos.html`, `proyecto_nuevo.html` | `internal/server/proyectos_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-01.1 Nombre obligatorio, 3 a 100 caracteres y único | Crear con datos válidos · Sin descripción y con espacios · Largo del nombre en los bordes · Nombre repetido | `TestNuevo_NombreVacioOSoloEspacios_*`, `TestNuevo_LargoDelNombre`, `TestProyectos_ExisteNombreSinDistinguirMayusculas`, `TestCrear_NombreRepetido_*`, `TestCrearProyecto_NombreRepetido_*` |
+| CA-01.2 Fin posterior al inicio | Fecha de finalización en el borde | `TestNuevo_FechasObligatorias`, `TestNuevo_FechaDeFinPosteriorALaDeInicio`, `TestNuevo_LasFechasSeTomanSinHora` |
+| CA-01.3 Nace en estado Planificado | Crear con datos válidos | `TestNuevo_DatosValidos_*`, `TestCrear_DatosValidos_*`, `TestCrearProyecto_DatosValidos_*` |
+| CA-01.4 Se indica qué campo falló | Largo del nombre en los bordes · Fecha en el borde · Nombre repetido · Se indica cada campo que falló | `TestNuevo_InformaTodosLosCamposInvalidosJuntos`, `TestCrear_DatosInvalidosYNombreRepetido_*`, `TestCrearProyecto_DatosInvalidos_*` |
