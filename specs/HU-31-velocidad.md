@@ -1,6 +1,6 @@
 # SPEC-31 · Velocidad del equipo
 
-**Historia:** HU-31 (#9) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-31 (#9) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla de Mariano (`specs/_plantilla.md`) y la fórmula M3 de `docs/metricas.md`.
 
@@ -63,4 +63,4 @@ Que el equipo sepa cuántos story points termina, en promedio, por sprint, para 
 
 ## Trazabilidad
 
-Issue: #9 · Métrica: M3 en `docs/metricas.md` · Feature: `features/hu-31-velocidad.feature` · Tests: `internal/metrics/velocity_test.go` (Sprint 1) · Código: `internal/metrics/velocity.go` (Sprint 1) · PR: #
+Issue: #9 · Métrica: M3 en `docs/metricas.md` · Feature: `features/hu-31-velocidad.feature` · Tests: `internal/metrics/velocity_test.go` · Código: `internal/metrics/velocity.go` (`CalcularVelocidad`) · Pasos BDD: `features/hu31_steps_test.go`
