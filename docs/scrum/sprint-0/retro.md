@@ -19,7 +19,8 @@ Las tareas de Mariano (#64, #65, #66) no tenían story points cargados, por eso 
 
 ## ¿Qué podemos mejorar?
 
-- TEC-01 se terminó tarde (miércoles) y bloqueó el trabajo de los demás en Go: lo que bloquea a otros va primero.
+- TEC-01 recién estuvo para revisar el jueves 01/10 a la noche y se mergeó el lunes 05/10: bloqueó el trabajo de los
+  demás en Go. Lo que bloquea a otros va primero.
 - Se dio por probado algo que solo se probó en local: el deploy en Vercel compila distinto.
 - Algunas tareas no tenían story points y no se pueden medir.
 - No hubo dailies registradas.
@@ -28,7 +29,7 @@ Las tareas de Mariano (#64, #65, #66) no tenían story points cargados, por eso 
 
 | Acción | Responsable | Para cuándo |
 |---|---|---|
-| Mergear TEC-01 y armar el CI (TEC-02) antes de empezar las historias | Juan Pablo | Martes 06/10 |
+| Mergear TEC-01 y armar el CI (TEC-02) antes de empezar las historias | Juan Pablo | Martes 06/10 (hecho el 05/10) |
 | Todo issue del sprint lleva story points antes de la Planning | Todos | Planning de cada lunes |
 | Un PR no se aprueba sin el preview de Vercel en verde | Todos | Desde el Sprint 1 |
 | Daily por mensaje (qué hice / qué hago / bloqueos) en el issue del sprint | Todos | Lunes a viernes |

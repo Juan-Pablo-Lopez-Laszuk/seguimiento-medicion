@@ -5,10 +5,12 @@ Participantes: López, Piastrellini, Bravo · Product Architect (profesores): po
 ## Sprint Goal
 
 > Dejar listo el entorno de trabajo, el tablero y el Product Backlog inicial para empezar a construir en el Sprint 1.
-> ¿Se cumplió? **Parcialmente**: tablero, backlog, plantillas, métricas, modelo de datos y deploy listos; el esqueleto
-> en Go (TEC-01) quedó en revisión y la integración continua (TEC-02) no se empezó.
+> ¿Se cumplió? **Parcialmente**: tablero, backlog, plantillas, métricas, modelo de datos y deploy listos; al cierre
+> (domingo 04/10) el esqueleto en Go (TEC-01) estaba en revisión y la integración continua (TEC-02) no se había empezado.
 
-## Terminado
+Las tablas muestran el estado **al cierre del sprint, el domingo 04/10**. Lo que se terminó después cuenta para el Sprint 1.
+
+## Terminado al cierre (04/10)
 
 | Issue | Tarea | SP | Responsable | Evidencia |
 |---|---|---|---|---|
@@ -24,13 +26,15 @@ Participantes: López, Piastrellini, Bravo · Product Architect (profesores): po
 | #51 | Tablero, etiquetas, hitos y plantillas | — | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
 | #52 | Preguntas abiertas con los profesores | — | Juan Pablo | Respuestas en la sección siguiente |
 
-## No terminado (pasa al Sprint 1)
+## No terminado al cierre (pasa al Sprint 1)
 
-| Issue | Tarea | SP | Motivo |
-|---|---|---|---|
-| #37 | TEC-01 · Esqueleto del proyecto | 3 | En revisión: el preview de Vercel falló al importar `internal/`; corregido en el PR #73 |
-| #71 | godog con los escenarios de HU-31 | 2 | En revisión (PR #72), depende de TEC-01 |
-| #38 | TEC-02 · Integración continua | 2 | No se empezó; depende de TEC-01 |
+| Issue | Tarea | SP | Estado al 04/10 | Qué pasó después |
+|---|---|---|---|---|
+| #37 | TEC-01 · Esqueleto del proyecto | 3 | En revisión: el preview de Vercel falló al importar `internal/` | Corregido en el PR #73; mergeado el lunes 05/10 (PR #70) |
+| #71 | godog con los escenarios de HU-31 | 2 | En revisión (PR #72), dependía de TEC-01 | Mergeado el lunes 05/10 (PR #72) |
+| #38 | TEC-02 · Integración continua | 2 | No se había empezado; dependía de TEC-01 | Hecho y mergeado el lunes 05/10 (PR #75) |
+
+Como se terminaron el primer día del Sprint 1, en el tablero quedaron asignadas al Sprint 1 y sus SP suman ahí.
 
 ## Preguntas abiertas (#52)
 
@@ -53,7 +57,7 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 
 ## Cambios en el Product Backlog
 
-- TEC-01, TEC-02 y la tarea de godog de HU-31 pasan al Sprint 1.
+- TEC-01, TEC-02 y la tarea de godog de HU-31 pasaron al Sprint 1 (se terminaron el 05/10).
 - Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe.
 - Documentación final en Markdown (el reporte PDF que genera la app, HU de la E9, sigue siendo obligatorio).
 - Nuevo aprendizaje técnico: la función de Vercel no puede importar paquetes `internal/`; se entra por el paquete público `app/`.
