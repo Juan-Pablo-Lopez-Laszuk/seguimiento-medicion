@@ -24,11 +24,16 @@ type Velocidad struct {
 	Valor float64 // promedio de story points completados por sprint
 }
 
-// CalcularVelocidad devuelve el promedio de story points completados de los últimos `ventana` sprints.
-// Si hay menos sprints que la ventana, promedia los que haya.
+// CalcularVelocidad devuelve el promedio de story points completados de los últimos `ventana` sprints
+// cerrados. Los sprints activos y planificados no cuentan. Si hay menos sprints cerrados que la ventana,
+// promedia los que haya.
 func CalcularVelocidad(sprints []Sprint, ventana int) (Velocidad, error) {
-	ordenados := make([]Sprint, len(sprints))
-	copy(ordenados, sprints)
+	var ordenados []Sprint
+	for _, s := range sprints {
+		if s.Estado == SprintCerrado {
+			ordenados = append(ordenados, s)
+		}
+	}
 	sort.Slice(ordenados, func(i, j int) bool { return ordenados[i].Numero < ordenados[j].Numero })
 
 	if len(ordenados) > ventana {
