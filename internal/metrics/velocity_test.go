@@ -79,3 +79,42 @@ func TestCalcularVelocidad_IgnoraSprintsActivosYPlanificados(t *testing.T) {
 		t.Errorf("velocidad = %v, se esperaba 15", velocidad.Valor)
 	}
 }
+
+// CA-31.3: sin sprints cerrados la velocidad es 0 y se avisa (nunca se divide por cero).
+func TestCalcularVelocidad_SinSprintsCerradosDevuelveCeroYAvisa(t *testing.T) {
+	casos := []struct {
+		nombre  string
+		sprints []metrics.Sprint
+	}{
+		{"proyecto sin sprints", nil},
+		{"solo sprints activos o planificados", []metrics.Sprint{
+			{Numero: 1, Estado: metrics.SprintActivo, SPCompletados: 50},
+			{Numero: 2, Estado: metrics.SprintPlanificado},
+		}},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			velocidad, err := metrics.CalcularVelocidad(c.sprints, 3)
+			if err != nil {
+				t.Fatalf("error inesperado: %v", err)
+			}
+			if velocidad.Valor != 0 {
+				t.Errorf("velocidad = %v, se esperaba 0", velocidad.Valor)
+			}
+			if velocidad.Mensaje() != "Aún no hay sprints cerrados" {
+				t.Errorf("mensaje = %q, se esperaba el aviso de que no hay sprints cerrados", velocidad.Mensaje())
+			}
+		})
+	}
+}
+
+// Cuando hay sprints cerrados no hay nada que avisar.
+func TestCalcularVelocidad_ConSprintsCerradosNoMuestraMensaje(t *testing.T) {
+	velocidad, err := metrics.CalcularVelocidad(cerrados(10, 20), 3)
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if velocidad.Mensaje() != "" {
+		t.Errorf("mensaje = %q, no se esperaba ninguno", velocidad.Mensaje())
+	}
+}
