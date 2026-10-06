@@ -108,13 +108,14 @@ func TestCrear_DatosInvalidosYNombreRepetido_InformaTodoJunto(t *testing.T) {
 	}
 }
 
-// repoQueFalla simula una base de datos caída: falla al buscar el nombre, al guardar o en ambos.
-type repoQueFalla struct{ errBuscar, errGuardar error }
+// repoQueFalla simula una base de datos caída: falla al buscar el nombre, al guardar o al listar.
+type repoQueFalla struct{ errBuscar, errGuardar, errListar error }
 
 func (r repoQueFalla) ExisteNombre(context.Context, string) (bool, error) { return false, r.errBuscar }
 func (r repoQueFalla) Guardar(_ context.Context, p project.Proyecto) (project.Proyecto, error) {
 	return p, r.errGuardar
 }
+func (r repoQueFalla) Listar(context.Context) ([]project.Proyecto, error) { return nil, r.errListar }
 
 // Un error del repositorio no es un error de validación: se devuelve tal cual para que la pantalla
 // muestre un error general.
@@ -132,5 +133,35 @@ func TestCrear_ErrorDelRepositorio_SeDevuelve(t *testing.T) {
 		if !errors.Is(err, falla) {
 			t.Errorf("%s: se esperaba el error del repositorio y se obtuvo: %v", nombre, err)
 		}
+	}
+}
+
+// La lista de proyectos sale en el orden en que se crearon.
+func TestListar_DevuelveLosProyectosEnOrdenDeCreacion(t *testing.T) {
+	s := service.NuevoProyectos(memory.NuevoProyectos(), relojFijo)
+	primero := datosValidos()
+	segundo := datosValidos()
+	segundo.Nombre = "Otro proyecto"
+	_, _ = s.Crear(context.Background(), primero)
+	_, _ = s.Crear(context.Background(), segundo)
+
+	lista, err := s.Listar(context.Background())
+
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if len(lista) != 2 || lista[0].Nombre != primero.Nombre || lista[1].Nombre != segundo.Nombre {
+		t.Errorf("se esperaba [%s %s] y se obtuvo %+v", primero.Nombre, segundo.Nombre, lista)
+	}
+}
+
+func TestListar_ErrorDelRepositorio_SeDevuelve(t *testing.T) {
+	falla := errors.New("base caída")
+	s := service.NuevoProyectos(repoQueFalla{errListar: falla}, relojFijo)
+
+	_, err := s.Listar(context.Background())
+
+	if !errors.Is(err, falla) {
+		t.Errorf("se esperaba el error del repositorio y se obtuvo: %v", err)
 	}
 }
