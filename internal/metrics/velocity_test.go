@@ -63,3 +63,19 @@ func TestCalcularVelocidad_NoDependeDelOrdenDeLosSprints(t *testing.T) {
 		t.Errorf("velocidad = %v, se esperaba 30", velocidad.Valor)
 	}
 }
+
+// CA-31.4 (RN1): los sprints activos o planificados no cuentan.
+func TestCalcularVelocidad_IgnoraSprintsActivosYPlanificados(t *testing.T) {
+	sprints := append(cerrados(10, 20),
+		metrics.Sprint{Numero: 3, Estado: metrics.SprintActivo, SPCompletados: 50},
+		metrics.Sprint{Numero: 4, Estado: metrics.SprintPlanificado, SPCompletados: 0},
+	)
+
+	velocidad, err := metrics.CalcularVelocidad(sprints, 3)
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if velocidad.Valor != 15 {
+		t.Errorf("velocidad = %v, se esperaba 15", velocidad.Valor)
+	}
+}
