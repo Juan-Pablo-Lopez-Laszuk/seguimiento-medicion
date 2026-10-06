@@ -19,16 +19,20 @@ type Dependencias struct {
 
 // NewRouter arma el router con todas las rutas de la aplicación.
 func NewRouter(dep Dependencias) http.Handler {
-	_ = dep // lo usan las pantallas de proyectos (HU-01)
 	r := chi.NewRouter()
 	r.Get("/health", health)
 	r.Get("/", inicio)
+
+	p := proyectos{casos: dep.Proyectos}
+	r.Get("/proyectos", p.listar)
+	r.Get("/proyectos/nuevo", p.nuevo)
+	r.Post("/proyectos", p.crear)
 	return r
 }
 
 // inicio muestra la página principal.
 func inicio(w http.ResponseWriter, _ *http.Request) {
-	render(w, "inicio.html", Pagina{Titulo: "Inicio"})
+	render(w, http.StatusOK, "inicio.html", Pagina{Titulo: "Inicio"})
 }
 
 // health indica que la aplicación está viva. Lo usan Vercel y el CI para verificar el deploy.
