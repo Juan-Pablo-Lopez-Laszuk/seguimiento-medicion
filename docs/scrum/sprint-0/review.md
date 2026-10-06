@@ -20,11 +20,14 @@ Las tablas muestran el estado **al cierre del sprint, el domingo 04/10**. Lo que
 | #54 | Vercel: prueba hola mundo | 2 | Carolina | https://seguimiento-medicion.vercel.app (PR #55) |
 | #59 | Registro de uso de IA | 1 | Carolina | `docs/ia/registro.md` (PR #60) |
 | #61 | Spec SDD de HU-31 | 2 | Carolina | `specs/HU-31-velocidad.md` (PR #62) |
-| #64 | Propuesta de modelo de datos | — | Mariano | PR #56 |
-| #65 | Plantilla de especificación SDD | — | Mariano | `specs/_plantilla.md` (PR #57) |
-| #66 | Spike Supabase Auth (JWT ES256) | — | Mariano | PR #58 |
+| #64 | Propuesta de modelo de datos | 3 (*) | Mariano | PR #56 |
+| #65 | Plantilla de especificación SDD | 1 (*) | Mariano | `specs/_plantilla.md` (PR #57) |
+| #66 | Spike Supabase Auth (JWT ES256) | 2 (*) | Mariano | PR #58 |
 | #51 | Tablero, etiquetas, hitos y plantillas | — | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
 | #52 | Preguntas abiertas con los profesores | — | Juan Pablo | Respuestas en la sección siguiente |
+
+(*) Las tareas de Mariano se cargaron sin story points y se estimaron **después de terminadas**, por eso no estaban en
+los 18 SP comprometidos al inicio del sprint.
 
 ## No terminado al cierre (pasa al Sprint 1)
 
