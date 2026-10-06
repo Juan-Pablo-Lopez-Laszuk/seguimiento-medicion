@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/app"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	}
 	srv := &http.Server{
 		Addr:              ":" + port,
-		Handler:           server.NewRouter(),
+		Handler:           app.NewHandler(),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 	log.Printf("Servidor escuchando en http://localhost:%s", port)

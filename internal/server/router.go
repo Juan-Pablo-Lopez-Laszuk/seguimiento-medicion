@@ -7,10 +7,19 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
 
+// Dependencias son los casos de uso que usan los handlers. Se arman afuera (en app) para que los
+// tests puedan pasar repositorios en memoria.
+type Dependencias struct {
+	Proyectos *service.Proyectos
+}
+
 // NewRouter arma el router con todas las rutas de la aplicación.
-func NewRouter() http.Handler {
+func NewRouter(dep Dependencias) http.Handler {
+	_ = dep // lo usan las pantallas de proyectos (HU-01)
 	r := chi.NewRouter()
 	r.Get("/health", health)
 	r.Get("/", inicio)
