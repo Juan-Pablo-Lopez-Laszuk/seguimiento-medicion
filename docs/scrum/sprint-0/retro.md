@@ -6,9 +6,11 @@ Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
 ## Métricas del sprint
 
-SP comprometidos: 18 · SP completados: 11 · Velocidad: 11 (referencia; el Sprint 0 fue de preparación) · Defectos abiertos: 0
+SP comprometidos al inicio: 18 · SP completados al cierre: 17 · Velocidad: 17 (referencia; el Sprint 0 fue de preparación) · Defectos abiertos: 0
 
-Las tareas de Mariano (#64, #65, #66) no tenían story points cargados, por eso no suman.
+Las tareas de Mariano (#64, #65, #66) se cargaron sin story points y se estimaron **después de terminadas**
+(3 + 1 + 2 = 6 SP), para que el trabajo del Sprint 0 también quede medido. Como son estimaciones a posteriori, no
+estaban en los 18 SP comprometidos al inicio: sin ellas, los completados serían 11.
 
 ## ¿Qué salió bien?
 
@@ -22,7 +24,8 @@ Las tareas de Mariano (#64, #65, #66) no tenían story points cargados, por eso 
 - TEC-01 recién estuvo para revisar el jueves 01/10 a la noche y se mergeó el lunes 05/10: bloqueó el trabajo de los
   demás en Go. Lo que bloquea a otros va primero.
 - Se dio por probado algo que solo se probó en local: el deploy en Vercel compila distinto.
-- Algunas tareas no tenían story points y no se pueden medir.
+- Algunas tareas no tenían story points al empezar (las de Mariano se estimaron recién al terminarlas) y no se
+  pueden medir con precisión.
 - No hubo dailies registradas.
 
 ## Acciones

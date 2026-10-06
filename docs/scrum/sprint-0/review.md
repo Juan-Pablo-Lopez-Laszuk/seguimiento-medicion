@@ -20,11 +20,14 @@ Las tablas muestran el estado **al cierre del sprint, el domingo 04/10**. Lo que
 | #54 | Vercel: prueba hola mundo | 2 | Carolina | https://seguimiento-medicion.vercel.app (PR #55) |
 | #59 | Registro de uso de IA | 1 | Carolina | `docs/ia/registro.md` (PR #60) |
 | #61 | Spec SDD de HU-31 | 2 | Carolina | `specs/HU-31-velocidad.md` (PR #62) |
-| #64 | Propuesta de modelo de datos | — | Mariano | PR #56 |
-| #65 | Plantilla de especificación SDD | — | Mariano | `specs/_plantilla.md` (PR #57) |
-| #66 | Spike Supabase Auth (JWT ES256) | — | Mariano | PR #58 |
+| #64 | Propuesta de modelo de datos | 3 (*) | Mariano | PR #56 |
+| #65 | Plantilla de especificación SDD | 1 (*) | Mariano | `specs/_plantilla.md` (PR #57) |
+| #66 | Spike Supabase Auth (JWT ES256) | 2 (*) | Mariano | PR #58 |
 | #51 | Tablero, etiquetas, hitos y plantillas | — | Juan Pablo | GitHub Project con vistas, campos y automatizaciones |
 | #52 | Preguntas abiertas con los profesores | — | Juan Pablo | Respuestas en la sección siguiente |
+
+(*) Las tareas de Mariano se cargaron sin story points y se estimaron **después de terminadas**, por eso no estaban en
+los 18 SP comprometidos al inicio del sprint.
 
 ## No terminado al cierre (pasa al Sprint 1)
 
@@ -58,6 +61,10 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 ## Cambios en el Product Backlog
 
 - TEC-01, TEC-02 y la tarea de godog de HU-31 pasaron al Sprint 1 (se terminaron el 05/10).
-- Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe.
+- Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe
+  (se documenta en una matriz requerimiento → test dentro de TEC-06, Sprint 3).
+- El 80 % de cobertura en `internal/domain` e `internal/metrics` **no lo exige la cátedra**: queda como meta interna del
+  equipo (Definition of Done) y el CI la hace cumplir desde TEC-06. Lo que sí piden los profesores es informar la
+  cobertura en el "Informe de métricas y cobertura de pruebas".
 - Documentación final en Markdown (el reporte PDF que genera la app, HU de la E9, sigue siendo obligatorio).
 - Nuevo aprendizaje técnico: la función de Vercel no puede importar paquetes `internal/`; se entra por el paquete público `app/`.
