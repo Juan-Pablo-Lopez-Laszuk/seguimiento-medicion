@@ -1,6 +1,15 @@
 package metrics
 
-import "sort"
+import (
+	"errors"
+	"sort"
+)
+
+// Errores que puede devolver el cálculo de velocidad.
+var (
+	ErrVentanaInvalida = errors.New("la ventana de sprints debe ser mayor a cero")
+	ErrSPNegativos     = errors.New("los story points no pueden ser negativos")
+)
 
 // EstadoSprint es el estado de un sprint: Planificado, Activo o Cerrado.
 type EstadoSprint string
@@ -37,8 +46,15 @@ func (v Velocidad) Mensaje() string {
 // cerrados. Los sprints activos y planificados no cuentan. Si hay menos sprints cerrados que la ventana,
 // promedia los que haya. Sin sprints cerrados devuelve 0 (no se divide por cero).
 func CalcularVelocidad(sprints []Sprint, ventana int) (Velocidad, error) {
+	if ventana <= 0 {
+		return Velocidad{}, ErrVentanaInvalida
+	}
+
 	var ordenados []Sprint
 	for _, s := range sprints {
+		if s.SPCompletados < 0 {
+			return Velocidad{}, ErrSPNegativos
+		}
 		if s.Estado == SprintCerrado {
 			ordenados = append(ordenados, s)
 		}
