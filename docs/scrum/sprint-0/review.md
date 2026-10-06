@@ -61,6 +61,10 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 ## Cambios en el Product Backlog
 
 - TEC-01, TEC-02 y la tarea de godog de HU-31 pasaron al Sprint 1 (se terminaron el 05/10).
-- Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe.
+- Cobertura: cada requerimiento de la consigna tiene que tener al menos un test o escenario BDD que lo pruebe
+  (se documenta en una matriz requerimiento → test dentro de TEC-06, Sprint 3).
+- El 80 % de cobertura en `internal/domain` e `internal/metrics` **no lo exige la cátedra**: queda como meta interna del
+  equipo (Definition of Done) y el CI la hace cumplir desde TEC-06. Lo que sí piden los profesores es informar la
+  cobertura en el "Informe de métricas y cobertura de pruebas".
 - Documentación final en Markdown (el reporte PDF que genera la app, HU de la E9, sigue siendo obligatorio).
 - Nuevo aprendizaje técnico: la función de Vercel no puede importar paquetes `internal/`; se entra por el paquete público `app/`.
