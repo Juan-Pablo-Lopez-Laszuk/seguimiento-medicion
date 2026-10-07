@@ -13,7 +13,7 @@
 - [ ] La **especificación SDD** está completa en `specs/` y fue revisada.
 - [ ] Los **escenarios BDD** (normal, alternativo, límite y error) están en `features/` y pasan.
 - [ ] Los **tests unitarios** se escribieron con TDD: el historial muestra commits RED → GREEN → REFACTOR.
-- [ ] La **cobertura** de los paquetes de dominio y métricas es de al menos 80 %.
+- [ ] La **cobertura** de los paquetes de dominio y métricas es de al menos 80 % (meta interna del equipo: la cátedra no fija un porcentaje; el CI la hace cumplir desde TEC-06).
 - [ ] `go vet` y el linter no reportan problemas.
 - [ ] El **Pull Request** fue revisado y aprobado por otro integrante.
 - [ ] Está **desplegada en Vercel** y se verificaron los criterios de aceptación en la aplicación.

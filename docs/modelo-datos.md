@@ -1,8 +1,11 @@
-# Modelo de datos (borrador · Sprint 0)
+# Modelo de datos (acordado · Sprint 0)
 
-Propuesta de Mariano para discutir y cerrar entre los tres antes de convertirla en la
-migración inicial (TEC-03, Sprint 1). Basado en las entidades mencionadas en el Plan de
-trabajo (sección 2.1) y en los ejemplos de la Guía de desarrollo.
+Base de la migración inicial (TEC-03, Sprint 1). Se armó a partir de las entidades del Plan de
+trabajo (sección 2.1) y de los ejemplos de la Guía de desarrollo.
+
+**Estado:** aprobado en la revisión de Juan Pablo (PR #56) y cerrado en la Review del Sprint 0.
+Queda pendiente la conformidad de Carolina sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto).
+Cualquier cambio posterior se hace con una migración nueva y se actualiza este documento.
 
 ## Diagrama entidad-relación
 
@@ -33,7 +36,30 @@ erDiagram
     TAREA ||--o{ REGISTRO_ESFUERZO : acumula
 ```
 
-## Entidades y campos propuestos
+El diagrama usa los nombres de las entidades; las tablas reales siguen la convención de abajo.
+
+## Convención de nombres
+
+Tablas en plural y en español, columnas en `snake_case` y en español (como el ejemplo de la Guía,
+sección 5.6). Los paquetes de Go siguen en inglés (Guía, sección 5). Las claves foráneas se llaman
+`<entidad>_id` y todas las tablas tienen `id bigserial` como clave primaria, salvo `sprint_historias`.
+
+| Entidad | Tabla |
+|---|---|
+| Proyecto | `proyectos` |
+| Integrante | `integrantes` |
+| Historia | `historias` |
+| CriterioAceptacion | `criterios_aceptacion` |
+| Tarea | `tareas` |
+| Sprint | `sprints` |
+| SprintHistoria | `sprint_historias` |
+| SesionPoker | `sesiones_poker` |
+| RondaPoker | `rondas_poker` |
+| Voto | `votos` |
+| RegistroEsfuerzo | `registros_esfuerzo` |
+| Defecto | `defectos` |
+
+## Entidades y campos
 
 ### Proyecto (E1 · Juan Pablo)
 | Campo | Tipo | Notas |
@@ -70,7 +96,7 @@ erDiagram
 | story_points | int | nullable, escala Fibonacci (0,1,2,3,5,8,13,21) |
 | orden | int | para el orden manual dentro de la misma prioridad (HU-09) |
 | sprint_id | bigint FK | nullable, sprint **abierto** donde está asignada ahora (no sirve para historial) |
-| horas_estimadas | numeric | HU-23, suma de tareas si las tiene |
+| horas_estimadas | numeric | nullable, HU-23. Solo se carga si la historia **no** tiene tareas; si las tiene, su estimación es la suma de las horas de sus tareas y se calcula al consultar (CA-23.2). Así hay una sola fuente de verdad |
 | completada_en | date | nullable, se completa al pasar a Hecho (HU-13); la usa el burndown |
 
 ### CriterioAceptacion (E2 · Mariano)
@@ -116,24 +142,27 @@ viejos sin recalcular nada.
 |---|---|---|
 | sprint_id | bigint FK | |
 | historia_id | bigint FK | |
-| story_points | int | SP de la historia en el momento del cierre (no el actual) |
+| story_points | int | nullable. SP de la historia en el momento del cierre (no el actual); `NULL` si estaba sin estimar, para que HU-30 (CA-30.2) pueda avisarlo también en sprints cerrados |
 | completada | bool | si estaba en Hecho cuando se cerró el sprint |
+
+La clave primaria es `(sprint_id, historia_id)`. Para un sprint **cerrado**, las métricas (HU-30, HU-31, HU-32 y
+HU-37) deben leer de esta tabla y no del estado actual de las historias.
 
 ### SesionPoker / RondaPoker / Voto (E4 · Mariano — Planning Poker)
 | Tabla | Campo | Tipo | Notas |
 |---|---|---|---|
-| sesion_poker | id | bigserial PK | |
-| sesion_poker | historia_id | bigint FK | una sesión abierta por historia |
-| sesion_poker | estado | text | Abierta / Cerrada |
-| sesion_poker | valor_acordado | int | nullable hasta HU-22 |
-| ronda_poker | id | bigserial PK | |
-| ronda_poker | sesion_id | bigint FK | |
-| ronda_poker | numero | int | correlativo dentro de la sesión |
-| ronda_poker | revelada | bool | |
-| voto | id | bigserial PK | |
-| voto | ronda_id | bigint FK | |
-| voto | integrante_id | bigint FK | |
-| voto | valor | int | escala Fibonacci; **no se expone hasta revelar** (regla de aplicación, no solo de BD) |
+| sesiones_poker | id | bigserial PK | |
+| sesiones_poker | historia_id | bigint FK | una sesión abierta por historia (CA-17.2, ver unicidad) |
+| sesiones_poker | estado | text | Abierta / Cerrada |
+| sesiones_poker | valor_acordado | int | nullable hasta HU-22 |
+| rondas_poker | id | bigserial PK | |
+| rondas_poker | sesion_id | bigint FK | |
+| rondas_poker | numero | int | correlativo dentro de la sesión (CA-21.3) |
+| rondas_poker | revelada | bool | |
+| votos | id | bigserial PK | |
+| votos | ronda_id | bigint FK | |
+| votos | integrante_id | bigint FK | |
+| votos | valor | int | escala Fibonacci (siempre un número); **no se expone hasta revelar** (regla de aplicación, no solo de BD) |
 
 ### RegistroEsfuerzo (E5 · Carolina)
 | Campo | Tipo | Notas |
@@ -158,25 +187,62 @@ viejos sin recalcular nada.
 | sprint_deteccion_id | bigint FK | |
 | sprint_resolucion_id | bigint FK | nullable, ≥ sprint_deteccion |
 
-## Restricciones de unicidad (pedidas por Juan Pablo en la revisión de esta PR)
+## Restricciones de unicidad
 
 | Tabla | Columnas | Motivo |
 |---|---|---|
-| historia | `(proyecto_id, numero)` | el número de HU es correlativo **por proyecto**, no puede repetirse dentro del mismo |
-| sprint | `(proyecto_id, numero)` | mismo criterio que historia |
-| integrante | `(proyecto_id, email)` | el email no se repite dentro de un proyecto (CA-03.1), pero sí puede pertenecer a otro proyecto distinto |
-| voto | `(ronda_id, integrante_id)` | un integrante vota una sola vez por ronda (CA-18.1); revotar es un `UPDATE`, no un `INSERT` |
+| `proyectos` | `lower(nombre)` | el nombre no se repite sin distinguir mayúsculas (HU-01) |
+| `historias` | `(proyecto_id, numero)` | el número de HU es correlativo **por proyecto**, no puede repetirse dentro del mismo |
+| `sprints` | `(proyecto_id, numero)` | mismo criterio que historias |
+| `integrantes` | `(proyecto_id, email)` | el email no se repite dentro de un proyecto (CA-03.1), pero sí puede pertenecer a otro proyecto distinto |
+| `integrantes` | `(proyecto_id)` solo donde `rol = 'AgileEnabler'` (índice único parcial) | un solo Agile Enabler por proyecto |
+| `sprint_historias` | clave primaria `(sprint_id, historia_id)` | una fila por historia en cada sprint cerrado |
+| `sesiones_poker` | `(historia_id)` solo donde `estado = 'Abierta'` (índice único parcial) | una única sesión abierta por historia (CA-17.2) |
+| `rondas_poker` | `(sesion_id, numero)` | la numeración de rondas no se repite dentro de la sesión (CA-21.3) |
+| `votos` | `(ronda_id, integrante_id)` | un integrante vota una sola vez por ronda (CA-18.1); revotar es un `UPDATE`, no un `INSERT` |
 
-## Puntos para discutir en Sprint 0
+## Restricciones de valores (`CHECK`)
+
+| Tabla.columna | Regla | Motivo |
+|---|---|---|
+| `historias.story_points`, `sprint_historias.story_points`, `sesiones_poker.valor_acordado`, `votos.valor` | `IN (0, 1, 2, 3, 5, 8, 13, 21)` | escala Fibonacci acordada (CA-16.1, CA-18.4, CA-22.1) |
+| `historias.prioridad` | `IN ('Alta', 'Media', 'Baja')` | CA-05.2 |
+| `historias.estado` | `IN ('Pendiente', 'En sprint', 'En progreso', 'Hecho')` | CA-08.1 |
+| `proyectos.fecha_fin` | `> fecha_inicio` | validación de HU-01 |
+| `historias.horas_estimadas`, `tareas.horas_estimadas` | `> 0` cuando no es nulo | CA-23.1 |
+| `registros_esfuerzo.horas` | `> 0 AND <= 24` | HU-24 |
+| `registros_esfuerzo` | `historia_id IS NOT NULL OR tarea_id IS NOT NULL` | todo registro pertenece a una historia o a una tarea |
+
+La escala también existe en el código de Go: debe haber una sola constante que la defina, y los
+tests deben comprobar que coincide con el `CHECK` de la migración.
+
+## Reglas que valida la aplicación (no la base)
+
+Dependen de varias filas o de datos de otras tablas, así que no se expresan con un `CHECK`:
+
+- El total diario de horas de un integrante no supera las 24 (HU-24).
+- Los sprints de un proyecto no se superponen y quedan dentro del rango del proyecto.
+- `defectos.sprint_resolucion_id` no es anterior a `sprint_deteccion_id`.
+- Una historia solo pasa a Hecho si todos sus criterios de aceptación están cumplidos (CA-08.2).
+- No se eliminan historias Hechas ni asignadas a un sprint cerrado (CA-06.2).
+- Los votos no se exponen antes de revelar la ronda (CA-18.2 y CA-18.3).
+
+## Seguridad de la base
+
+Supabase publica cada tabla del esquema `public` por una API que se maneja con la clave `anon`. Para que
+esa API no pueda leer ni escribir nuestras tablas (en particular `votos` antes de revelar), **todas las tablas
+se crean con RLS activado y sin políticas**. La aplicación entra por `DATABASE_URL` con el usuario `postgres`,
+que no está sujeto a RLS, así que no se ve afectada. Esto se comprueba en la primera prueba de TEC-03.
+
+## Decisiones tomadas en el Sprint 0
 
 1. ~~¿`auth_user_id` en `Integrante` alcanza, o conviene una tabla puente...?~~ **Resuelto
-   (Juan Pablo, revisión de esta PR):** `auth_user_id` nullable alcanza; se completa en el
+   (Juan Pablo, revisión del PR #56):** `auth_user_id` nullable alcanza; se completa en el
    primer login matcheando por email.
-2. ~~Confirmar escala de Story Points~~ **Resuelto por ahora (Juan Pablo):** Fibonacci 0-21,
-   hasta que los profesores confirmen la pregunta abierta #7 del Plan de trabajo.
-3. `Voto.valor` en la tabla real: aunque HTTP/servicio no lo exponga antes de revelar,
-   alguien con acceso directo a la base sí lo vería. Para la demo alcanza (es la regla de
-   negocio la que se evalúa), pero vale la pena mencionarlo si preguntan por seguridad.
-4. Nombres de tablas en español, columnas en snake_case — a definir como convención con el
-   equipo para que coincida con los paquetes Go (`project`, `sprint`, `estimation`, etc. en
-   inglés según la Guía, sección 5).
+2. ~~Confirmar escala de Story Points~~ **Resuelto (equipo, Review del Sprint 0):** Fibonacci
+   0, 1, 2, 3, 5, 8, 13 y 21. Un voto siempre es un número de la escala.
+3. ~~`Voto.valor` visible con acceso directo a la base~~ **Resuelto:** RLS activado sin políticas
+   en todas las tablas (ver "Seguridad de la base"). La regla de no exponer votos antes de revelar
+   sigue siendo también una regla de la aplicación.
+4. ~~Convención de nombres~~ **Resuelto:** tablas en plural y en español, columnas en `snake_case`
+   (ver "Convención de nombres").
