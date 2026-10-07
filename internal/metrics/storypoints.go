@@ -29,13 +29,17 @@ func (s StoryPoints) Advertencia() string {
 }
 
 // CalcularStoryPoints suma los story points planificados y completados de las historias de un sprint.
-// Las historias sin estimar suman 0 y se cuentan aparte.
+// Las historias sin estimar suman 0 y se cuentan aparte. Si alguna historia tiene SP negativos
+// devuelve ErrSPNegativos.
 func CalcularStoryPoints(historias []Historia) (StoryPoints, error) {
 	var sp StoryPoints
 	for _, h := range historias {
 		if h.SinEstimar {
 			sp.SinEstimar++
 			continue
+		}
+		if h.SP < 0 {
+			return StoryPoints{}, ErrSPNegativos
 		}
 		sp.Planificados += h.SP
 		if h.Hecha {
