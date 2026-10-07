@@ -90,3 +90,30 @@ func TestCalcularStoryPoints_SPNegativosDevuelveError(t *testing.T) {
 		t.Errorf("resultado = %+v, se esperaba vacío cuando hay error", sp)
 	}
 }
+
+// CA-30.3: el total del proyecto es la suma de sus sprints.
+func TestSumarStoryPoints_TotalDelProyecto(t *testing.T) {
+	porSprint := []metrics.StoryPoints{
+		{Planificados: 16, Completados: 8},
+		{Planificados: 10, Completados: 10, SinEstimar: 1},
+		{Planificados: 5, Completados: 0, SinEstimar: 2},
+	}
+
+	total := metrics.SumarStoryPoints(porSprint)
+
+	quiero := metrics.StoryPoints{Planificados: 31, Completados: 18, SinEstimar: 3}
+	if total != quiero {
+		t.Errorf("total = %+v, se esperaba %+v", total, quiero)
+	}
+	if total.Advertencia() != "hay 3 historias sin estimar" {
+		t.Errorf("advertencia = %q", total.Advertencia())
+	}
+}
+
+// Un proyecto sin sprints tiene todo en 0 y no avisa nada.
+func TestSumarStoryPoints_ProyectoSinSprints(t *testing.T) {
+	total := metrics.SumarStoryPoints(nil)
+	if total != (metrics.StoryPoints{}) {
+		t.Errorf("total = %+v, se esperaba todo en 0", total)
+	}
+}
