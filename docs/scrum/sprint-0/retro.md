@@ -22,13 +22,16 @@ Como son estimaciones a posteriori, no estaban en los 18 SP comprometidos al ini
 
 ## ¿Qué salió bien?
 
-- Todos hicieron su primer Pull Request y revisión siguiendo la rotación (JP → Mariano → Carolina → JP).
+- Todos hicieron su primer Pull Request y su primera revisión siguiendo la rotación: Juan Pablo revisa a Mariano,
+  Mariano revisa a Carolina y Carolina revisa a Juan Pablo.
 - El backlog completo quedó cargado en el tablero con SP, prioridad, épica y sprint.
 - Carolina encontró y corrigió el error de Vercel en el esqueleto (PR #73) antes de que llegara a `main`.
 - Se definieron métricas, modelo de datos, plantilla SDD y login con Supabase antes de escribir código.
 
 ## ¿Qué podemos mejorar?
 
+- Crear la issue antes de empezar a trabajar: las issues #64, #65 y #66 se crearon el 01/10, dos días después de sus
+  PRs (#56, #57 y #58, del 29/09), y por eso quedaron sin story points ni lugar en el tablero mientras se hacían.
 - TEC-01 recién estuvo para revisar el jueves 01/10 a la noche y se mergeó el lunes 05/10: bloqueó el trabajo de los
   demás en Go. Lo que bloquea a otros va primero.
 - Se dio por probado algo que solo se probó en local: el deploy en Vercel compila distinto.

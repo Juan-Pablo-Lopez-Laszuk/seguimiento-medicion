@@ -50,7 +50,7 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 | Fecha de la presentación final | Profesores | Primeras semanas de noviembre (el Sprint 4 cierra el 01/11) |
 | Cobertura mínima de tests | Profesores | No hay un porcentaje fijo: hay que cubrir con tests todo lo que pide la consigna |
 | Formato de la documentación final | Profesores | Markdown en el repositorio |
-| Escala de story points | Equipo | Fibonacci 0, 1, 2, 3, 5, 8, 13, 21 y "?" |
+| Escala de story points | Equipo | Fibonacci 0, 1, 2, 3, 5, 8, 13, 21 (sin "?": un voto siempre es un número de la escala) |
 | "Diferencia" en Planning Poker | Equipo | Hay diferencia si los votos extremos están a más de una posición de la escala |
 | Horas estimadas: ¿por historia, por tarea o ambas? | Equipo | Ambas: la historia suma las horas de sus tareas (la consigna dice "historia o tarea") |
 | Sprints para la velocidad | Equipo | Promedio de los últimos 3 sprints cerrados |
@@ -58,7 +58,6 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 ## Feedback del cliente
 
 - Respuestas a las preguntas abiertas (tabla de arriba).
-- (agregar cualquier otro comentario de los profesores)
 
 ## Cambios en el Product Backlog
 
