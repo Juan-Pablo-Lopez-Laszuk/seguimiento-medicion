@@ -48,3 +48,14 @@ func CalcularStoryPoints(historias []Historia) (StoryPoints, error) {
 	}
 	return sp, nil
 }
+
+// SumarStoryPoints devuelve el total del proyecto: la suma de los story points de todos sus sprints.
+func SumarStoryPoints(porSprint []StoryPoints) StoryPoints {
+	var total StoryPoints
+	for _, sp := range porSprint {
+		total.Planificados += sp.Planificados
+		total.Completados += sp.Completados
+		total.SinEstimar += sp.SinEstimar
+	}
+	return total
+}
