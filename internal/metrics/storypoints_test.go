@@ -1,6 +1,7 @@
 package metrics_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
@@ -76,5 +77,16 @@ func TestCalcularStoryPoints_HistoriasSinEstimarSumanCeroYSeAvisa(t *testing.T) 
 				t.Errorf("advertencia = %q, se esperaba %q", sp.Advertencia(), c.advertencia)
 			}
 		})
+	}
+}
+
+// RG-4: los story points negativos son un error, no un número equivocado.
+func TestCalcularStoryPoints_SPNegativosDevuelveError(t *testing.T) {
+	sp, err := metrics.CalcularStoryPoints([]metrics.Historia{{SP: 5, Hecha: true}, {SP: -3}})
+	if !errors.Is(err, metrics.ErrSPNegativos) {
+		t.Errorf("error = %v, se esperaba ErrSPNegativos", err)
+	}
+	if sp != (metrics.StoryPoints{}) {
+		t.Errorf("resultado = %+v, se esperaba vacío cuando hay error", sp)
 	}
 }
