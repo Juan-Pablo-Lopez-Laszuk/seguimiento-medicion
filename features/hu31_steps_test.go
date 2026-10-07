@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/cucumber/godog"
+
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
 )
 
 // hu31 guarda los datos de un escenario de HU-31 (velocidad del equipo) mientras se ejecuta.
@@ -62,10 +64,23 @@ func (e *hu31) unSprintActivo(sp int) error {
 	return nil
 }
 
-// consultoLaVelocidad queda pendiente hasta el Sprint 1: ahí se escribe con TDD la función de
-// velocidad en internal/metrics (specs/HU-31-velocidad.md) y este paso la llama.
+// consultoLaVelocidad arma los sprints del escenario y llama al cálculo real de internal/metrics
+// (specs/HU-31-velocidad.md). Guarda el resultado para que lo revisen los pasos "Entonces".
 func (e *hu31) consultoLaVelocidad() error {
-	return godog.ErrPending
+	var sprints []metrics.Sprint
+	for i, sp := range e.spCerrados {
+		sprints = append(sprints, metrics.Sprint{Numero: i + 1, Estado: metrics.SprintCerrado, SPCompletados: sp})
+	}
+	if e.spActivo > 0 {
+		sprints = append(sprints, metrics.Sprint{Numero: len(sprints) + 1, Estado: metrics.SprintActivo, SPCompletados: e.spActivo})
+	}
+
+	velocidad, err := metrics.CalcularVelocidad(sprints, e.ventana)
+	e.velocidad = velocidad.Valor
+	e.mensaje = velocidad.Mensaje()
+	e.errInformado = err
+	e.consultaHecha = true
+	return nil
 }
 
 func (e *hu31) laVelocidadInformadaEs(esperada string) error {
