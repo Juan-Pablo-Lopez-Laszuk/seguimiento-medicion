@@ -2,6 +2,12 @@ package metrics
 
 import "fmt"
 
+// Avisos que se muestran cuando hay historias sin estimar (CA-30.2).
+const (
+	advertenciaUnaSinEstimar    = "hay 1 historia sin estimar"
+	advertenciaVariasSinEstimar = "hay %d historias sin estimar"
+)
+
 // Historia tiene los datos de una historia de usuario que hacen falta para calcular métricas.
 type Historia struct {
 	SP         float64 // story points estimados (no se usan si SinEstimar es true)
@@ -22,15 +28,20 @@ func (s StoryPoints) Advertencia() string {
 	case 0:
 		return ""
 	case 1:
-		return "hay 1 historia sin estimar"
+		return advertenciaUnaSinEstimar
 	default:
-		return fmt.Sprintf("hay %d historias sin estimar", s.SinEstimar)
+		return fmt.Sprintf(advertenciaVariasSinEstimar, s.SinEstimar)
 	}
 }
 
-// CalcularStoryPoints suma los story points planificados y completados de las historias de un sprint.
-// Las historias sin estimar suman 0 y se cuentan aparte. Si alguna historia tiene SP negativos
-// devuelve ErrSPNegativos.
+// CalcularStoryPoints calcula los story points de un sprint a partir de sus historias
+// (specs/HU-30-sp-planificados-completados.md):
+//
+//   - RN1: planificados = suma de SP de todas las historias del sprint.
+//   - RN2: completados = suma de SP de las historias Hechas.
+//   - RN3: una historia sin estimar suma 0 en los dos y se cuenta en SinEstimar.
+//
+// Si alguna historia estimada tiene SP negativos devuelve ErrSPNegativos y ningún resultado.
 func CalcularStoryPoints(historias []Historia) (StoryPoints, error) {
 	var sp StoryPoints
 	for _, h := range historias {
@@ -49,13 +60,20 @@ func CalcularStoryPoints(historias []Historia) (StoryPoints, error) {
 	return sp, nil
 }
 
-// SumarStoryPoints devuelve el total del proyecto: la suma de los story points de todos sus sprints.
+// SumarStoryPoints devuelve el total del proyecto: la suma de los story points de todos sus sprints (RN4).
 func SumarStoryPoints(porSprint []StoryPoints) StoryPoints {
 	var total StoryPoints
 	for _, sp := range porSprint {
-		total.Planificados += sp.Planificados
-		total.Completados += sp.Completados
-		total.SinEstimar += sp.SinEstimar
+		total = total.mas(sp)
 	}
 	return total
+}
+
+// mas devuelve la suma de dos resultados, campo por campo.
+func (s StoryPoints) mas(otro StoryPoints) StoryPoints {
+	return StoryPoints{
+		Planificados: s.Planificados + otro.Planificados,
+		Completados:  s.Completados + otro.Completados,
+		SinEstimar:   s.SinEstimar + otro.SinEstimar,
+	}
 }
