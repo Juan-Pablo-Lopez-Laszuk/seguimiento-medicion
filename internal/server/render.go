@@ -33,9 +33,9 @@ func cargarPlantillas() map[string]*template.Template {
 	return ps
 }
 
-// render muestra una página dentro del layout base. Primero la arma en memoria para no enviar
-// una página a medias si la plantilla falla.
-func render(w http.ResponseWriter, pagina string, datos Pagina) {
+// render muestra una página dentro del layout base con el código HTTP indicado. Primero la arma en
+// memoria para no enviar una página a medias si la plantilla falla.
+func render(w http.ResponseWriter, codigo int, pagina string, datos Pagina) {
 	t, ok := plantillas[pagina]
 	if !ok {
 		log.Printf("render: no existe la plantilla %q", pagina)
@@ -49,5 +49,6 @@ func render(w http.ResponseWriter, pagina string, datos Pagina) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(codigo)
 	_, _ = buf.WriteTo(w)
 }

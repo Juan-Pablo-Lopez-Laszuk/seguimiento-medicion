@@ -1,0 +1,43 @@
+{{define "contenido"}}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Proyectos</h1>
+  <a class="btn btn-primary" href="/proyectos/nuevo">Nuevo proyecto</a>
+</div>
+
+{{if .Datos.Creado}}
+<div class="alert alert-success" role="status">Proyecto creado.</div>
+{{end}}
+
+{{with .Datos.Proyectos}}
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">Nombre</th>
+        <th scope="col">Inicio</th>
+        <th scope="col">Fin</th>
+        <th scope="col">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .}}
+      <tr>
+        <td>
+          <div class="fw-semibold">{{.Nombre}}</div>
+          {{with .Descripcion}}<div class="small text-body-secondary">{{.}}</div>{{end}}
+        </td>
+        <td>{{.FechaInicio.Format "02/01/2006"}}</td>
+        <td>{{.FechaFin.Format "02/01/2006"}}</td>
+        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-3 text-body-secondary">Todavía no hay proyectos.</p>
+  <a class="btn btn-outline-primary" href="/proyectos/nuevo">Crear el primero</a>
+</div>
+{{end}}
+{{end}}

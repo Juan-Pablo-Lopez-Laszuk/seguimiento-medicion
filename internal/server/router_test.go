@@ -6,15 +6,25 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
+
+// nuevoRouter arma la aplicación con repositorios en memoria vacíos.
+func nuevoRouter() http.Handler {
+	return server.NewRouter(server.Dependencias{
+		Proyectos: service.NuevoProyectos(memory.NuevoProyectos(), time.Now),
+	})
+}
 
 // pedir simula un pedido GET a la aplicación y devuelve la respuesta grabada.
 func pedir(t *testing.T, ruta string) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	server.NewRouter().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, ruta, nil))
+	nuevoRouter().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, ruta, nil))
 	return rec
 }
 
