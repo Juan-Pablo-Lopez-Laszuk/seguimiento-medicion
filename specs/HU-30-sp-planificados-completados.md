@@ -1,6 +1,6 @@
 # SPEC-30 · Story points planificados y completados
 
-**Historia:** HU-30 (#8) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-30 (#8) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y las fórmulas M1 y M2 de `docs/metricas.md`.
 
