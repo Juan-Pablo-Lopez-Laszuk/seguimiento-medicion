@@ -1,5 +1,10 @@
 package metrics
 
+import (
+	"fmt"
+	"strings"
+)
+
 // Porcentaje es el resultado de la métrica M7: qué parte de las historias planificadas se terminó.
 type Porcentaje struct {
 	Hechas       int     // historias en estado Hecho
@@ -36,4 +41,9 @@ func SumarPorcentajes(porSprint []Porcentaje) Porcentaje {
 	}
 	total.Valor = float64(total.Hechas) / float64(total.Planificadas) * 100
 	return total
+}
+
+// Texto devuelve el porcentaje como se muestra en pantalla: con 1 decimal y coma decimal ("75,0 %").
+func (p Porcentaje) Texto() string {
+	return strings.Replace(fmt.Sprintf("%.1f %%", p.Valor), ".", ",", 1)
 }
