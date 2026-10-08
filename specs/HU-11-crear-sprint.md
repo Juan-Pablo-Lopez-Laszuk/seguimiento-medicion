@@ -1,6 +1,6 @@
 # SPEC-11 · Crear sprint con Sprint Goal
 
-**Historia:** HU-11 (#43) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-11 (#43) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Sprint de
 > `docs/modelo-datos.md`.
