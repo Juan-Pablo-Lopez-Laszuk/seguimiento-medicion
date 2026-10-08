@@ -81,3 +81,25 @@ func TestSumarPorcentajes_ProyectoSinHistorias(t *testing.T) {
 		}
 	}
 }
+
+// RG-2: en pantalla el porcentaje se muestra con 1 decimal y coma decimal.
+func TestPorcentaje_TextoConUnDecimal(t *testing.T) {
+	casos := []struct {
+		p      metrics.Porcentaje
+		quiero string
+	}{
+		{metrics.CalcularPorcentajeCompletadas(historias(4, 3)), "75,0 %"},
+		{metrics.SumarPorcentajes([]metrics.Porcentaje{
+			metrics.CalcularPorcentajeCompletadas(historias(4, 3)),
+			metrics.CalcularPorcentajeCompletadas(historias(3, 3)),
+		}), "85,7 %"},
+		{metrics.CalcularPorcentajeCompletadas(historias(3, 3)), "100,0 %"},
+		{metrics.CalcularPorcentajeCompletadas(nil), "0,0 %"},
+		{metrics.CalcularPorcentajeCompletadas(historias(3, 2)), "66,7 %"},
+	}
+	for _, c := range casos {
+		if got := c.p.Texto(); got != c.quiero {
+			t.Errorf("texto = %q, se esperaba %q", got, c.quiero)
+		}
+	}
+}
