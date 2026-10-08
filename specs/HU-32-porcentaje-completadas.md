@@ -1,6 +1,6 @@
 # SPEC-32 · Porcentaje de historias completadas
 
-**Historia:** HU-32 (#10) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-32 (#10) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la fórmula M7 de `docs/metricas.md`.
 
