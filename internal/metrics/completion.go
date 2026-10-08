@@ -21,10 +21,7 @@ func CalcularPorcentajeCompletadas(historias []Historia) Porcentaje {
 			p.Hechas++
 		}
 	}
-	if p.Planificadas == 0 {
-		return p
-	}
-	p.Valor = float64(p.Hechas) / float64(p.Planificadas) * 100
+	p.Valor = porcentaje(p.Hechas, p.Planificadas)
 	return p
 }
 
@@ -36,14 +33,19 @@ func SumarPorcentajes(porSprint []Porcentaje) Porcentaje {
 		total.Hechas += p.Hechas
 		total.Planificadas += p.Planificadas
 	}
-	if total.Planificadas == 0 {
-		return total
-	}
-	total.Valor = float64(total.Hechas) / float64(total.Planificadas) * 100
+	total.Valor = porcentaje(total.Hechas, total.Planificadas)
 	return total
 }
 
 // Texto devuelve el porcentaje como se muestra en pantalla: con 1 decimal y coma decimal ("75,0 %").
 func (p Porcentaje) Texto() string {
 	return strings.Replace(fmt.Sprintf("%.1f %%", p.Valor), ".", ",", 1)
+}
+
+// porcentaje calcula hechas / planificadas × 100 y devuelve 0 si no hay historias (CA-32.2).
+func porcentaje(hechas, planificadas int) float64 {
+	if planificadas == 0 {
+		return 0
+	}
+	return float64(hechas) / float64(planificadas) * 100
 }
