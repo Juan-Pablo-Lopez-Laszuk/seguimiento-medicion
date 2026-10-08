@@ -1,6 +1,7 @@
 package metrics_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
@@ -50,5 +51,33 @@ func TestCalcularPorcentajeCompletadas_SprintSinHistoriasDaCero(t *testing.T) {
 	}
 	if p.Hechas != 0 || p.Planificadas != 0 {
 		t.Errorf("hechas/planificadas = %d/%d, se esperaba 0/0", p.Hechas, p.Planificadas)
+	}
+}
+
+// CA-32.3: el porcentaje del proyecto se calcula con el total de historias de todos sus sprints,
+// no promediando los porcentajes de cada sprint.
+func TestSumarPorcentajes_TotalDelProyecto(t *testing.T) {
+	porSprint := []metrics.Porcentaje{
+		metrics.CalcularPorcentajeCompletadas(historias(4, 3)), // 75 %
+		metrics.CalcularPorcentajeCompletadas(historias(3, 3)), // 100 %
+	}
+
+	total := metrics.SumarPorcentajes(porSprint)
+
+	if total.Hechas != 6 || total.Planificadas != 7 {
+		t.Errorf("hechas/planificadas = %d/%d, se esperaba 6/7", total.Hechas, total.Planificadas)
+	}
+	// 6 / 7 × 100 = 85,71…; el promedio de los porcentajes (87,5) sería incorrecto.
+	if math.Abs(total.Valor-600.0/7) > 1e-9 {
+		t.Errorf("porcentaje = %v, se esperaba 85,71…", total.Valor)
+	}
+}
+
+// Un proyecto sin sprints, o con sprints sin historias, da 0 %.
+func TestSumarPorcentajes_ProyectoSinHistorias(t *testing.T) {
+	for _, porSprint := range [][]metrics.Porcentaje{nil, {metrics.CalcularPorcentajeCompletadas(nil)}} {
+		if total := metrics.SumarPorcentajes(porSprint); total.Valor != 0 {
+			t.Errorf("porcentaje = %v, se esperaba 0", total.Valor)
+		}
 	}
 }
