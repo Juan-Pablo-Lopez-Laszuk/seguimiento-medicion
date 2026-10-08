@@ -41,3 +41,14 @@ func TestCalcularPorcentajeCompletadas_HechasSobrePlanificadas(t *testing.T) {
 		})
 	}
 }
+
+// CA-32.2: un sprint sin historias da 0 % y no es un error (la división por cero está controlada).
+func TestCalcularPorcentajeCompletadas_SprintSinHistoriasDaCero(t *testing.T) {
+	p := metrics.CalcularPorcentajeCompletadas(nil)
+	if p.Valor != 0 {
+		t.Errorf("porcentaje = %v, se esperaba 0", p.Valor)
+	}
+	if p.Hechas != 0 || p.Planificadas != 0 {
+		t.Errorf("hechas/planificadas = %d/%d, se esperaba 0/0", p.Hechas, p.Planificadas)
+	}
+}
