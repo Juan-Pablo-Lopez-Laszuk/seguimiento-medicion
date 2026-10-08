@@ -2,7 +2,7 @@
 
 > **Proyecto:** Software Metrics & Estimation · TPI Ingeniería y Calidad de Software 2026 · UTN FRSR
 > **Responsable:** Bravo, Carolina · Épicas E5 (Esfuerzo), E6 (Defectos), E7 (Métricas), E8 (Dashboard)
-> **Estado:** borrador v0.1 (Sprint 0) · Los puntos marcados **[A CONFIRMAR]** dependen de las preguntas abiertas del plan de trabajo (sección 8).
+> **Estado:** v1.0 (acordado en la Review del Sprint 0) · Las preguntas abiertas que afectaban a las métricas quedaron resueltas (sección 8).
 > **Uso de IA:** borrador elaborado con asistencia de IA, en revisión por la responsable; ver `docs/ia/registro.md`.
 
 ## 1. Para qué sirve este documento
@@ -32,7 +32,7 @@ La consigna del TPI pide como mínimo nueve métricas (punto 7 del enunciado). T
 
 | Concepto | Significado |
 |---|---|
-| **Story Points (SP)** | Número que expresa el esfuerzo relativo de una historia. Escala Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21 **[A CONFIRMAR #7]**. |
+| **Story Points (SP)** | Número que expresa el esfuerzo relativo de una historia. Escala Fibonacci: 0, 1, 2, 3, 5, 8, 13, 21 (sin "?": un voto siempre es un número de la escala). |
 | **Historia Hecha** | Historia en estado `Hecho`. Solo pasa a Hecho si cumple todos sus criterios de aceptación (HU-08). |
 | **Estados de un sprint** | `Planificado` → `Activo` → `Cerrado`. |
 | **Registro de esfuerzo** | Integrante + fecha + actividad + horas trabajadas en una historia o tarea (HU-24). |
@@ -60,7 +60,7 @@ La consigna del TPI pide como mínimo nueve métricas (punto 7 del enunciado). T
 
 - **Qué mide:** cuántos SP termina el equipo por sprint, en promedio. Sirve para decidir cuánto comprometer en el próximo sprint.
 - **Fórmula:** `Velocidad = (Σ SP completados de los últimos N sprints cerrados) / N`
-- **Ventana N:** por defecto **3** sprints **[A CONFIRMAR #10]**, configurable por proyecto. "Últimos" son los de mayor número de sprint.
+- **Ventana N:** por defecto **3** sprints, configurable por proyecto. "Últimos" son los de mayor número de sprint.
 - **Reglas:** solo cuentan sprints **Cerrados**; los activos o planificados no (CA-31.4). El orden en que llegan los datos no cambia el resultado.
 - **Casos límite:** sin sprints cerrados → 0 y el mensaje "Aún no hay sprints cerrados" (CA-31.3). Si hay menos de N sprints cerrados, se promedian los que haya (CA-31.2).
 - **Errores:** N ≤ 0 → `ErrVentanaInvalida` (CA-31.5). SP negativos → `ErrSPNegativos`.
@@ -69,7 +69,7 @@ La consigna del TPI pide como mínimo nueve métricas (punto 7 del enunciado). T
 ### M4 · Horas estimadas — HU-23
 
 - **Qué mide:** cuánto tiempo se esperaba dedicar.
-- **Fórmula (historia):** si la historia tiene tareas, `Horas estimadas = Σ horas estimadas de sus tareas`. Si no tiene tareas, se usa la estimación cargada en la historia **[A CONFIRMAR #9]**.
+- **Fórmula (historia):** si la historia tiene tareas, `Horas estimadas = Σ horas estimadas de sus tareas`. Si no tiene tareas, se usa la estimación cargada en la historia (solo se carga si la historia no tiene tareas; ver `docs/modelo-datos.md`).
 - **Sprint / proyecto:** suma de las horas estimadas de sus historias.
 - **Validaciones:** mayor que 0; admite decimales (ej.: 1,5).
 - **Errores:** horas ≤ 0 al cargar → `ErrHorasInvalidas`.
@@ -158,11 +158,13 @@ Historia "Login": estimada en 10 h; registros de 4 h, 5 h y 3 h. Defectos: 2 det
 | M7 | HU-32 | `specs/HU-32-porcentaje-completadas.md` | `features/hu-32-porcentaje.feature` | `internal/metrics/completion.go` |
 | M8, M9 | HU-34 | `specs/HU-34-defectos.md` | `features/hu-34-defectos.feature` | `internal/metrics/defects.go` |
 
-## 8. Preguntas abiertas que afectan a las métricas
+## 8. Preguntas que afectaban a las métricas (resueltas)
 
-| # (plan) | Pregunta | Propuesta por defecto |
-|---|---|---|
-| 7 | ¿Qué escala de story points usamos? | Fibonacci 0–21 |
-| 9 | ¿Horas estimadas por historia, por tarea o ambas? | Ambas: historia = suma de sus tareas |
-| 10 | ¿Sobre cuántos sprints se calcula la velocidad? | Últimos 3 sprints cerrados |
-| 13 | ¿Cobertura mínima de tests exigida? | 80 % en `internal/metrics` y `internal/domain` |
+Se cerraron en la Review del Sprint 0 (`docs/scrum/sprint-0/review.md`).
+
+| # (plan) | Pregunta | Decisión | Quién la resolvió |
+|---|---|---|---|
+| 7 | ¿Qué escala de story points usamos? | Fibonacci 0, 1, 2, 3, 5, 8, 13, 21, sin "?" | Equipo |
+| 9 | ¿Horas estimadas por historia, por tarea o ambas? | Ambas: la historia suma las horas de sus tareas | Equipo |
+| 10 | ¿Sobre cuántos sprints se calcula la velocidad? | Últimos 3 sprints cerrados | Equipo |
+| 13 | ¿Cobertura mínima de tests exigida? | La cátedra no fija un porcentaje: hay que cubrir todo lo que pide la consigna. El 80 % en `internal/metrics` e `internal/domain` es meta interna del equipo | Profesores y equipo |
