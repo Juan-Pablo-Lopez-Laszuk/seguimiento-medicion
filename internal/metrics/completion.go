@@ -22,3 +22,18 @@ func CalcularPorcentajeCompletadas(historias []Historia) Porcentaje {
 	p.Valor = float64(p.Hechas) / float64(p.Planificadas) * 100
 	return p
 }
+
+// SumarPorcentajes devuelve el porcentaje del proyecto: suma las historias Hechas y planificadas de todos
+// sus sprints y recién ahí calcula el porcentaje (no promedia los porcentajes de cada sprint).
+func SumarPorcentajes(porSprint []Porcentaje) Porcentaje {
+	var total Porcentaje
+	for _, p := range porSprint {
+		total.Hechas += p.Hechas
+		total.Planificadas += p.Planificadas
+	}
+	if total.Planificadas == 0 {
+		return total
+	}
+	total.Valor = float64(total.Hechas) / float64(total.Planificadas) * 100
+	return total
+}
