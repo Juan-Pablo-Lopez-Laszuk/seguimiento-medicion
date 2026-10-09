@@ -159,3 +159,69 @@ func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
 	verificarErrorDeCampo(t, err, member.CampoEmail, member.ErrEmailInvalido)
 	verificarErrorDeCampo(t, err, member.CampoRol, member.ErrRolInvalido)
 }
+
+// existente arma un integrante ya guardado en el proyecto de ejemplo.
+func existente(id int64, email string, rol member.Rol, activo bool) member.Integrante {
+	return member.Integrante{ID: id, ProyectoID: proyectoID, Nombre: "Alguien", Email: email, Rol: rol, Activo: activo}
+}
+
+// CA-03.1 · RN4: el email no se repite en el proyecto, sin distinguir mayúsculas y contando a los dados de baja
+func TestNuevo_EmailRepetido(t *testing.T) {
+	casos := []struct {
+		nombre     string
+		existentes []member.Integrante
+		repetido   bool
+	}{
+		{"mismo email", []member.Integrante{existente(1, "ana@mail.com", member.RolProductBuilder, true)}, true},
+		{"dado de baja", []member.Integrante{existente(1, "ana@mail.com", member.RolProductBuilder, false)}, true},
+		{"otro email", []member.Integrante{existente(1, "bea@mail.com", member.RolProductBuilder, true)}, false},
+	}
+	for _, c := range casos {
+		d := datosValidos()
+		d.Email = " ANA@Mail.com "
+		d.Rol = member.RolProductBuilder
+
+		_, err := member.Nuevo(d, proyectoID, c.existentes)
+
+		if !c.repetido && err != nil {
+			t.Errorf("%s: no se esperaba error, se obtuvo %v", c.nombre, err)
+		}
+		if c.repetido {
+			verificarErrorDeCampo(t, err, member.CampoEmail, member.ErrEmailRepetido)
+		}
+	}
+}
+
+// CA-03.2 · RN6: un solo Agile Enabler activo; los dados de baja no cuentan y Product Builder puede haber varios
+func TestNuevo_UnSoloAgileEnablerActivo(t *testing.T) {
+	casos := []struct {
+		nombre     string
+		rol        member.Rol
+		existentes []member.Integrante
+		valido     bool
+	}{
+		{"segundo Agile Enabler", member.RolAgileEnabler,
+			[]member.Integrante{existente(1, "jp@mail.com", member.RolAgileEnabler, true)}, false},
+		{"el anterior está dado de baja", member.RolAgileEnabler,
+			[]member.Integrante{existente(1, "jp@mail.com", member.RolAgileEnabler, false)}, true},
+		{"varios Product Builder", member.RolProductBuilder,
+			[]member.Integrante{
+				existente(1, "jp@mail.com", member.RolAgileEnabler, true),
+				existente(2, "mp@mail.com", member.RolProductBuilder, true),
+			}, true},
+	}
+	for _, c := range casos {
+		d := datosValidos()
+		d.Email = "nuevo@mail.com"
+		d.Rol = c.rol
+
+		_, err := member.Nuevo(d, proyectoID, c.existentes)
+
+		if c.valido && err != nil {
+			t.Errorf("%s: no se esperaba error, se obtuvo %v", c.nombre, err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, member.CampoRol, member.ErrAgileEnablerRepetido)
+		}
+	}
+}
