@@ -15,6 +15,7 @@ import (
 // tests puedan pasar repositorios en memoria.
 type Dependencias struct {
 	Proyectos *service.Proyectos
+	Sprints   *service.Sprints
 }
 
 // NewRouter arma el router con todas las rutas de la aplicación.
@@ -27,6 +28,11 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/proyectos", p.listar)
 	r.Get("/proyectos/nuevo", p.nuevo)
 	r.Post("/proyectos", p.crear)
+
+	s := sprints{casos: dep.Sprints}
+	r.Get("/proyectos/{id}/sprints", s.listar)
+	r.Get("/proyectos/{id}/sprints/nuevo", s.nuevo)
+	r.Post("/proyectos/{id}/sprints", s.crear)
 	return r
 }
 

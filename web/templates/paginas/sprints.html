@@ -1,0 +1,56 @@
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{.Proyecto.Nombre}}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Sprints de {{.Proyecto.Nombre}}</h1>
+    <div class="small text-body-secondary">
+      Proyecto del {{.Proyecto.FechaInicio.Format "02/01/2006"}} al {{.Proyecto.FechaFin.Format "02/01/2006"}}
+    </div>
+  </div>
+  <a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/sprints/nuevo">Nuevo sprint</a>
+</div>
+
+{{with .Creado}}
+<div class="alert alert-success" role="status">Sprint {{.}} creado.</div>
+{{end}}
+
+{{if .Sprints}}
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">Sprint</th>
+        <th scope="col">Sprint Goal</th>
+        <th scope="col">Inicio</th>
+        <th scope="col">Fin</th>
+        <th scope="col">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Sprints}}
+      <tr>
+        <td class="fw-semibold text-nowrap">Sprint {{.Numero}}</td>
+        <td>{{.Objetivo}}</td>
+        <td>{{.FechaInicio.Format "02/01/2006"}}</td>
+        <td>{{.FechaFin.Format "02/01/2006"}}</td>
+        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-3 text-body-secondary">Todavía no hay sprints en este proyecto.</p>
+  <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/sprints/nuevo">Crear el primero</a>
+</div>
+{{end}}
+{{end}}
+{{end}}

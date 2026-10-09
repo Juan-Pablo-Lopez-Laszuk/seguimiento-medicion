@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 )
 
@@ -32,11 +33,11 @@ func NuevoProyectos(repo RepositorioProyectos, ahora func() time.Time) *Proyecto
 }
 
 // Crear valida los datos (HU-01), controla que el nombre no exista y guarda el proyecto.
-// Los datos inválidos se devuelven juntos en project.ErroresValidacion; cualquier otro error
+// Los datos inválidos se devuelven juntos en domain.ErroresValidacion; cualquier otro error
 // viene del repositorio.
 func (s *Proyectos) Crear(ctx context.Context, d project.Datos) (project.Proyecto, error) {
 	p, err := project.Nuevo(d)
-	errs := project.ErroresValidacion{}
+	errs := domain.ErroresValidacion{}
 	if err != nil && !errors.As(err, &errs) {
 		return project.Proyecto{}, err
 	}

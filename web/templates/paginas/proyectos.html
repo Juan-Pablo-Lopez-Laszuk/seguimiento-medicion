@@ -17,6 +17,7 @@
         <th scope="col">Inicio</th>
         <th scope="col">Fin</th>
         <th scope="col">Estado</th>
+        <th scope="col"><span class="visually-hidden">Acciones</span></th>
       </tr>
     </thead>
     <tbody>
@@ -29,6 +30,7 @@
         <td>{{.FechaInicio.Format "02/01/2006"}}</td>
         <td>{{.FechaFin.Format "02/01/2006"}}</td>
         <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/sprints">Sprints</a></td>
       </tr>
       {{end}}
     </tbody>
