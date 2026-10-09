@@ -1,9 +1,12 @@
 package sprint_test
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
 )
@@ -38,6 +41,18 @@ func datosValidos(t *testing.T) sprint.Datos {
 	}
 }
 
+// verificarErrorDeCampo comprueba que err sea un error de validación con el error esperado en ese campo.
+func verificarErrorDeCampo(t *testing.T, err error, campo string, esperado error) {
+	t.Helper()
+	var errs domain.ErroresValidacion
+	if !errors.As(err, &errs) {
+		t.Fatalf("se esperaba domain.ErroresValidacion y se obtuvo: %v", err)
+	}
+	if !errors.Is(errs[campo], esperado) {
+		t.Errorf("campo %q: se esperaba %v y se obtuvo %v (todos: %v)", campo, esperado, errs[campo], errs)
+	}
+}
+
 // CA-11.3 · el primer sprint del proyecto es el 1 y nace Planificado
 func TestNuevo_PrimerSprint_TieneElNumero1YEstadoPlanificado(t *testing.T) {
 	d := datosValidos(t)
@@ -59,5 +74,57 @@ func TestNuevo_PrimerSprint_TieneElNumero1YEstadoPlanificado(t *testing.T) {
 	}
 	if !s.FechaInicio.Equal(d.FechaInicio) || !s.FechaFin.Equal(d.FechaFin) {
 		t.Errorf("fechas: se esperaba %v → %v y se obtuvo %v → %v", d.FechaInicio, d.FechaFin, s.FechaInicio, s.FechaFin)
+	}
+}
+
+// CA-11.1 · RN1: el Sprint Goal es obligatorio; solo espacios cuenta como vacío
+func TestNuevo_SprintGoalVacioOSoloEspacios_InformaQueEsObligatorio(t *testing.T) {
+	for _, objetivo := range []string{"", "   "} {
+		d := datosValidos(t)
+		d.Objetivo = objetivo
+
+		_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+		verificarErrorDeCampo(t, err, sprint.CampoObjetivo, sprint.ErrObjetivoObligatorio)
+	}
+}
+
+// RN1 · el Sprint Goal se guarda sin los espacios de alrededor
+func TestNuevo_QuitaLosEspaciosAlrededorDelSprintGoal(t *testing.T) {
+	d := datosValidos(t)
+	d.Objetivo = "  Primer MVP con métricas  "
+
+	s, err := sprint.Nuevo(d, proyecto(t), nil)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if s.Objetivo != "Primer MVP con métricas" {
+		t.Errorf("goal: se esperaba %q y se obtuvo %q", "Primer MVP con métricas", s.Objetivo)
+	}
+}
+
+// RN1 · casos límite del largo (se cuentan caracteres, no bytes)
+func TestNuevo_LargoDelSprintGoal(t *testing.T) {
+	casos := []struct {
+		objetivo string
+		valido   bool
+	}{
+		{"a", true},
+		{strings.Repeat("ñ", sprint.ObjetivoMax), true}, // 500 caracteres, 1000 bytes
+		{strings.Repeat("a", sprint.ObjetivoMax+1), false},
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.Objetivo = c.objetivo
+
+		_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+		if c.valido && err != nil {
+			t.Errorf("goal de %d caracteres: no se esperaba error, se obtuvo %v", len([]rune(c.objetivo)), err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, sprint.CampoObjetivo, sprint.ErrObjetivoLargo)
+		}
 	}
 }
