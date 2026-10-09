@@ -14,8 +14,9 @@ import (
 // Dependencias son los casos de uso que usan los handlers. Se arman afuera (en app) para que los
 // tests puedan pasar repositorios en memoria.
 type Dependencias struct {
-	Proyectos *service.Proyectos
-	Sprints   *service.Sprints
+	Proyectos   *service.Proyectos
+	Sprints     *service.Sprints
+	Integrantes *service.Integrantes
 }
 
 // NewRouter arma el router con todas las rutas de la aplicación.
@@ -33,6 +34,12 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/proyectos/{id}/sprints", s.listar)
 	r.Get("/proyectos/{id}/sprints/nuevo", s.nuevo)
 	r.Post("/proyectos/{id}/sprints", s.crear)
+
+	in := integrantes{casos: dep.Integrantes}
+	r.Get("/proyectos/{id}/integrantes", in.listar)
+	r.Get("/proyectos/{id}/integrantes/nuevo", in.nuevo)
+	r.Post("/proyectos/{id}/integrantes", in.registrar)
+	r.Post("/proyectos/{id}/integrantes/{integranteID}/baja", in.darDeBaja)
 	return r
 }
 
