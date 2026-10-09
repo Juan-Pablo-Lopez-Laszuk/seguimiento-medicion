@@ -5,8 +5,12 @@
 package sprint
 
 import (
+	"errors"
+	"strings"
 	"time"
+	"unicode/utf8"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 )
 
@@ -15,6 +19,22 @@ type Estado string
 
 // EstadoPlanificado es el estado con el que nace todo sprint (RN6).
 const EstadoPlanificado Estado = "Planificado"
+
+// Nombres de los campos, tal como se informan en los errores y en el formulario.
+const (
+	CampoObjetivo    = "objetivo"
+	CampoFechaInicio = "fecha_inicio"
+	CampoFechaFin    = "fecha_fin"
+)
+
+// ObjetivoMax es el largo máximo del Sprint Goal, en caracteres (RN1).
+const ObjetivoMax = 500
+
+// Errores de validación (sección 7 de la spec).
+var (
+	ErrObjetivoObligatorio = errors.New("el Sprint Goal es obligatorio")
+	ErrObjetivoLargo       = errors.New("el Sprint Goal no puede superar los 500 caracteres")
+)
 
 // Datos son los campos que carga el usuario para crear un sprint.
 type Datos struct {
@@ -35,13 +55,31 @@ type Sprint struct {
 }
 
 // Nuevo valida los datos contra el proyecto y sus sprints existentes y devuelve el sprint listo para guardar.
+// Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
 func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
+	objetivo := strings.TrimSpace(d.Objetivo)
+
+	errs := domain.ErroresValidacion{}
+	errs.Agregar(CampoObjetivo, validarObjetivo(objetivo))
+	if len(errs) > 0 {
+		return Sprint{}, errs
+	}
 	return Sprint{
 		ProyectoID:  p.ID,
 		Numero:      1,
-		Objetivo:    d.Objetivo,
+		Objetivo:    objetivo,
 		FechaInicio: d.FechaInicio,
 		FechaFin:    d.FechaFin,
 		Estado:      EstadoPlanificado,
 	}, nil
+}
+
+func validarObjetivo(objetivo string) error {
+	switch largo := utf8.RuneCountInString(objetivo); {
+	case largo == 0:
+		return ErrObjetivoObligatorio
+	case largo > ObjetivoMax:
+		return ErrObjetivoLargo
+	}
+	return nil
 }
