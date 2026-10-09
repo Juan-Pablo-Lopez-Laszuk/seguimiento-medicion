@@ -194,3 +194,43 @@ func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
 	verificarErrorDeCampo(t, err, sprint.CampoObjetivo, sprint.ErrObjetivoObligatorio)
 	verificarErrorDeCampo(t, err, sprint.CampoFechaInicio, sprint.ErrFechaInicio)
 }
+
+// CA-11.2 · RN3: el sprint queda dentro del proyecto (del 05/10 al 01/11); los bordes valen
+func TestNuevo_FechasDentroDelProyecto(t *testing.T) {
+	casos := []struct {
+		inicio, fin string
+		campo       string // campo con error; vacío si es válido
+	}{
+		{"2026-10-05", "2026-11-01", ""},                      // justo los bordes del proyecto
+		{"2026-10-04", "2026-10-11", sprint.CampoFechaInicio}, // un día antes del inicio
+		{"2026-10-26", "2026-11-02", sprint.CampoFechaFin},    // un día después del fin
+		{"2026-11-02", "2026-11-08", sprint.CampoFechaInicio}, // empieza cuando el proyecto ya terminó
+		{"2026-09-01", "2026-09-07", sprint.CampoFechaInicio}, // termina antes de que empiece el proyecto
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.FechaInicio, d.FechaFin = fecha(t, c.inicio), fecha(t, c.fin)
+
+		_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+		if c.campo == "" && err != nil {
+			t.Errorf("%s → %s: no se esperaba error, se obtuvo %v", c.inicio, c.fin, err)
+		}
+		if c.campo != "" {
+			verificarErrorDeCampo(t, err, c.campo, sprint.ErrFueraDelProyecto)
+		}
+	}
+}
+
+// El mensaje dice las fechas del proyecto, para que el usuario sepa qué rango tiene.
+func TestNuevo_FueraDelProyecto_ElMensajeIncluyeElRango(t *testing.T) {
+	d := datosValidos(t)
+	d.FechaInicio = fecha(t, "2026-10-04")
+
+	_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+	esperado := "fecha_inicio: la fecha tiene que estar dentro del proyecto (del 05/10/2026 al 01/11/2026)"
+	if err == nil || err.Error() != esperado {
+		t.Errorf("se esperaba %q y se obtuvo %v", esperado, err)
+	}
+}
