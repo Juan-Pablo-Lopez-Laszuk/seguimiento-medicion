@@ -6,6 +6,7 @@ package member
 
 import (
 	"errors"
+	"net/mail"
 	"strings"
 	"unicode/utf8"
 
@@ -28,13 +29,18 @@ const (
 	CampoRol    = "rol"
 )
 
-// NombreMax es el largo máximo del nombre, en caracteres (RN1).
-const NombreMax = 100
+// Límites, en caracteres: el del nombre (RN1) y el máximo de un email según el estándar (RN3).
+const (
+	NombreMax = 100
+	EmailMax  = 254
+)
 
 // Errores de validación (sección 7 de la spec).
 var (
 	ErrNombreObligatorio = errors.New("el nombre es obligatorio")
 	ErrNombreLargo       = errors.New("el nombre no puede superar los 100 caracteres")
+	ErrEmailObligatorio  = errors.New("el email es obligatorio")
+	ErrEmailInvalido     = errors.New("el email no tiene un formato válido")
 )
 
 // Datos son los campos que carga el usuario para registrar un integrante.
@@ -58,17 +64,18 @@ type Integrante struct {
 // listo para guardar. Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los
 // campos que fallaron (RN9).
 func Nuevo(d Datos, proyectoID int64, _ []Integrante) (Integrante, error) {
-	nombre := strings.TrimSpace(d.Nombre)
+	nombre, email := strings.TrimSpace(d.Nombre), NormalizarEmail(d.Email)
 
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoNombre, validarNombre(nombre))
+	errs.Agregar(CampoEmail, validarEmail(email))
 	if len(errs) > 0 {
 		return Integrante{}, errs
 	}
 	return Integrante{
 		ProyectoID: proyectoID,
 		Nombre:     nombre,
-		Email:      NormalizarEmail(d.Email),
+		Email:      email,
 		Rol:        d.Rol,
 		Activo:     true,
 	}, nil
@@ -85,6 +92,26 @@ func validarNombre(nombre string) error {
 		return ErrNombreObligatorio
 	case largo > NombreMax:
 		return ErrNombreLargo
+	}
+	return nil
+}
+
+// validarEmail controla el formato (RN3): una sola dirección, sin nombre delante, con usuario y con un
+// dominio que tenga al menos un punto y no empiece ni termine con punto.
+func validarEmail(email string) error {
+	if email == "" {
+		return ErrEmailObligatorio
+	}
+	if len(email) > EmailMax {
+		return ErrEmailInvalido
+	}
+	dir, err := mail.ParseAddress(email)
+	if err != nil || dir.Name != "" || dir.Address != email {
+		return ErrEmailInvalido
+	}
+	_, dominio, _ := strings.Cut(email, "@")
+	if !strings.Contains(dominio, ".") || strings.HasPrefix(dominio, ".") || strings.HasSuffix(dominio, ".") {
+		return ErrEmailInvalido
 	}
 	return nil
 }
