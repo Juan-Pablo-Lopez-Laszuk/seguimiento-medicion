@@ -6,6 +6,7 @@ package sprint
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -38,7 +39,12 @@ var (
 	ErrFechaInicio     = project.ErrFechaInicio
 	ErrFechaFin        = project.ErrFechaFin
 	ErrFechasInvalidas = project.ErrFechasInvalidas
+	// ErrFueraDelProyecto se informa con el rango del proyecto: "... (del 05/10/2026 al 01/11/2026)".
+	ErrFueraDelProyecto = errors.New("la fecha tiene que estar dentro del proyecto")
 )
+
+// formatoFecha es como se muestran las fechas en los mensajes: 05/10/2026.
+const formatoFecha = "02/01/2006"
 
 // Datos son los campos que carga el usuario para crear un sprint.
 type Datos struct {
@@ -75,6 +81,13 @@ func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
 	case !inicio.IsZero() && !fin.After(inicio): // RN2
 		errs.Agregar(CampoFechaFin, ErrFechasInvalidas)
 	}
+	// RN3: solo se mira el rango de las fechas que no tienen ya otro error.
+	for campo, f := range map[string]time.Time{CampoFechaInicio: inicio, CampoFechaFin: fin} {
+		if _, conError := errs[campo]; !conError && fueraDelProyecto(f, p) {
+			errs.Agregar(campo, fmt.Errorf("%w (del %s al %s)", ErrFueraDelProyecto,
+				p.FechaInicio.Format(formatoFecha), p.FechaFin.Format(formatoFecha)))
+		}
+	}
 	if len(errs) > 0 {
 		return Sprint{}, errs
 	}
@@ -96,4 +109,9 @@ func validarObjetivo(objetivo string) error {
 		return ErrObjetivoLargo
 	}
 	return nil
+}
+
+// fueraDelProyecto informa si f cae antes del inicio o después del fin del proyecto (los bordes valen).
+func fueraDelProyecto(f time.Time, p project.Proyecto) bool {
+	return f.Before(domain.SoloFecha(p.FechaInicio)) || f.After(domain.SoloFecha(p.FechaFin))
 }
