@@ -24,3 +24,35 @@ func TestValidarHoras_MayoresACeroConDecimales(t *testing.T) {
 		t.Errorf("mensaje del error = %q", got)
 	}
 }
+
+// CA-23.1: en el formulario las horas se escriben con coma o con punto decimal ("1,5" o "1.5").
+func TestParsearHoras_AceptaComaOPuntoDecimal(t *testing.T) {
+	casos := []struct {
+		texto  string
+		quiero float64
+	}{
+		{"8", 8},
+		{"1,5", 1.5},
+		{"1.5", 1.5},
+		{" 0,25 ", 0.25},
+	}
+	for _, c := range casos {
+		got, err := effort.ParsearHoras(c.texto)
+		if err != nil {
+			t.Errorf("ParsearHoras(%q): error inesperado %v", c.texto, err)
+			continue
+		}
+		if got != c.quiero {
+			t.Errorf("ParsearHoras(%q) = %v, se esperaba %v", c.texto, got, c.quiero)
+		}
+	}
+}
+
+// Un texto vacío, que no es un número, o un número que no es mayor a 0 se rechaza con ErrHorasInvalidas.
+func TestParsearHoras_RechazaTextosInvalidos(t *testing.T) {
+	for _, texto := range []string{"", "   ", "abc", "1,5,2", "0", "-2", "NaN", "Inf"} {
+		if _, err := effort.ParsearHoras(texto); !errors.Is(err, effort.ErrHorasInvalidas) {
+			t.Errorf("ParsearHoras(%q) = %v, se esperaba ErrHorasInvalidas", texto, err)
+		}
+	}
+}
