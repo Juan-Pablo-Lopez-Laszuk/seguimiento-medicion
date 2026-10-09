@@ -1,0 +1,55 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/integrantes">{{with .Proyecto.Nombre}}{{.}}{{else}}Proyecto{{end}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nuevo integrante</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-3">Nuevo integrante</h1>
+
+    {{with .ErrorGeneral}}
+    <div class="alert alert-danger" role="alert">{{.}}</div>
+    {{end}}
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.Proyecto.ID}}/integrantes" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="nombre">Nombre</label>
+        <input class="form-control{{if index .Errores "nombre"}} is-invalid{{end}}" id="nombre" name="nombre"
+               value="{{.Nombre}}" maxlength="100" required autofocus>
+        {{with index .Errores "nombre"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control{{if index .Errores "email"}} is-invalid{{end}}" type="email" id="email"
+               name="email" value="{{.Email}}" maxlength="254" required>
+        {{with index .Errores "email"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">No puede repetirse dentro del proyecto. Con este email va a entrar a la aplicación.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="rol">Rol</label>
+        <select class="form-select{{if index .Errores "rol"}} is-invalid{{end}}" id="rol" name="rol" required>
+          <option value="">Elegí un rol</option>
+          {{$elegido := .Rol}}
+          {{range .Roles}}
+          <option value="{{.}}"{{if eq . $elegido}} selected{{end}}>{{.Texto}}</option>
+          {{end}}
+        </select>
+        {{with index .Errores "rol"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">Puede haber un solo Agile Enabler activo por proyecto.</div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Registrar integrante</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/integrantes">Cancelar</a>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}

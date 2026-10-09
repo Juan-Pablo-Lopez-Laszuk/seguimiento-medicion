@@ -21,7 +21,8 @@ import (
 func NewHandler() http.Handler {
 	proyectos := memory.NuevoProyectos()
 	return server.NewRouter(server.Dependencias{
-		Proyectos: service.NuevoProyectos(proyectos, time.Now),
-		Sprints:   service.NuevoSprints(proyectos, memory.NuevoSprints()),
+		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
+		Sprints:     service.NuevoSprints(proyectos, memory.NuevoSprints()),
+		Integrantes: service.NuevoIntegrantes(proyectos, memory.NuevoIntegrantes()),
 	})
 }

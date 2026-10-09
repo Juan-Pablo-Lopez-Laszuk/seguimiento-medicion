@@ -1,0 +1,68 @@
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{.Proyecto.Nombre}}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3 mb-0">Integrantes de {{.Proyecto.Nombre}}</h1>
+  <a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes/nuevo">Nuevo integrante</a>
+</div>
+
+{{if .Registrado}}
+<div class="alert alert-success" role="status">Integrante registrado.</div>
+{{end}}
+{{if .Baja}}
+<div class="alert alert-success" role="status">Integrante dado de baja.</div>
+{{end}}
+{{with .Error}}
+<div class="alert alert-warning" role="alert">{{.}}</div>
+{{end}}
+
+{{if .Integrantes}}
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">Nombre</th>
+        <th scope="col">Email</th>
+        <th scope="col">Rol</th>
+        <th scope="col">Estado</th>
+        <th scope="col"><span class="visually-hidden">Acciones</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {{$proyecto := .Proyecto.ID}}
+      {{range .Integrantes}}
+      <tr{{if not .Activo}} class="text-body-secondary"{{end}}>
+        <td class="fw-semibold">{{.Nombre}}</td>
+        <td>{{.Email}}</td>
+        <td>{{.Rol.Texto}}</td>
+        <td>
+          {{if .Activo}}<span class="badge text-bg-success">Activo</span>
+          {{else}}<span class="badge text-bg-secondary">Dado de baja</span>{{end}}
+        </td>
+        <td class="text-end">
+          {{if .Activo}}
+          <form action="/proyectos/{{$proyecto}}/integrantes/{{.ID}}/baja" method="post" class="d-inline"
+                onsubmit="return confirm('¿Dar de baja a este integrante? Queda en el historial pero ya no participa del proyecto.')">
+            <button class="btn btn-sm btn-outline-danger" type="submit">Dar de baja</button>
+          </form>
+          {{end}}
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-3 text-body-secondary">Todavía no hay integrantes en este proyecto.</p>
+  <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes/nuevo">Registrar el primero</a>
+</div>
+{{end}}
+{{end}}
+{{end}}
