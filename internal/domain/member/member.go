@@ -60,6 +60,9 @@ var (
 	ErrEmailObligatorio  = errors.New("el email es obligatorio")
 	ErrEmailInvalido     = errors.New("el email no tiene un formato válido")
 	ErrRolInvalido       = errors.New("el rol tiene que ser Agile Enabler o Product Builder")
+	// Estos dos dependen de los demás integrantes del proyecto (RN4 y RN6).
+	ErrEmailRepetido        = errors.New("ya hay un integrante con ese email en el proyecto")
+	ErrAgileEnablerRepetido = errors.New("el proyecto ya tiene un Agile Enabler activo")
 )
 
 // Datos son los campos que carga el usuario para registrar un integrante.
@@ -82,7 +85,7 @@ type Integrante struct {
 // Nuevo valida los datos contra los integrantes que ya tiene el proyecto y devuelve el integrante
 // listo para guardar. Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los
 // campos que fallaron (RN9).
-func Nuevo(d Datos, proyectoID int64, _ []Integrante) (Integrante, error) {
+func Nuevo(d Datos, proyectoID int64, existentes []Integrante) (Integrante, error) {
 	nombre, email := strings.TrimSpace(d.Nombre), NormalizarEmail(d.Email)
 
 	errs := domain.ErroresValidacion{}
@@ -90,6 +93,14 @@ func Nuevo(d Datos, proyectoID int64, _ []Integrante) (Integrante, error) {
 	errs.Agregar(CampoEmail, validarEmail(email))
 	if !d.Rol.valido() {
 		errs.Agregar(CampoRol, ErrRolInvalido)
+	}
+	for _, e := range existentes {
+		if _, conError := errs[CampoEmail]; !conError && strings.EqualFold(e.Email, email) { // RN4
+			errs.Agregar(CampoEmail, ErrEmailRepetido)
+		}
+		if d.Rol == RolAgileEnabler && e.Rol == RolAgileEnabler && e.Activo { // RN6
+			errs.Agregar(CampoRol, ErrAgileEnablerRepetido)
+		}
 	}
 	if len(errs) > 0 {
 		return Integrante{}, errs
