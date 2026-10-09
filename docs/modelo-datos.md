@@ -233,7 +233,8 @@ Dependen de varias filas o de datos de otras tablas, así que no se expresan con
 Supabase publica cada tabla del esquema `public` por una API que se maneja con la clave `anon`. Para que
 esa API no pueda leer ni escribir nuestras tablas (en particular `votos` antes de revelar), **todas las tablas
 se crean con RLS activado y sin políticas**. La aplicación entra por `DATABASE_URL` con el usuario `postgres`,
-que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que las 12 tablas tengan RLS activado.
+que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que las 12 tablas tengan RLS activado. La tabla `goose_db_version` (donde goose anota las
+migraciones aplicadas) no es del modelo, pero también queda en `public` y expuesta: la migración `0002` le activa RLS.
 
 ## Decisiones tomadas en el Sprint 0
 
