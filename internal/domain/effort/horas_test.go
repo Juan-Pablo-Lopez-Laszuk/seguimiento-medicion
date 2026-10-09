@@ -56,3 +56,30 @@ func TestParsearHoras_RechazaTextosInvalidos(t *testing.T) {
 		}
 	}
 }
+
+// CA-23.2: si la historia tiene tareas, sus horas estimadas son la suma de las de sus tareas;
+// si no tiene, se usan las horas cargadas en la historia.
+func TestHorasEstimadasDeHistoria_SumaLasTareas(t *testing.T) {
+	casos := []struct {
+		nombre        string
+		horasHistoria float64
+		tareas        []effort.Tarea
+		quiero        float64
+	}{
+		{"sin tareas: usa las horas de la historia", 8, nil, 8},
+		{"con tareas: suma las tareas", 0, []effort.Tarea{{HorasEstimadas: 2}, {HorasEstimadas: 3.5}}, 5.5},
+		{"con tareas: ignora las horas cargadas en la historia", 10, []effort.Tarea{{HorasEstimadas: 2}, {HorasEstimadas: 3}}, 5},
+		{"sin tareas y sin estimar: da 0", 0, nil, 0},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			got, err := effort.HorasEstimadasDeHistoria(c.horasHistoria, c.tareas)
+			if err != nil {
+				t.Fatalf("error inesperado: %v", err)
+			}
+			if got != c.quiero {
+				t.Errorf("horas = %v, se esperaba %v", got, c.quiero)
+			}
+		})
+	}
+}
