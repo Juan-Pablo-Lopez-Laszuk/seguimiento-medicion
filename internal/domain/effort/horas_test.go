@@ -83,3 +83,22 @@ func TestHorasEstimadasDeHistoria_SumaLasTareas(t *testing.T) {
 		})
 	}
 }
+
+// Datos inválidos: una tarea o una historia con horas negativas es un error, no un número equivocado (RG-4).
+func TestHorasEstimadasDeHistoria_HorasNegativasSonError(t *testing.T) {
+	casos := []struct {
+		nombre        string
+		horasHistoria float64
+		tareas        []effort.Tarea
+	}{
+		{"una tarea negativa", 0, []effort.Tarea{{HorasEstimadas: 2}, {HorasEstimadas: -1}}},
+		{"historia negativa sin tareas", -3, nil},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			if _, err := effort.HorasEstimadasDeHistoria(c.horasHistoria, c.tareas); !errors.Is(err, effort.ErrHorasInvalidas) {
+				t.Errorf("error = %v, se esperaba ErrHorasInvalidas", err)
+			}
+		})
+	}
+}
