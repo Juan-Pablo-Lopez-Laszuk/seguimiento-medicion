@@ -1,6 +1,6 @@
 # SPEC-11 · Crear sprint con Sprint Goal
 
-**Historia:** HU-11 (#43) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Revisada
+**Historia:** HU-11 (#43) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Sprint de
 > `docs/modelo-datos.md`.
@@ -110,13 +110,14 @@ Issue: #43 · Feature: `features/hu-11-crear-sprint.feature` · Pasos BDD: `feat
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | `internal/domain/sprint/sprint.go` | `internal/domain/sprint/sprint_test.go` |
-| Repositorio en memoria | `internal/store/memory/sprints.go` | `internal/store/memory/sprints_test.go` |
-| Caso de uso | `internal/service/sprints.go` | `internal/service/sprints_test.go` |
+| Dominio | `internal/domain/sprint/sprint.go` (`Nuevo`) · `internal/domain/validacion.go`, `fecha.go` (compartidos) | `internal/domain/sprint/sprint_test.go` · `internal/domain/*_test.go` |
+| Repositorio en memoria | `internal/store/memory/sprints.go`, `BuscarPorID` en `proyectos.go` | `internal/store/memory/sprints_test.go`, `proyectos_test.go` |
+| Caso de uso | `internal/service/sprints.go` (`Crear`, `Listar`) | `internal/service/sprints_test.go` |
 | Pantalla | `internal/server/sprints.go`, `web/templates/paginas/sprints.html`, `sprint_nuevo.html` | `internal/server/sprints_test.go` |
 
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-11.1 Sprint Goal obligatorio | Crear el primer sprint · Sprint Goal vacío | se completa con el código |
-| CA-11.2 Dentro del proyecto y sin superponerse | Fechas en el borde del proyecto · Se superpone con el último sprint | se completa con el código |
-| CA-11.3 Número correlativo y estado Planificado | Crear el primer sprint · El siguiente sprint lleva el número 2 · Cada proyecto numera sus sprints | se completa con el código |
+| CA-11.1 Sprint Goal obligatorio | Crear el primer sprint · El Sprint Goal es obligatorio | `TestNuevo_SprintGoalVacioOSoloEspacios_*`, `TestNuevo_QuitaLosEspaciosAlrededorDelSprintGoal`, `TestNuevo_LargoDelSprintGoal`, `TestNuevo_InformaTodosLosCamposInvalidosJuntos`, `TestCrearSprint_DatosInvalidos_*` |
+| CA-11.2 Dentro del proyecto y sin superponerse | Fechas en el borde del proyecto · No se superpone con el último sprint | `TestNuevo_FechasObligatorias`, `TestNuevo_FechaDeFinPosteriorALaDeInicio`, `TestNuevo_LasFechasSeTomanSinHora`, `TestNuevo_FechasDentroDelProyecto`, `TestNuevo_FueraDelProyecto_*`, `TestNuevo_EmpiezaDespuesDelUltimoSprint`, `TestNuevo_Superpuesto_*`, `TestCrearSprint_SuperpuestoConElUltimo_NoGuarda`, `TestFormularioNuevoSprint_*` |
+| CA-11.3 Número correlativo y estado Planificado | Crear el primer sprint · El siguiente sprint lleva el número que sigue · Cada proyecto numera sus propios sprints | `TestNuevo_PrimerSprint_*`, `TestNuevo_ElNumeroSigueAlMasAlto`, `TestNuevo_NoReutilizaNumerosQueFaltan`, `TestCrearSprint_DatosValidos_*`, `TestSprints_GuardarAsignaIDsYListarPorProyecto`, `TestCrearSprint_DatosValidos_VuelveALaListaConElSprint` |
+| Proyecto inexistente (sección 7) | — | `TestProyectos_BuscarPorID`, `TestCrearSprint_ProyectoInexistente_*`, `TestListarSprints_ProyectoInexistente_*`, `TestSprints_ProyectoInexistente_Responde404` |
