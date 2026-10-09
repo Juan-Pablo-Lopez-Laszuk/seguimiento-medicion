@@ -110,11 +110,11 @@ func TestCrearSprint_DatosInvalidos_MuestraLosErroresYConservaLosDatos(t *testin
 func TestSprints_ProyectoInexistente_Responde404(t *testing.T) {
 	h := conProyecto(t)
 	pedidos := map[string]*httptest.ResponseRecorder{
-		"lista":           get(h, "/proyectos/99/sprints"),
-		"formulario":      get(h, "/proyectos/99/sprints/nuevo"),
-		"creación":        post(h, "/proyectos/99/sprints", sprintValido()),
-		"ID no numérico":  get(h, "/proyectos/abc/sprints"),
-		"ID no numérico ": post(h, "/proyectos/abc/sprints", sprintValido()),
+		"lista":                       get(h, "/proyectos/99/sprints"),
+		"formulario":                  get(h, "/proyectos/99/sprints/nuevo"),
+		"creación":                    post(h, "/proyectos/99/sprints", sprintValido()),
+		"lista con ID no numérico":    get(h, "/proyectos/abc/sprints"),
+		"creación con ID no numérico": post(h, "/proyectos/abc/sprints", sprintValido()),
 	}
 	for nombre, rec := range pedidos {
 		if rec.Code != http.StatusNotFound {
