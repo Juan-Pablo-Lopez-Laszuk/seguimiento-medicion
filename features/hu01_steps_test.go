@@ -9,6 +9,7 @@ import (
 
 	"github.com/cucumber/godog"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
@@ -112,7 +113,7 @@ func (e *hu01) elResultadoEs(resultado string) error {
 }
 
 func (e *hu01) seInformaElErrorEnElCampo(mensaje, campo string) error {
-	var errs project.ErroresValidacion
+	var errs domain.ErroresValidacion
 	if !errors.As(e.err, &errs) {
 		return fmt.Errorf("se esperaban errores de validación y se obtuvo: %v", e.err)
 	}

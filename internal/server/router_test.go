@@ -15,8 +15,10 @@ import (
 
 // nuevoRouter arma la aplicación con repositorios en memoria vacíos.
 func nuevoRouter() http.Handler {
+	proyectos := memory.NuevoProyectos()
 	return server.NewRouter(server.Dependencias{
-		Proyectos: service.NuevoProyectos(memory.NuevoProyectos(), time.Now),
+		Proyectos: service.NuevoProyectos(proyectos, time.Now),
+		Sprints:   service.NuevoSprints(proyectos, memory.NuevoSprints()),
 	})
 }
 
