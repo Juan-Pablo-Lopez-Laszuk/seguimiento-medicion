@@ -74,29 +74,8 @@ func Nuevo(d Datos, p project.Proyecto, existentes []Sprint) (Sprint, error) {
 
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoObjetivo, validarObjetivo(objetivo))
-	if inicio.IsZero() {
-		errs.Agregar(CampoFechaInicio, ErrFechaInicio)
-	}
-	switch {
-	case fin.IsZero():
-		errs.Agregar(CampoFechaFin, ErrFechaFin)
-	case !inicio.IsZero() && !fin.After(inicio): // RN2
-		errs.Agregar(CampoFechaFin, ErrFechasInvalidas)
-	}
-	// RN3: solo se mira el rango de las fechas que no tienen ya otro error.
-	for campo, f := range map[string]time.Time{CampoFechaInicio: inicio, CampoFechaFin: fin} {
-		if _, conError := errs[campo]; !conError && fueraDelProyecto(f, p) {
-			errs.Agregar(campo, fmt.Errorf("%w (del %s al %s)", ErrFueraDelProyecto,
-				p.FechaInicio.Format(formatoFecha), p.FechaFin.Format(formatoFecha)))
-		}
-	}
-	// RN4: los sprints se crean en orden, así no se superponen y el número sigue a las fechas.
-	if ultimo, hay := ultimoSprint(existentes); hay {
-		if _, conError := errs[CampoFechaInicio]; !conError && !inicio.After(ultimo.FechaFin) {
-			errs.Agregar(CampoFechaInicio, fmt.Errorf("%w (el Sprint %d termina el %s)", ErrSuperpuesto,
-				ultimo.Numero, ultimo.FechaFin.Format(formatoFecha)))
-		}
-	}
+	errs.Agregar(CampoFechaInicio, validarInicio(inicio, p, existentes))
+	errs.Agregar(CampoFechaFin, validarFin(inicio, fin, p))
 	if len(errs) > 0 {
 		return Sprint{}, errs
 	}
@@ -120,9 +99,45 @@ func validarObjetivo(objetivo string) error {
 	return nil
 }
 
+// validarInicio devuelve el primer error de la fecha de inicio, en este orden: falta, queda fuera del
+// proyecto (RN3) o no empieza después del último sprint (RN4). Así se informa un solo error por campo.
+func validarInicio(inicio time.Time, p project.Proyecto, existentes []Sprint) error {
+	ultimo, hay := ultimoSprint(existentes)
+	switch {
+	case inicio.IsZero():
+		return ErrFechaInicio
+	case fueraDelProyecto(inicio, p):
+		return errFueraDelProyecto(p)
+	case hay && !inicio.After(ultimo.FechaFin):
+		return fmt.Errorf("%w (el Sprint %d termina el %s)", ErrSuperpuesto,
+			ultimo.Numero, ultimo.FechaFin.Format(formatoFecha))
+	}
+	return nil
+}
+
+// validarFin devuelve el primer error de la fecha de fin: falta, no es posterior al inicio (RN2) o queda
+// fuera del proyecto (RN3).
+func validarFin(inicio, fin time.Time, p project.Proyecto) error {
+	switch {
+	case fin.IsZero():
+		return ErrFechaFin
+	case !inicio.IsZero() && !fin.After(inicio):
+		return ErrFechasInvalidas
+	case fueraDelProyecto(fin, p):
+		return errFueraDelProyecto(p)
+	}
+	return nil
+}
+
 // fueraDelProyecto informa si f cae antes del inicio o después del fin del proyecto (los bordes valen).
 func fueraDelProyecto(f time.Time, p project.Proyecto) bool {
 	return f.Before(domain.SoloFecha(p.FechaInicio)) || f.After(domain.SoloFecha(p.FechaFin))
+}
+
+// errFueraDelProyecto agrega al error el rango del proyecto, para que el usuario sepa qué fechas valen.
+func errFueraDelProyecto(p project.Proyecto) error {
+	return fmt.Errorf("%w (del %s al %s)", ErrFueraDelProyecto,
+		p.FechaInicio.Format(formatoFecha), p.FechaFin.Format(formatoFecha))
 }
 
 // ultimoSprint devuelve el sprint que termina más tarde; hay es false si el proyecto todavía no tiene sprints.
