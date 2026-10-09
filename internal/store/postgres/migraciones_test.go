@@ -37,6 +37,23 @@ func TestMigracion_SubeTodasLasTablasConRLS(t *testing.T) {
 	}
 }
 
+// Supabase le da al rol anon permisos sobre todo el esquema public: sin RLS, la API pública podría leer y
+// modificar hasta el historial de migraciones que guarda goose.
+func TestMigracion_LaTablaDeVersionesDeGooseTambienTieneRLS(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+
+	var conRLS bool
+	err := pool.QueryRow(ctx, `SELECT rowsecurity FROM pg_tables
+		WHERE schemaname = current_schema() AND tablename = 'goose_db_version'`).Scan(&conRLS)
+	if err != nil {
+		t.Fatalf("consultar la tabla de versiones: %v", err)
+	}
+	if !conRLS {
+		t.Error("goose_db_version tiene que tener RLS activado, como las tablas del modelo")
+	}
+}
+
 func TestMigracion_BajaDejaLaBaseSinTablasDelModelo(t *testing.T) {
 	ctx := context.Background()
 	pool := baseMigrada(t)
