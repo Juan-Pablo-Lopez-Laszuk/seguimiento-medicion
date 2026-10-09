@@ -34,6 +34,10 @@ const ObjetivoMax = 500
 var (
 	ErrObjetivoObligatorio = errors.New("el Sprint Goal es obligatorio")
 	ErrObjetivoLargo       = errors.New("el Sprint Goal no puede superar los 500 caracteres")
+	// Los errores de fechas son los mismos de HU-01, así el usuario ve el mismo mensaje en las dos pantallas.
+	ErrFechaInicio     = project.ErrFechaInicio
+	ErrFechaFin        = project.ErrFechaFin
+	ErrFechasInvalidas = project.ErrFechasInvalidas
 )
 
 // Datos son los campos que carga el usuario para crear un sprint.
@@ -58,9 +62,19 @@ type Sprint struct {
 // Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
 func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
 	objetivo := strings.TrimSpace(d.Objetivo)
+	inicio, fin := domain.SoloFecha(d.FechaInicio), domain.SoloFecha(d.FechaFin)
 
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoObjetivo, validarObjetivo(objetivo))
+	if inicio.IsZero() {
+		errs.Agregar(CampoFechaInicio, ErrFechaInicio)
+	}
+	switch {
+	case fin.IsZero():
+		errs.Agregar(CampoFechaFin, ErrFechaFin)
+	case !inicio.IsZero() && !fin.After(inicio): // RN2
+		errs.Agregar(CampoFechaFin, ErrFechasInvalidas)
+	}
 	if len(errs) > 0 {
 		return Sprint{}, errs
 	}
@@ -68,8 +82,8 @@ func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
 		ProyectoID:  p.ID,
 		Numero:      1,
 		Objetivo:    objetivo,
-		FechaInicio: d.FechaInicio,
-		FechaFin:    d.FechaFin,
+		FechaInicio: inicio,
+		FechaFin:    fin,
 		Estado:      EstadoPlanificado,
 	}, nil
 }
