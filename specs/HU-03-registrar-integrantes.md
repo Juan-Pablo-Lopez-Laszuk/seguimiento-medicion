@@ -1,6 +1,6 @@
 # SPEC-03 · Registrar integrantes
 
-**Historia:** HU-03 (#41) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Revisada
+**Historia:** HU-03 (#41) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Integrante de
 > `docs/modelo-datos.md`.
@@ -113,13 +113,14 @@ Issue: #41 · Feature: `features/hu-03-registrar-integrantes.feature` · Pasos B
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | `internal/domain/member/member.go` | `internal/domain/member/member_test.go` |
+| Dominio | `internal/domain/member/member.go` (`Nuevo`, `DarDeBaja`, `Rol.Texto`) | `internal/domain/member/member_test.go` |
 | Repositorio en memoria | `internal/store/memory/integrantes.go` | `internal/store/memory/integrantes_test.go` |
-| Caso de uso | `internal/service/integrantes.go` | `internal/service/integrantes_test.go` |
+| Caso de uso | `internal/service/integrantes.go` (`Registrar`, `Listar`, `DarDeBaja`) | `internal/service/integrantes_test.go` |
 | Pantalla | `internal/server/integrantes.go`, `web/templates/paginas/integrantes.html`, `integrante_nuevo.html` | `internal/server/integrantes_test.go` |
 
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-03.1 Email válido y no repetido | Registrar al Agile Enabler · Formato del email · Email repetido · Mismo email en otro proyecto | se completa con el código |
-| CA-03.2 Rol y un solo Agile Enabler | Registrar al Agile Enabler · Varios Product Builder · Segundo Agile Enabler · Agile Enabler después de una baja | se completa con el código |
-| CA-03.3 Se da de baja, no se elimina | Dar de baja a un integrante · No se da de baja dos veces | se completa con el código |
+| CA-03.1 Email válido y no repetido | Registrar al Agile Enabler · Formato del email · No se repite el email dentro del proyecto · El mismo email en otro proyecto | `TestNuevo_DatosValidos_*`, `TestNuevo_FormatoDelEmail`, `TestNuevo_EmailRepetido`, `TestRegistrarIntegrante_ConLosQueYaEstan_*`, `TestRegistrarIntegrante_DatosInvalidos_*` |
+| CA-03.2 Rol y un solo Agile Enabler | Registrar al Agile Enabler · Registrar varios Product Builder · No puede haber dos Agile Enabler activos · Nuevo Agile Enabler después de una baja · Se indica cada campo que falló | `TestNuevo_Rol`, `TestRol_Texto`, `TestNuevo_UnSoloAgileEnablerActivo`, `TestNuevo_InformaTodosLosCamposInvalidosJuntos`, `TestNuevo_Nombre`, `TestFormularioNuevoIntegrante_*` |
+| CA-03.3 Se da de baja, no se elimina | Dar de baja a un integrante · No se da de baja dos veces | `TestDarDeBaja_IntegranteActivo_*`, `TestDarDeBaja_YaDadoDeBaja_*`, `TestIntegrantes_Actualizar`, `TestDarDeBaja_QuedaInactivoYNoSeBorra`, `TestDarDeBaja_VuelveALaListaConElIntegranteDadoDeBaja`, `TestDarDeBaja_DosVeces_MuestraElAviso` |
+| Proyecto o integrante inexistente (sección 7) | — | `TestIntegrantes_BuscarPorID`, `TestRegistrarIntegrante_ProyectoInexistente_*`, `TestDarDeBaja_IntegranteInexistente_*`, `TestIntegrantes_NoEncontrado_Responde404` |

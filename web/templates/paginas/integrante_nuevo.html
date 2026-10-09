@@ -28,7 +28,7 @@
         <input class="form-control{{if index .Errores "email"}} is-invalid{{end}}" type="email" id="email"
                name="email" value="{{.Email}}" maxlength="254" required>
         {{with index .Errores "email"}}<div class="invalid-feedback">{{.}}</div>{{end}}
-        <div class="form-text">No puede repetirse dentro del proyecto. Con este email va a entrar a la aplicación.</div>
+        <div class="form-text">No puede repetirse dentro del proyecto.</div>
       </div>
 
       <div class="mb-3">
