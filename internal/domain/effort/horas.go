@@ -31,3 +31,21 @@ func ParsearHoras(texto string) (float64, error) {
 	}
 	return horas, nil
 }
+
+// Tarea tiene los datos de una tarea que hacen falta para sumar las horas estimadas.
+type Tarea struct {
+	HorasEstimadas float64 // 0 si la tarea todavía no está estimada
+}
+
+// HorasEstimadasDeHistoria devuelve las horas estimadas de una historia (CA-23.2): si tiene tareas, la
+// suma de las horas de sus tareas; si no tiene, las horas cargadas en la historia.
+func HorasEstimadasDeHistoria(horasHistoria float64, tareas []Tarea) (float64, error) {
+	if len(tareas) == 0 {
+		return horasHistoria, nil
+	}
+	total := 0.0
+	for _, t := range tareas {
+		total += t.HorasEstimadas
+	}
+	return total, nil
+}
