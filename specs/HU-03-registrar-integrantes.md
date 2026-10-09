@@ -1,6 +1,6 @@
 # SPEC-03 · Registrar integrantes
 
-**Historia:** HU-03 (#41) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-03 (#41) · **Responsable:** López, Juan Pablo · **Sprint:** 1 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Integrante de
 > `docs/modelo-datos.md`.
