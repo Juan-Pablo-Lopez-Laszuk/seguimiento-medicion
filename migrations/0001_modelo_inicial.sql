@@ -26,8 +26,8 @@ CREATE TABLE integrantes (
     auth_user_id uuid,
     CONSTRAINT integrantes_email_uq UNIQUE (proyecto_id, email)
 );
--- Un solo Agile Enabler por proyecto.
-CREATE UNIQUE INDEX integrantes_un_agile_enabler_uq ON integrantes (proyecto_id) WHERE rol = 'AgileEnabler';
+-- Un solo Agile Enabler ACTIVO por proyecto: si se da de baja, se puede registrar otro (HU-03, RN6).
+CREATE UNIQUE INDEX integrantes_un_agile_enabler_uq ON integrantes (proyecto_id) WHERE rol = 'AgileEnabler' AND activo;
 
 CREATE TABLE sprints (
     id              bigserial PRIMARY KEY,
