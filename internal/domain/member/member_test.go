@@ -73,3 +73,40 @@ func TestNuevo_Nombre(t *testing.T) {
 		}
 	}
 }
+
+// CA-03.1 · RN3: el email es obligatorio y tiene formato válido
+func TestNuevo_FormatoDelEmail(t *testing.T) {
+	largo := strings.Repeat("a", 64) + "@" + strings.Repeat("b", 185) + ".com" // 254 caracteres
+	casos := []struct {
+		email    string
+		esperado error // nil si es válido
+	}{
+		{"ana@mail.com", nil},
+		{"ana.perez+tpi@frsr.utn.edu.ar", nil},
+		{largo, nil},
+		{"", member.ErrEmailObligatorio},
+		{"   ", member.ErrEmailObligatorio},
+		{"ana@mail", member.ErrEmailInvalido},                   // dominio sin punto
+		{"ana.mail.com", member.ErrEmailInvalido},               // sin @
+		{"@mail.com", member.ErrEmailInvalido},                  // sin usuario
+		{"ana@.com", member.ErrEmailInvalido},                   // dominio que empieza con punto
+		{"ana@mail.", member.ErrEmailInvalido},                  // dominio que termina con punto
+		{"Ana <ana@mail.com>", member.ErrEmailInvalido},         // con nombre delante
+		{"<ana@mail.com>", member.ErrEmailInvalido},             // entre < >
+		{"ana@mail.com, bea@mail.com", member.ErrEmailInvalido}, // dos direcciones
+		{"a" + largo, member.ErrEmailInvalido},                  // 255 caracteres
+	}
+	for _, c := range casos {
+		d := datosValidos()
+		d.Email = c.email
+
+		_, err := member.Nuevo(d, proyectoID, nil)
+
+		if c.esperado == nil && err != nil {
+			t.Errorf("email %q: no se esperaba error, se obtuvo %v", c.email, err)
+		}
+		if c.esperado != nil {
+			verificarErrorDeCampo(t, err, member.CampoEmail, c.esperado)
+		}
+	}
+}
