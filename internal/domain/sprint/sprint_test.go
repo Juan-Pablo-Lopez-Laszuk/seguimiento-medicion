@@ -234,3 +234,61 @@ func TestNuevo_FueraDelProyecto_ElMensajeIncluyeElRango(t *testing.T) {
 		t.Errorf("se esperaba %q y se obtuvo %v", esperado, err)
 	}
 }
+
+// sprintExistente arma un sprint ya guardado del proyecto de ejemplo.
+func sprintExistente(t *testing.T, numero int, inicio, fin string) sprint.Sprint {
+	return sprint.Sprint{
+		ID:          int64(numero),
+		ProyectoID:  proyecto(t).ID,
+		Numero:      numero,
+		Objetivo:    "Sprint anterior",
+		FechaInicio: fecha(t, inicio),
+		FechaFin:    fecha(t, fin),
+		Estado:      sprint.EstadoPlanificado,
+	}
+}
+
+// CA-11.2 · RN4: el sprint nuevo empieza después del día en que termina el último
+func TestNuevo_EmpiezaDespuesDelUltimoSprint(t *testing.T) {
+	existentes := []sprint.Sprint{
+		sprintExistente(t, 1, "2026-10-05", "2026-10-11"),
+		sprintExistente(t, 2, "2026-10-12", "2026-10-18"),
+	}
+	casos := []struct {
+		inicio, fin string
+		valido      bool
+	}{
+		{"2026-10-18", "2026-10-25", false}, // empieza el día que termina el último
+		{"2026-10-15", "2026-10-17", false}, // queda adentro del último
+		{"2026-10-05", "2026-10-08", false}, // queda antes del último (en el lugar del Sprint 1)
+		{"2026-10-19", "2026-10-25", true},  // el día siguiente
+		{"2026-10-22", "2026-10-28", true},  // con días libres en el medio
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.FechaInicio, d.FechaFin = fecha(t, c.inicio), fecha(t, c.fin)
+
+		_, err := sprint.Nuevo(d, proyecto(t), existentes)
+
+		if c.valido && err != nil {
+			t.Errorf("%s → %s: no se esperaba error, se obtuvo %v", c.inicio, c.fin, err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, sprint.CampoFechaInicio, sprint.ErrSuperpuesto)
+		}
+	}
+}
+
+// El mensaje dice cuál es el último sprint y cuándo termina.
+func TestNuevo_Superpuesto_ElMensajeDiceCuandoTerminaElUltimo(t *testing.T) {
+	existentes := []sprint.Sprint{sprintExistente(t, 1, "2026-10-05", "2026-10-11")}
+	d := datosValidos(t)
+	d.FechaInicio, d.FechaFin = fecha(t, "2026-10-11"), fecha(t, "2026-10-18")
+
+	_, err := sprint.Nuevo(d, proyecto(t), existentes)
+
+	esperado := "fecha_inicio: el sprint tiene que empezar después del último (el Sprint 1 termina el 11/10/2026)"
+	if err == nil || err.Error() != esperado {
+		t.Errorf("se esperaba %q y se obtuvo %v", esperado, err)
+	}
+}
