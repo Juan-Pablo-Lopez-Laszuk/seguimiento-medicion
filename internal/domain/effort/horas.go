@@ -38,13 +38,20 @@ type Tarea struct {
 }
 
 // HorasEstimadasDeHistoria devuelve las horas estimadas de una historia (CA-23.2): si tiene tareas, la
-// suma de las horas de sus tareas; si no tiene, las horas cargadas en la historia.
+// suma de las horas de sus tareas; si no tiene, las horas cargadas en la historia. Una historia o tarea
+// sin estimar vale 0; horas negativas devuelven ErrHorasInvalidas.
 func HorasEstimadasDeHistoria(horasHistoria float64, tareas []Tarea) (float64, error) {
 	if len(tareas) == 0 {
+		if horasHistoria < 0 {
+			return 0, ErrHorasInvalidas
+		}
 		return horasHistoria, nil
 	}
 	total := 0.0
 	for _, t := range tareas {
+		if t.HorasEstimadas < 0 {
+			return 0, ErrHorasInvalidas
+		}
 		total += t.HorasEstimadas
 	}
 	return total, nil
