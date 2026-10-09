@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
@@ -67,7 +68,7 @@ func (h proyectos) crear(w http.ResponseWriter, r *http.Request) {
 		FechaFin:    fechaDeFormulario(form.FechaFin),
 	})
 
-	var errs project.ErroresValidacion
+	var errs domain.ErroresValidacion
 	switch {
 	case err == nil:
 		http.Redirect(w, r, "/proyectos?creado=1", http.StatusSeeOther)

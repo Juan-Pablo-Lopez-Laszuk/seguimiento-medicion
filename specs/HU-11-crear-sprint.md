@@ -53,8 +53,8 @@ El número del sprint **no se carga**: lo asigna el sistema (RN5).
   Los repositorios son interfaces: `internal/store/memory` en los tests y `internal/store/postgres` cuando esté
   TEC-03. **Para TEC-03:** el repositorio de proyectos suma `BuscarPorID` y hace falta uno de sprints
   (`ListarPorProyecto` y `Guardar`).
-- `ErroresValidacion` pasa de `internal/domain/project` a `internal/domain` para que la usen proyecto y sprint
-  (refactor sin cambio de comportamiento de HU-01).
+- `ErroresValidacion` y `SoloFecha` pasan de `internal/domain/project` a `internal/domain` para que los usen
+  proyecto y sprint (refactor sin cambio de comportamiento de HU-01).
 - En la base, la restricción única `(proyecto_id, numero)` de `docs/modelo-datos.md` evita dos sprints con el mismo
   número si dos personas crean un sprint al mismo tiempo.
 - Las fechas se manejan sin hora (`time.Time` a medianoche UTC), como en HU-01.
