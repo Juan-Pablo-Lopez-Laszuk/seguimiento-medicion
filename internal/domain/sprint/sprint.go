@@ -102,7 +102,7 @@ func Nuevo(d Datos, p project.Proyecto, existentes []Sprint) (Sprint, error) {
 	}
 	return Sprint{
 		ProyectoID:  p.ID,
-		Numero:      1,
+		Numero:      siguienteNumero(existentes),
 		Objetivo:    objetivo,
 		FechaInicio: inicio,
 		FechaFin:    fin,
@@ -133,4 +133,14 @@ func ultimoSprint(existentes []Sprint) (ultimo Sprint, hay bool) {
 		}
 	}
 	return ultimo, hay
+}
+
+// siguienteNumero devuelve el número más alto de los sprints existentes más uno (RN5). No reutiliza
+// números que falten en el medio, así un número nunca nombra a dos sprints distintos.
+func siguienteNumero(existentes []Sprint) int {
+	maximo := 0
+	for _, s := range existentes {
+		maximo = max(maximo, s.Numero)
+	}
+	return maximo + 1
 }
