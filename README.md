@@ -78,11 +78,13 @@ cobertura queda en el resumen de la corrida y como artefacto descargable (`cober
 api/index.go          función de Vercel: delega cada pedido al router (a través de app/)
 app/                  puerta de entrada pública al router (Vercel no puede importar internal/)
 cmd/server/           servidor local
+cmd/migrar/           aplica las migraciones a la base (up, status, down)
 internal/server/      router, handlers y renderizado de páginas
 internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
 internal/service/     casos de uso
 internal/metrics/     cálculos de métricas
 internal/store/       repositorios: memory (tests) y postgres (Supabase)
+migrations/          migraciones SQL versionadas (goose) del modelo de datos
 web/templates/        layout base (base.html) y una plantilla por página (paginas/)
 features/             escenarios BDD (.feature) y sus pasos en Go
 specs/                especificaciones SDD
