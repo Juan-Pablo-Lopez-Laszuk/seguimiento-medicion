@@ -59,7 +59,7 @@ La consigna del TPI pide como mínimo nueve métricas (punto 7 del enunciado). T
 ### M3 · Velocidad del equipo — HU-31
 
 - **Qué mide:** cuántos SP termina el equipo por sprint, en promedio. Sirve para decidir cuánto comprometer en el próximo sprint.
-- **Fórmula:** `Velocidad = (Σ SP completados de los últimos N sprints cerrados) / N`
+- **Fórmula:** `Velocidad = (Σ SP completados de los últimos N sprints cerrados) / k`, donde k es la cantidad de sprints que se tomaron: k = N si hay N o más sprints cerrados; si hay menos, k = los que haya (ver el ejemplo de la sección 6).
 - **Ventana N:** por defecto **3** sprints, configurable por proyecto. "Últimos" son los de mayor número de sprint.
 - **Reglas:** solo cuentan sprints **Cerrados**; los activos o planificados no (CA-31.4). El orden en que llegan los datos no cambia el resultado.
 - **Casos límite:** sin sprints cerrados → 0 y el mensaje "Aún no hay sprints cerrados" (CA-31.3). Si hay menos de N sprints cerrados, se promedian los que haya (CA-31.2).
