@@ -113,6 +113,13 @@ func TestMigracion_RestriccionesDelModelo(t *testing.T) {
 		{"foto de cierre con SP fuera de la escala", false, `INSERT INTO sprint_historias (sprint_id, historia_id, story_points) VALUES (1, 1, 7)`},
 		{"tarea con horas negativas", false, `INSERT INTO tareas (historia_id, titulo, horas_estimadas) VALUES (1, 't', -1)`},
 		{"defecto válido", true, `INSERT INTO defectos (proyecto_id, descripcion, severidad, estado, sprint_deteccion_id) VALUES (1, 'd', 'Alta', 'Abierto', 1)`},
+
+		// HU-03 (RN6 y RN4): un solo Agile Enabler ACTIVO por proyecto; el email de quien se dio de baja sigue ocupado.
+		{"dar de baja al Agile Enabler", true, `UPDATE integrantes SET activo = false WHERE email = 'jp@x.com'`},
+		{"nuevo Agile Enabler cuando el anterior está de baja", true, `INSERT INTO integrantes (proyecto_id, nombre, email, rol) VALUES (1, 'Nuevo AE', 'ae2@x.com', 'AgileEnabler')`},
+		{"otro Agile Enabler activo más", false, `INSERT INTO integrantes (proyecto_id, nombre, email, rol) VALUES (1, 'Otro AE', 'ae3@x.com', 'AgileEnabler')`},
+		{"reactivar al Agile Enabler que estaba de baja", false, `UPDATE integrantes SET activo = true WHERE email = 'jp@x.com'`},
+		{"registrar el email de alguien dado de baja", false, `INSERT INTO integrantes (proyecto_id, nombre, email, rol) VALUES (1, 'Repetido', 'jp@x.com', 'ProductBuilder')`},
 	}
 	for _, c := range casos {
 		_, err := pool.Exec(ctx, c.sql)
