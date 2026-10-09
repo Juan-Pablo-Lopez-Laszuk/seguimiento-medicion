@@ -1,0 +1,58 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints">{{.Proyecto.Nombre}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nuevo sprint</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-3">Nuevo sprint</h1>
+
+    {{with .ErrorGeneral}}
+    <div class="alert alert-danger" role="alert">{{.}}</div>
+    {{end}}
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.Proyecto.ID}}/sprints" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="objetivo">Sprint Goal</label>
+        <textarea class="form-control{{if index .Errores "objetivo"}} is-invalid{{end}}" id="objetivo"
+                  name="objetivo" rows="3" maxlength="500" required autofocus>{{.Objetivo}}</textarea>
+        {{with index .Errores "objetivo"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">Qué quiere lograr el equipo en este sprint. Hasta 500 caracteres.</div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="fecha_inicio">Fecha de inicio</label>
+          <input class="form-control{{if index .Errores "fecha_inicio"}} is-invalid{{end}}" type="date"
+                 id="fecha_inicio" name="fecha_inicio" value="{{.FechaInicio}}" required
+                 {{if not .Proyecto.FechaInicio.IsZero}}min="{{fechaParaInput .Proyecto.FechaInicio}}" max="{{fechaParaInput .Proyecto.FechaFin}}"{{end}}>
+          {{with index .Errores "fecha_inicio"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        </div>
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="fecha_fin">Fecha de finalización</label>
+          <input class="form-control{{if index .Errores "fecha_fin"}} is-invalid{{end}}" type="date"
+                 id="fecha_fin" name="fecha_fin" value="{{.FechaFin}}" required
+                 {{if not .Proyecto.FechaInicio.IsZero}}min="{{fechaParaInput .Proyecto.FechaInicio}}" max="{{fechaParaInput .Proyecto.FechaFin}}"{{end}}>
+          {{with index .Errores "fecha_fin"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        </div>
+      </div>
+      {{if not .Proyecto.FechaInicio.IsZero}}
+      <p class="form-text mt-0">
+        El sprint tiene que quedar dentro del proyecto (del {{.Proyecto.FechaInicio.Format "02/01/2006"}} al
+        {{.Proyecto.FechaFin.Format "02/01/2006"}}) y empezar después del último sprint. El número lo asigna el sistema.
+      </p>
+      {{end}}
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Crear sprint</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/sprints">Cancelar</a>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}
