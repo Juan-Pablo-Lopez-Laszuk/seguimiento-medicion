@@ -47,7 +47,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		if err != nil {
 			return nil, err
 		}
-		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), memory.NuevoIntegrantes() // pasa a Postgres en el próximo commit
+		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
 	}
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
