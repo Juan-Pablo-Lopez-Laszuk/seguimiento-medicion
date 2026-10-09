@@ -42,17 +42,25 @@ type Tarea struct {
 // sin estimar vale 0; horas negativas devuelven ErrHorasInvalidas.
 func HorasEstimadasDeHistoria(horasHistoria float64, tareas []Tarea) (float64, error) {
 	if len(tareas) == 0 {
-		if horasHistoria < 0 {
-			return 0, ErrHorasInvalidas
+		if err := sinEstimarOValidas(horasHistoria); err != nil {
+			return 0, err
 		}
 		return horasHistoria, nil
 	}
 	total := 0.0
 	for _, t := range tareas {
-		if t.HorasEstimadas < 0 {
-			return 0, ErrHorasInvalidas
+		if err := sinEstimarOValidas(t.HorasEstimadas); err != nil {
+			return 0, err
 		}
 		total += t.HorasEstimadas
 	}
 	return total, nil
+}
+
+// sinEstimarOValidas acepta 0 (todavía sin estimar) o horas válidas; lo negativo es ErrHorasInvalidas.
+func sinEstimarOValidas(horas float64) error {
+	if horas == 0 {
+		return nil
+	}
+	return ValidarHoras(horas)
 }
