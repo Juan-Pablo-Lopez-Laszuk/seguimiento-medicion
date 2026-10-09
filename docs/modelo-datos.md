@@ -1,7 +1,8 @@
 # Modelo de datos (acordado · Sprint 0)
 
-Base de la migración inicial (TEC-03, Sprint 1). Se armó a partir de las entidades del Plan de
-trabajo (sección 2.1) y de los ejemplos de la Guía de desarrollo.
+Base de la migración inicial (TEC-03, Sprint 1), que está en `migrations/0001_modelo_inicial.sql`. Se armó a partir
+de las entidades del Plan de trabajo (sección 2.1) y de los ejemplos de la Guía de desarrollo. Los tests con base de
+datos de `internal/store/postgres` comprueban las restricciones de este documento.
 
 **Estado:** aprobado en la revisión de Juan Pablo (PR #56) y cerrado en la Review del Sprint 0.
 Queda pendiente la conformidad de Carolina sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto).
@@ -232,7 +233,7 @@ Dependen de varias filas o de datos de otras tablas, así que no se expresan con
 Supabase publica cada tabla del esquema `public` por una API que se maneja con la clave `anon`. Para que
 esa API no pueda leer ni escribir nuestras tablas (en particular `votos` antes de revelar), **todas las tablas
 se crean con RLS activado y sin políticas**. La aplicación entra por `DATABASE_URL` con el usuario `postgres`,
-que no está sujeto a RLS, así que no se ve afectada. Esto se comprueba en la primera prueba de TEC-03.
+que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que las 12 tablas tengan RLS activado.
 
 ## Decisiones tomadas en el Sprint 0
 
@@ -246,3 +247,13 @@ que no está sujeto a RLS, así que no se ve afectada. Esto se comprueba en la p
    sigue siendo también una regla de la aplicación.
 4. ~~Convención de nombres~~ **Resuelto:** tablas en plural y en español, columnas en `snake_case`
    (ver "Convención de nombres").
+
+## Decisiones de la migración inicial (TEC-03)
+
+La migración sigue este documento al pie de la letra. Dos cosas quedaron fuera a propósito y se resuelven con una
+migración nueva cuando la historia que las necesita las defina:
+
+- **Sin `CHECK` en los estados** (`proyectos.estado`, `sprints.estado`, `integrantes.rol`, etc.): este documento los
+  describe en las notas pero no los lista en "Restricciones de valores". Hoy los controla la aplicación.
+- **Sin borrado en cascada** de las claves foráneas: eliminar una historia con criterios o tareas falla hasta que HU-06
+  (editar y eliminar ítem) decida qué pasa con ellos.
