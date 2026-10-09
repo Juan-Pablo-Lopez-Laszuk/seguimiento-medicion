@@ -128,3 +128,69 @@ func TestNuevo_LargoDelSprintGoal(t *testing.T) {
 		}
 	}
 }
+
+// Fechas faltantes (la fecha cero es la que llega cuando el campo está vacío o no es una fecha).
+func TestNuevo_FechasObligatorias(t *testing.T) {
+	d := datosValidos(t)
+	d.FechaInicio = time.Time{}
+	_, err := sprint.Nuevo(d, proyecto(t), nil)
+	verificarErrorDeCampo(t, err, sprint.CampoFechaInicio, sprint.ErrFechaInicio)
+
+	d = datosValidos(t)
+	d.FechaFin = time.Time{}
+	_, err = sprint.Nuevo(d, proyecto(t), nil)
+	verificarErrorDeCampo(t, err, sprint.CampoFechaFin, sprint.ErrFechaFin)
+}
+
+// RN2 · la fecha de fin tiene que ser estrictamente posterior a la de inicio
+func TestNuevo_FechaDeFinPosteriorALaDeInicio(t *testing.T) {
+	casos := []struct {
+		inicio, fin string
+		valido      bool
+	}{
+		{"2026-10-05", "2026-10-05", false}, // mismo día
+		{"2026-10-05", "2026-10-06", true},  // un día después
+		{"2026-10-08", "2026-10-06", false}, // anterior
+	}
+	for _, c := range casos {
+		d := datosValidos(t)
+		d.FechaInicio, d.FechaFin = fecha(t, c.inicio), fecha(t, c.fin)
+
+		_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+		if c.valido && err != nil {
+			t.Errorf("%s → %s: no se esperaba error, se obtuvo %v", c.inicio, c.fin, err)
+		}
+		if !c.valido {
+			verificarErrorDeCampo(t, err, sprint.CampoFechaFin, sprint.ErrFechasInvalidas)
+		}
+	}
+}
+
+// Las fechas se guardan sin hora, como en HU-01.
+func TestNuevo_LasFechasSeTomanSinHora(t *testing.T) {
+	d := datosValidos(t)
+	d.FechaInicio = time.Date(2026, 10, 5, 10, 0, 0, 0, time.UTC)
+	d.FechaFin = time.Date(2026, 10, 11, 18, 30, 0, 0, time.UTC)
+
+	s, err := sprint.Nuevo(d, proyecto(t), nil)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if !s.FechaInicio.Equal(fecha(t, "2026-10-05")) || !s.FechaFin.Equal(fecha(t, "2026-10-11")) {
+		t.Errorf("se esperaban las fechas sin hora y se obtuvo %v → %v", s.FechaInicio, s.FechaFin)
+	}
+}
+
+// RN7 · si hay varios datos inválidos se informan todos juntos
+func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
+	d := datosValidos(t)
+	d.Objetivo = "   "
+	d.FechaInicio = time.Time{}
+
+	_, err := sprint.Nuevo(d, proyecto(t), nil)
+
+	verificarErrorDeCampo(t, err, sprint.CampoObjetivo, sprint.ErrObjetivoObligatorio)
+	verificarErrorDeCampo(t, err, sprint.CampoFechaInicio, sprint.ErrFechaInicio)
+}
