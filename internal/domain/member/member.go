@@ -97,18 +97,8 @@ func Nuevo(d Datos, proyectoID int64, existentes []Integrante) (Integrante, erro
 
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoNombre, validarNombre(nombre))
-	errs.Agregar(CampoEmail, validarEmail(email))
-	if !d.Rol.valido() {
-		errs.Agregar(CampoRol, ErrRolInvalido)
-	}
-	for _, e := range existentes {
-		if _, conError := errs[CampoEmail]; !conError && strings.EqualFold(e.Email, email) { // RN4
-			errs.Agregar(CampoEmail, ErrEmailRepetido)
-		}
-		if d.Rol == RolAgileEnabler && e.Rol == RolAgileEnabler && e.Activo { // RN6
-			errs.Agregar(CampoRol, ErrAgileEnablerRepetido)
-		}
-	}
+	errs.Agregar(CampoEmail, validarEmail(email, existentes))
+	errs.Agregar(CampoRol, validarRol(d.Rol, existentes))
 	if len(errs) > 0 {
 		return Integrante{}, errs
 	}
@@ -146,9 +136,23 @@ func validarNombre(nombre string) error {
 	return nil
 }
 
-// validarEmail controla el formato (RN3): una sola dirección, sin nombre delante, con usuario y con un
-// dominio que tenga al menos un punto y no empiece ni termine con punto.
-func validarEmail(email string) error {
+// validarEmail devuelve el primer error del email: falta, tiene formato inválido (RN3) o ya lo usa otro
+// integrante del proyecto, aunque esté dado de baja (RN4).
+func validarEmail(email string, existentes []Integrante) error {
+	if err := validarFormatoEmail(email); err != nil {
+		return err
+	}
+	for _, e := range existentes {
+		if strings.EqualFold(e.Email, email) {
+			return ErrEmailRepetido
+		}
+	}
+	return nil
+}
+
+// validarFormatoEmail controla el formato (RN3): una sola dirección, sin nombre delante, con usuario y con
+// un dominio que tenga al menos un punto y no empiece ni termine con punto.
+func validarFormatoEmail(email string) error {
 	if email == "" {
 		return ErrEmailObligatorio
 	}
@@ -162,6 +166,23 @@ func validarEmail(email string) error {
 	_, dominio, _ := strings.Cut(email, "@")
 	if !strings.Contains(dominio, ".") || strings.HasPrefix(dominio, ".") || strings.HasSuffix(dominio, ".") {
 		return ErrEmailInvalido
+	}
+	return nil
+}
+
+// validarRol devuelve ErrRolInvalido si el rol no existe (RN5) o ErrAgileEnablerRepetido si ya hay un
+// Agile Enabler activo en el proyecto (RN6).
+func validarRol(rol Rol, existentes []Integrante) error {
+	if !rol.valido() {
+		return ErrRolInvalido
+	}
+	if rol != RolAgileEnabler {
+		return nil
+	}
+	for _, e := range existentes {
+		if e.Rol == RolAgileEnabler && e.Activo {
+			return ErrAgileEnablerRepetido
+		}
 	}
 	return nil
 }
