@@ -46,6 +46,9 @@ var (
 	ErrFechasInvalidas   = errors.New("la fecha de finalización debe ser posterior a la de inicio")
 )
 
+// ErrNoEncontrado lo devuelven los repositorios cuando no hay un proyecto con ese ID.
+var ErrNoEncontrado = errors.New("no existe el proyecto")
+
 // Datos son los campos que carga el usuario para crear un proyecto.
 type Datos struct {
 	Nombre      string
