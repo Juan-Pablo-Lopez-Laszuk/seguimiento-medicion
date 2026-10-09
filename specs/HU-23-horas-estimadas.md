@@ -1,6 +1,6 @@
 # SPEC-23 · Registrar horas estimadas
 
-**Historia:** HU-23 (#1) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-23 (#1) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Implementada (regla; guardar y pantalla esperan a HU-05)
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, la métrica M4 de `docs/metricas.md` y las columnas `historias.horas_estimadas` y `tareas.horas_estimadas` de `docs/modelo-datos.md`.
 
