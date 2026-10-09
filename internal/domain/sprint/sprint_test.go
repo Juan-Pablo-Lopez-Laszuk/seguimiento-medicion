@@ -292,3 +292,41 @@ func TestNuevo_Superpuesto_ElMensajeDiceCuandoTerminaElUltimo(t *testing.T) {
 		t.Errorf("se esperaba %q y se obtuvo %v", esperado, err)
 	}
 }
+
+// CA-11.3 · RN5: el número es el más alto del proyecto más uno
+func TestNuevo_ElNumeroSigueAlMasAlto(t *testing.T) {
+	existentes := []sprint.Sprint{
+		sprintExistente(t, 1, "2026-10-05", "2026-10-11"),
+		sprintExistente(t, 2, "2026-10-12", "2026-10-18"),
+	}
+	d := datosValidos(t)
+	d.FechaInicio, d.FechaFin = fecha(t, "2026-10-19"), fecha(t, "2026-10-25")
+
+	s, err := sprint.Nuevo(d, proyecto(t), existentes)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if s.Numero != 3 {
+		t.Errorf("número: se esperaba 3 y se obtuvo %d", s.Numero)
+	}
+}
+
+// RN5 · si falta un número en el medio (por ejemplo, se borró un sprint) no se reutiliza
+func TestNuevo_NoReutilizaNumerosQueFaltan(t *testing.T) {
+	existentes := []sprint.Sprint{
+		sprintExistente(t, 1, "2026-10-05", "2026-10-11"),
+		sprintExistente(t, 3, "2026-10-12", "2026-10-18"),
+	}
+	d := datosValidos(t)
+	d.FechaInicio, d.FechaFin = fecha(t, "2026-10-19"), fecha(t, "2026-10-25")
+
+	s, err := sprint.Nuevo(d, proyecto(t), existentes)
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if s.Numero != 4 {
+		t.Errorf("número: se esperaba 4 y se obtuvo %d", s.Numero)
+	}
+}
