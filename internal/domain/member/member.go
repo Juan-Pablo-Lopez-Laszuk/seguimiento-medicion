@@ -65,6 +65,13 @@ var (
 	ErrAgileEnablerRepetido = errors.New("el proyecto ya tiene un Agile Enabler activo")
 )
 
+// Errores que no son de un campo del formulario.
+var (
+	ErrYaDadoDeBaja = errors.New("el integrante ya está dado de baja")
+	// ErrNoEncontrado lo devuelven los repositorios cuando no hay un integrante con ese ID en el proyecto.
+	ErrNoEncontrado = errors.New("no existe el integrante")
+)
+
 // Datos son los campos que carga el usuario para registrar un integrante.
 type Datos struct {
 	Nombre string
@@ -112,6 +119,16 @@ func Nuevo(d Datos, proyectoID int64, existentes []Integrante) (Integrante, erro
 		Rol:        d.Rol,
 		Activo:     true,
 	}, nil
+}
+
+// DarDeBaja devuelve el integrante inactivo (RN7: nunca se borra). Si ya estaba dado de baja,
+// devuelve ErrYaDadoDeBaja (RN8).
+func (i Integrante) DarDeBaja() (Integrante, error) {
+	if !i.Activo {
+		return i, ErrYaDadoDeBaja
+	}
+	i.Activo = false
+	return i, nil
 }
 
 // NormalizarEmail quita los espacios de alrededor y pasa el email a minúsculas (RN2).
