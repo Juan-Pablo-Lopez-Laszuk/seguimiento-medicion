@@ -22,6 +22,24 @@ const (
 	RolProductBuilder Rol = "ProductBuilder"
 )
 
+// Roles es la lista de roles válidos, en el orden en que se ofrecen en el formulario.
+var Roles = []Rol{RolAgileEnabler, RolProductBuilder}
+
+// Texto devuelve el rol como se muestra en pantalla ("Agile Enabler").
+func (r Rol) Texto() string {
+	switch r {
+	case RolAgileEnabler:
+		return "Agile Enabler"
+	case RolProductBuilder:
+		return "Product Builder"
+	}
+	return string(r)
+}
+
+func (r Rol) valido() bool {
+	return r == RolAgileEnabler || r == RolProductBuilder
+}
+
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (
 	CampoNombre = "nombre"
@@ -41,6 +59,7 @@ var (
 	ErrNombreLargo       = errors.New("el nombre no puede superar los 100 caracteres")
 	ErrEmailObligatorio  = errors.New("el email es obligatorio")
 	ErrEmailInvalido     = errors.New("el email no tiene un formato válido")
+	ErrRolInvalido       = errors.New("el rol tiene que ser Agile Enabler o Product Builder")
 )
 
 // Datos son los campos que carga el usuario para registrar un integrante.
@@ -69,6 +88,9 @@ func Nuevo(d Datos, proyectoID int64, _ []Integrante) (Integrante, error) {
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoNombre, validarNombre(nombre))
 	errs.Agregar(CampoEmail, validarEmail(email))
+	if !d.Rol.valido() {
+		errs.Agregar(CampoRol, ErrRolInvalido)
+	}
 	if len(errs) > 0 {
 		return Integrante{}, errs
 	}
