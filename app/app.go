@@ -37,19 +37,21 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			service.RepositorioProyectos
 			service.BuscadorProyectos
 		}
-		sprints service.RepositorioSprints
+		sprints     service.RepositorioSprints
+		integrantes service.RepositorioIntegrantes
 	)
 	if url == "" {
-		proyectos, sprints = memory.NuevoProyectos(), memory.NuevoSprints()
+		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
 			return nil, err
 		}
-		proyectos, sprints = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool)
+		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), memory.NuevoIntegrantes() // pasa a Postgres en el próximo commit
 	}
 	return server.NewRouter(server.Dependencias{
-		Proyectos: service.NuevoProyectos(proyectos, time.Now),
-		Sprints:   service.NuevoSprints(proyectos, sprints),
+		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
+		Sprints:     service.NuevoSprints(proyectos, sprints),
+		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
 	}), nil
 }
