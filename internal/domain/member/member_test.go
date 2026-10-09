@@ -110,3 +110,52 @@ func TestNuevo_FormatoDelEmail(t *testing.T) {
 		}
 	}
 }
+
+// CA-03.2 · RN5: el rol es Agile Enabler o Product Builder
+func TestNuevo_Rol(t *testing.T) {
+	casos := map[member.Rol]bool{
+		member.RolAgileEnabler:   true,
+		member.RolProductBuilder: true,
+		"":                       false,
+		"ScrumMaster":            false,
+		"agileenabler":           false, // los valores son exactos, como en la base
+	}
+	for rol, valido := range casos {
+		d := datosValidos()
+		d.Rol = rol
+
+		_, err := member.Nuevo(d, proyectoID, nil)
+
+		if valido && err != nil {
+			t.Errorf("rol %q: no se esperaba error, se obtuvo %v", rol, err)
+		}
+		if !valido {
+			verificarErrorDeCampo(t, err, member.CampoRol, member.ErrRolInvalido)
+		}
+	}
+}
+
+// En pantalla el rol se muestra con espacio: "Agile Enabler".
+func TestRol_Texto(t *testing.T) {
+	casos := map[member.Rol]string{
+		member.RolAgileEnabler:   "Agile Enabler",
+		member.RolProductBuilder: "Product Builder",
+		"Otro":                   "Otro",
+	}
+	for rol, esperado := range casos {
+		if got := rol.Texto(); got != esperado {
+			t.Errorf("%q.Texto(): se esperaba %q y se obtuvo %q", rol, esperado, got)
+		}
+	}
+}
+
+// RN9 · si hay varios datos inválidos se informan todos juntos
+func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
+	d := member.Datos{Nombre: "   ", Email: "ana@mail", Rol: "ScrumMaster"}
+
+	_, err := member.Nuevo(d, proyectoID, nil)
+
+	verificarErrorDeCampo(t, err, member.CampoNombre, member.ErrNombreObligatorio)
+	verificarErrorDeCampo(t, err, member.CampoEmail, member.ErrEmailInvalido)
+	verificarErrorDeCampo(t, err, member.CampoRol, member.ErrRolInvalido)
+}
