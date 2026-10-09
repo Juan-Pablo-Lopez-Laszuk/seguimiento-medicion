@@ -41,6 +41,8 @@ var (
 	ErrFechasInvalidas = project.ErrFechasInvalidas
 	// ErrFueraDelProyecto se informa con el rango del proyecto: "... (del 05/10/2026 al 01/11/2026)".
 	ErrFueraDelProyecto = errors.New("la fecha tiene que estar dentro del proyecto")
+	// ErrSuperpuesto se informa con el último sprint: "... (el Sprint 1 termina el 11/10/2026)".
+	ErrSuperpuesto = errors.New("el sprint tiene que empezar después del último")
 )
 
 // formatoFecha es como se muestran las fechas en los mensajes: 05/10/2026.
@@ -66,7 +68,7 @@ type Sprint struct {
 
 // Nuevo valida los datos contra el proyecto y sus sprints existentes y devuelve el sprint listo para guardar.
 // Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
-func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
+func Nuevo(d Datos, p project.Proyecto, existentes []Sprint) (Sprint, error) {
 	objetivo := strings.TrimSpace(d.Objetivo)
 	inicio, fin := domain.SoloFecha(d.FechaInicio), domain.SoloFecha(d.FechaFin)
 
@@ -86,6 +88,13 @@ func Nuevo(d Datos, p project.Proyecto, _ []Sprint) (Sprint, error) {
 		if _, conError := errs[campo]; !conError && fueraDelProyecto(f, p) {
 			errs.Agregar(campo, fmt.Errorf("%w (del %s al %s)", ErrFueraDelProyecto,
 				p.FechaInicio.Format(formatoFecha), p.FechaFin.Format(formatoFecha)))
+		}
+	}
+	// RN4: los sprints se crean en orden, así no se superponen y el número sigue a las fechas.
+	if ultimo, hay := ultimoSprint(existentes); hay {
+		if _, conError := errs[CampoFechaInicio]; !conError && !inicio.After(ultimo.FechaFin) {
+			errs.Agregar(CampoFechaInicio, fmt.Errorf("%w (el Sprint %d termina el %s)", ErrSuperpuesto,
+				ultimo.Numero, ultimo.FechaFin.Format(formatoFecha)))
 		}
 	}
 	if len(errs) > 0 {
@@ -114,4 +123,14 @@ func validarObjetivo(objetivo string) error {
 // fueraDelProyecto informa si f cae antes del inicio o después del fin del proyecto (los bordes valen).
 func fueraDelProyecto(f time.Time, p project.Proyecto) bool {
 	return f.Before(domain.SoloFecha(p.FechaInicio)) || f.After(domain.SoloFecha(p.FechaFin))
+}
+
+// ultimoSprint devuelve el sprint que termina más tarde; hay es false si el proyecto todavía no tiene sprints.
+func ultimoSprint(existentes []Sprint) (ultimo Sprint, hay bool) {
+	for _, s := range existentes {
+		if !hay || s.FechaFin.After(ultimo.FechaFin) {
+			ultimo, hay = s, true
+		}
+	}
+	return ultimo, hay
 }
