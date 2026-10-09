@@ -225,3 +225,32 @@ func TestNuevo_UnSoloAgileEnablerActivo(t *testing.T) {
 		}
 	}
 }
+
+// CA-03.3 · RN7: dar de baja deja al integrante inactivo, con el resto de sus datos igual
+func TestDarDeBaja_IntegranteActivo_QuedaInactivo(t *testing.T) {
+	i := existente(1, "ana@mail.com", member.RolProductBuilder, true)
+
+	baja, err := i.DarDeBaja()
+
+	if err != nil {
+		t.Fatalf("no se esperaba error, se obtuvo: %v", err)
+	}
+	if baja.Activo {
+		t.Error("se esperaba que quede inactivo")
+	}
+	i.Activo = false
+	if baja != i {
+		t.Errorf("solo tenía que cambiar Activo: se esperaba %+v y se obtuvo %+v", i, baja)
+	}
+}
+
+// RN8 · no se da de baja dos veces
+func TestDarDeBaja_YaDadoDeBaja_DaError(t *testing.T) {
+	i := existente(1, "ana@mail.com", member.RolProductBuilder, false)
+
+	_, err := i.DarDeBaja()
+
+	if !errors.Is(err, member.ErrYaDadoDeBaja) {
+		t.Errorf("se esperaba %v y se obtuvo %v", member.ErrYaDadoDeBaja, err)
+	}
+}
