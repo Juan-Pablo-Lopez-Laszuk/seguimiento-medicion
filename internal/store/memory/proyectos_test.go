@@ -2,6 +2,7 @@ package memory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
@@ -51,5 +52,25 @@ func TestProyectos_ExisteNombreSinDistinguirMayusculas(t *testing.T) {
 		if existe != esperado {
 			t.Errorf("ExisteNombre(%q): se esperaba %v y se obtuvo %v", nombre, esperado, existe)
 		}
+	}
+}
+
+// HU-11 · para crear un sprint hay que buscar su proyecto
+func TestProyectos_BuscarPorID(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoProyectos()
+	guardado, _ := repo.Guardar(ctx, project.Proyecto{Nombre: "Software Metrics"})
+
+	p, err := repo.BuscarPorID(ctx, guardado.ID)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if p.Nombre != "Software Metrics" {
+		t.Errorf("se esperaba el proyecto %q y se obtuvo %+v", "Software Metrics", p)
+	}
+
+	_, err = repo.BuscarPorID(ctx, 99)
+	if !errors.Is(err, project.ErrNoEncontrado) {
+		t.Errorf("id inexistente: se esperaba project.ErrNoEncontrado y se obtuvo %v", err)
 	}
 }

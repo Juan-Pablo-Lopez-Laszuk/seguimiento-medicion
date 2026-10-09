@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
@@ -36,9 +37,9 @@ func cantidadDeProyectos(t *testing.T, repo *memory.Proyectos) int {
 
 func errorDeCampo(t *testing.T, err error, campo string) error {
 	t.Helper()
-	var errs project.ErroresValidacion
+	var errs domain.ErroresValidacion
 	if !errors.As(err, &errs) {
-		t.Fatalf("se esperaba project.ErroresValidacion y se obtuvo: %v", err)
+		t.Fatalf("se esperaba domain.ErroresValidacion y se obtuvo: %v", err)
 	}
 	return errs[campo]
 }

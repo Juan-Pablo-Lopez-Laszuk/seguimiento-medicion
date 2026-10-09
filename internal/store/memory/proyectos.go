@@ -49,3 +49,15 @@ func (r *Proyectos) ExisteNombre(_ context.Context, nombre string) (bool, error)
 	}
 	return false, nil
 }
+
+// BuscarPorID devuelve el proyecto con ese ID, o project.ErrNoEncontrado si no existe.
+func (r *Proyectos) BuscarPorID(_ context.Context, id int64) (project.Proyecto, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, p := range r.lista {
+		if p.ID == id {
+			return p, nil
+		}
+	}
+	return project.Proyecto{}, project.ErrNoEncontrado
+}

@@ -6,10 +6,11 @@ package project
 
 import (
 	"errors"
-	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 )
 
 // Estado es la etapa en la que está un proyecto.
@@ -45,29 +46,8 @@ var (
 	ErrFechasInvalidas   = errors.New("la fecha de finalización debe ser posterior a la de inicio")
 )
 
-// ErroresValidacion junta los errores de todos los campos inválidos, por nombre de campo (RN7).
-type ErroresValidacion map[string]error
-
-// Error arma un texto con todos los errores, ordenados por campo: "nombre: el nombre es obligatorio".
-func (e ErroresValidacion) Error() string {
-	campos := make([]string, 0, len(e))
-	for campo := range e {
-		campos = append(campos, campo)
-	}
-	sort.Strings(campos)
-	partes := make([]string, 0, len(campos))
-	for _, campo := range campos {
-		partes = append(partes, campo+": "+e[campo].Error())
-	}
-	return strings.Join(partes, "; ")
-}
-
-// agregar registra el error del campo solo si hay error.
-func (e ErroresValidacion) agregar(campo string, err error) {
-	if err != nil {
-		e[campo] = err
-	}
-}
+// ErrNoEncontrado lo devuelven los repositorios cuando no hay un proyecto con ese ID.
+var ErrNoEncontrado = errors.New("no existe el proyecto")
 
 // Datos son los campos que carga el usuario para crear un proyecto.
 type Datos struct {
@@ -89,17 +69,17 @@ type Proyecto struct {
 }
 
 // Nuevo valida los datos y devuelve el proyecto listo para guardar. Si algún dato es inválido,
-// devuelve ErroresValidacion con todos los campos que fallaron.
+// devuelve domain.ErroresValidacion con todos los campos que fallaron.
 func Nuevo(d Datos) (Proyecto, error) {
 	nombre := NormalizarNombre(d.Nombre)
-	inicio, fin := soloFecha(d.FechaInicio), soloFecha(d.FechaFin)
+	inicio, fin := domain.SoloFecha(d.FechaInicio), domain.SoloFecha(d.FechaFin)
 
-	errs := ErroresValidacion{}
-	errs.agregar(CampoNombre, validarNombre(nombre))
-	errs.agregar(CampoDescripcion, validarDescripcion(d.Descripcion))
+	errs := domain.ErroresValidacion{} // RN7: se informan todos los campos juntos
+	errs.Agregar(CampoNombre, validarNombre(nombre))
+	errs.Agregar(CampoDescripcion, validarDescripcion(d.Descripcion))
 	errInicio, errFin := validarFechas(inicio, fin)
-	errs.agregar(CampoFechaInicio, errInicio)
-	errs.agregar(CampoFechaFin, errFin)
+	errs.Agregar(CampoFechaInicio, errInicio)
+	errs.Agregar(CampoFechaFin, errFin)
 	if len(errs) > 0 {
 		return Proyecto{}, errs
 	}
@@ -148,13 +128,4 @@ func validarFechas(inicio, fin time.Time) (errInicio, errFin error) {
 		errFin = ErrFechasInvalidas
 	}
 	return errInicio, errFin
-}
-
-// soloFecha deja el día de t a medianoche UTC, así la comparación no depende de la hora ni de la zona horaria.
-// La fecha cero (campo vacío) se mantiene en cero.
-func soloFecha(t time.Time) time.Time {
-	if t.IsZero() {
-		return t
-	}
-	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }

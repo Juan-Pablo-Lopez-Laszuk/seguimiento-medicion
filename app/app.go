@@ -19,7 +19,9 @@ import (
 // Por ahora los datos se guardan en memoria; cuando esté la base (TEC-03) se cambia el repositorio
 // por el de internal/store/postgres sin tocar nada más.
 func NewHandler() http.Handler {
+	proyectos := memory.NuevoProyectos()
 	return server.NewRouter(server.Dependencias{
-		Proyectos: service.NuevoProyectos(memory.NuevoProyectos(), time.Now),
+		Proyectos: service.NuevoProyectos(proyectos, time.Now),
+		Sprints:   service.NuevoSprints(proyectos, memory.NuevoSprints()),
 	})
 }

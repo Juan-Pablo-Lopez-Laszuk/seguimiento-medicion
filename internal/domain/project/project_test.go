@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 )
 
@@ -32,9 +33,9 @@ func datosValidos(t *testing.T) project.Datos {
 // verificarErrorDeCampo comprueba que err sea un error de validación con el error esperado en ese campo (CA-01.4).
 func verificarErrorDeCampo(t *testing.T, err error, campo string, esperado error) {
 	t.Helper()
-	var errs project.ErroresValidacion
+	var errs domain.ErroresValidacion
 	if !errors.As(err, &errs) {
-		t.Fatalf("se esperaba project.ErroresValidacion y se obtuvo: %v", err)
+		t.Fatalf("se esperaba domain.ErroresValidacion y se obtuvo: %v", err)
 	}
 	if !errors.Is(errs[campo], esperado) {
 		t.Errorf("campo %q: se esperaba %v y se obtuvo %v (todos: %v)", campo, esperado, errs[campo], errs)
@@ -210,17 +211,4 @@ func TestNuevo_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
 
 	verificarErrorDeCampo(t, err, project.CampoNombre, project.ErrNombreObligatorio)
 	verificarErrorDeCampo(t, err, project.CampoFechaInicio, project.ErrFechaInicio)
-}
-
-// El texto del error junta todos los campos, ordenados, con su mensaje.
-func TestErroresValidacion_TextoConTodosLosCamposOrdenados(t *testing.T) {
-	errs := project.ErroresValidacion{
-		project.CampoNombre:      project.ErrNombreObligatorio,
-		project.CampoFechaInicio: project.ErrFechaInicio,
-	}
-
-	esperado := "fecha_inicio: la fecha de inicio es obligatoria y debe ser válida; nombre: el nombre es obligatorio"
-	if errs.Error() != esperado {
-		t.Errorf("se esperaba %q y se obtuvo %q", esperado, errs.Error())
-	}
 }
