@@ -93,7 +93,7 @@ func (h Historia) Identificador() string {
 
 // Nueva valida los datos contra las historias que ya tiene el proyecto y devuelve la historia lista para guardar.
 // Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
-func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
+func Nueva(d Datos, proyectoID int64, existentes []Historia) (Historia, error) {
 	titulo, descripcion := strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Descripcion)
 
 	errs := domain.ErroresValidacion{}
@@ -107,13 +107,23 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 	}
 	return Historia{
 		ProyectoID:  proyectoID,
-		Numero:      1,
+		Numero:      siguienteNumero(existentes),
 		Titulo:      titulo,
 		Descripcion: descripcion,
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
 		StoryPoints: puntos,
 	}, nil
+}
+
+// siguienteNumero devuelve el número más alto de las historias del proyecto más uno (RN5). Con el más alto y no
+// con la cantidad, un número que falte no se reutiliza.
+func siguienteNumero(existentes []Historia) int {
+	mayor := 0
+	for _, h := range existentes {
+		mayor = max(mayor, h.Numero)
+	}
+	return mayor + 1
 }
 
 // parsearStoryPoints convierte el texto del formulario. Vacío es "sin estimar" (nil, RN4); si no, tiene que ser
