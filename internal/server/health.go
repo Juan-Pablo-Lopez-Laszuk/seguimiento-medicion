@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 )
 
 // VerificadorBase es lo que /health necesita de la base de datos: saber si responde. El pool de pgx lo
@@ -12,6 +13,9 @@ import (
 type VerificadorBase interface {
 	Ping(ctx context.Context) error
 }
+
+// EsperaBase es lo máximo que /health espera a la base antes de darla por caída (RN3).
+const EsperaBase = 3 * time.Second
 
 // Estados de la base que informa /health.
 const (
@@ -35,12 +39,14 @@ func health(base VerificadorBase) http.HandlerFunc {
 	}
 }
 
-// verificarBase le hace ping a la base y devuelve su estado. El error solo va al log del servidor: la
+// verificarBase le hace ping a la base, con un tiempo máximo, y devuelve su estado. El error solo va al log del servidor: la
 // respuesta no lo muestra porque puede traer el host o el usuario (RN4).
 func verificarBase(ctx context.Context, base VerificadorBase) string {
 	if base == nil {
 		return BaseMemoria
 	}
+	ctx, cancelar := context.WithTimeout(ctx, EsperaBase)
+	defer cancelar()
 	if err := base.Ping(ctx); err != nil {
 		log.Printf("health: la base de datos no responde: %v", err)
 		return BaseSinConexion
