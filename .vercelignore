@@ -8,4 +8,5 @@
 !/go.sum
 !/app
 !/internal
+!/migrations
 !/web
