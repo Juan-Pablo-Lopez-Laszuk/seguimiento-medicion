@@ -31,16 +31,21 @@ const EstadoPendiente Estado = "Pendiente"
 
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (
-	CampoTitulo = "titulo"
+	CampoTitulo      = "titulo"
+	CampoDescripcion = "descripcion"
 )
 
-// TituloMax es el largo máximo del título, en caracteres (RN1).
-const TituloMax = 120
+// Límites, en caracteres: el del título (RN1) y el de la descripción (RN2).
+const (
+	TituloMax      = 120
+	DescripcionMax = 2000
+)
 
 // Errores de validación (sección 7 de la spec).
 var (
 	ErrTituloObligatorio = errors.New("el título es obligatorio")
 	ErrTituloLargo       = errors.New("el título no puede superar los 120 caracteres")
+	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 2000 caracteres")
 )
 
 // Datos son los campos que carga el usuario para crear una historia.
@@ -71,10 +76,11 @@ func (h Historia) Identificador() string {
 // Nueva valida los datos contra las historias que ya tiene el proyecto y devuelve la historia lista para guardar.
 // Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
 func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
-	titulo := strings.TrimSpace(d.Titulo)
+	titulo, descripcion := strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Descripcion)
 
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoTitulo, validarTitulo(titulo))
+	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
 	if len(errs) > 0 {
 		return Historia{}, errs
 	}
@@ -82,10 +88,17 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 		ProyectoID:  proyectoID,
 		Numero:      1,
 		Titulo:      titulo,
-		Descripcion: strings.TrimSpace(d.Descripcion),
+		Descripcion: descripcion,
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
 	}, nil
+}
+
+func validarDescripcion(descripcion string) error {
+	if utf8.RuneCountInString(descripcion) > DescripcionMax {
+		return ErrDescripcionLarga
+	}
+	return nil
 }
 
 func validarTitulo(titulo string) error {
