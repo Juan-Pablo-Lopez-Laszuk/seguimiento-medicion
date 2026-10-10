@@ -25,7 +25,7 @@ const ayuda = `Uso: go run ./cmd/migrar <comando>
   status              muestra cuáles están aplicadas
   down --borrar-todo  deshace todas las migraciones (borra los datos)
 
-La base sale de MIGRATIONS_DATABASE_URL o, si no existe, de DATABASE_URL.`
+La base sale de MIGRATIONS_DATABASE_URL o, si no existe, de DATABASE_URL`
 
 func main() {
 	if err := run(context.Background(), os.Args[1:], os.Getenv, os.Stdout); err != nil {
@@ -66,24 +66,34 @@ func run(ctx context.Context, args []string, getenv func(string) string, out io.
 		if err := postgres.Subir(ctx, pool); err != nil {
 			return err
 		}
-		fmt.Fprintln(out, "migraciones aplicadas")
+		return escribir(out, "migraciones aplicadas\n")
 	case "down":
 		if err := postgres.Bajar(ctx, pool); err != nil {
 			return err
 		}
-		fmt.Fprintln(out, "migraciones deshechas")
-	case "status":
+		return escribir(out, "migraciones deshechas\n")
+	default: // status
 		estado, err := postgres.Estado(ctx, pool)
 		if err != nil {
 			return err
 		}
 		for _, m := range estado {
+			linea := fmt.Sprintf("pendiente  %17s  %s\n", "", m.Source.Path)
 			if m.State == goose.StateApplied {
-				fmt.Fprintf(out, "aplicada   %s  %s\n", m.AppliedAt.Format("2006-01-02 15:04"), m.Source.Path)
-			} else {
-				fmt.Fprintf(out, "pendiente  %17s  %s\n", "", m.Source.Path)
+				linea = fmt.Sprintf("aplicada   %s  %s\n", m.AppliedAt.Format("2006-01-02 15:04"), m.Source.Path)
+			}
+			if err := escribir(out, linea); err != nil {
+				return err
 			}
 		}
+		return nil
+	}
+}
+
+// escribir manda el texto a la salida y devuelve el error si no se pudo escribir.
+func escribir(out io.Writer, texto string) error {
+	if _, err := io.WriteString(out, texto); err != nil {
+		return fmt.Errorf("escribir la salida: %w", err)
 	}
 	return nil
 }
