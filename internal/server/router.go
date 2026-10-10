@@ -16,12 +16,14 @@ type Dependencias struct {
 	Proyectos   *service.Proyectos
 	Sprints     *service.Sprints
 	Integrantes *service.Integrantes
+	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
+	Base VerificadorBase
 }
 
 // NewRouter arma el router con todas las rutas de la aplicación.
 func NewRouter(dep Dependencias) http.Handler {
 	r := chi.NewRouter()
-	r.Get("/health", health)
+	r.Get("/health", health(dep.Base))
 	r.Get("/", inicio)
 
 	p := proyectos{casos: dep.Proyectos}
