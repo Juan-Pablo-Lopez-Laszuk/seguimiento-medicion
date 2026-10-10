@@ -3,8 +3,10 @@ package server_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,5 +71,29 @@ func TestHealth_ConBaseQueRespondeInformaOK(t *testing.T) {
 	}
 	if cuerpo["status"] != "ok" || cuerpo["base"] != "ok" {
 		t.Errorf("respuesta = %v, se esperaba status ok y base ok", cuerpo)
+	}
+}
+
+// RN2: si la base no responde, la app está viva pero no puede guardar: 503.
+func TestHealth_ConBaseCaidaResponde503(t *testing.T) {
+	codigo, cuerpo := pedirSalud(t, baseFalsa{err: errors.New("la base no responde")})
+
+	if codigo != http.StatusServiceUnavailable {
+		t.Errorf("código = %d, se esperaba %d", codigo, http.StatusServiceUnavailable)
+	}
+	if cuerpo["status"] != "error" || cuerpo["base"] != "sin conexión" {
+		t.Errorf("respuesta = %v, se esperaba status error y base sin conexión", cuerpo)
+	}
+}
+
+// RN4: el error de la base puede traer el host o el usuario; no se muestra en la respuesta.
+func TestHealth_NoMuestraElErrorDeLaBase(t *testing.T) {
+	err := errors.New(`failed to connect to host=db.ejemplo.supabase.co user=postgres: password authentication failed`)
+	_, cuerpo := pedirSalud(t, baseFalsa{err: err})
+
+	for campo, valor := range cuerpo {
+		if strings.Contains(valor, "supabase") || strings.Contains(valor, "postgres") {
+			t.Errorf("el campo %q muestra datos de la conexión: %q", campo, valor)
+		}
 	}
 }
