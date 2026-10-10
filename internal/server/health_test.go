@@ -97,3 +97,22 @@ func TestHealth_NoMuestraElErrorDeLaBase(t *testing.T) {
 		}
 	}
 }
+
+// RN3: /health espera a la base como máximo 3 segundos; si tarda más, cuenta como sin conexión.
+func TestHealth_EsperaALaBaseComoMaximo3Segundos(t *testing.T) {
+	casos := []struct {
+		demora time.Duration
+		codigo int
+		base   string
+	}{
+		{2 * time.Second, http.StatusOK, "ok"},
+		{4 * time.Second, http.StatusServiceUnavailable, "sin conexión"},
+	}
+	for _, c := range casos {
+		codigo, cuerpo := pedirSalud(t, baseFalsa{demora: c.demora})
+		if codigo != c.codigo || cuerpo["base"] != c.base {
+			t.Errorf("base que tarda %v: código %d y base %q, se esperaba %d y %q",
+				c.demora, codigo, cuerpo["base"], c.codigo, c.base)
+		}
+	}
+}
