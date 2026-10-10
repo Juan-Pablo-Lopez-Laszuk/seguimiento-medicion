@@ -289,3 +289,43 @@ func TestEscalaStoryPoints_EsLaAcordada(t *testing.T) {
 		}
 	}
 }
+
+// CA-05.1 · el número sigue al más alto del proyecto
+func TestNueva_ElNumeroSigueAlMasAlto(t *testing.T) {
+	existentes := []backlog.Historia{{ID: 1, ProyectoID: 7, Numero: 1}, {ID: 2, ProyectoID: 7, Numero: 2}}
+
+	h, err := backlog.Nueva(datosValidos(), 7, existentes)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if h.Numero != 3 || h.Identificador() != "HU-3" {
+		t.Errorf("se esperaba la HU-3 y se obtuvo %s", h.Identificador())
+	}
+}
+
+// RN5 · un número nunca se reutiliza: se toma el más alto, no la cantidad de historias
+func TestNueva_NoReutilizaNumerosQueFaltan(t *testing.T) {
+	existentes := []backlog.Historia{{Numero: 5}, {Numero: 1}}
+
+	h, err := backlog.Nueva(datosValidos(), 7, existentes)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if h.Numero != 6 {
+		t.Errorf("número = %d, se esperaba 6", h.Numero)
+	}
+}
+
+// RN7 · si hay varios datos inválidos se informan todos juntos, y los campos válidos no tienen error
+func TestNueva_InformaTodosLosCamposInvalidosJuntos(t *testing.T) {
+	d := backlog.Datos{Titulo: "   ", Descripcion: "Está bien", Prioridad: "Urgente", StoryPoints: "4"}
+
+	_, err := backlog.Nueva(d, 7, nil)
+
+	verificarErrorDeCampo(t, err, backlog.CampoTitulo, backlog.ErrTituloObligatorio)
+	verificarErrorDeCampo(t, err, backlog.CampoPrioridad, backlog.ErrPrioridadInvalida)
+	verificarErrorDeCampo(t, err, backlog.CampoStoryPoints, backlog.ErrStoryPointsInvalidos)
+	verificarSinErrorEnElCampo(t, err, backlog.CampoDescripcion)
+}
