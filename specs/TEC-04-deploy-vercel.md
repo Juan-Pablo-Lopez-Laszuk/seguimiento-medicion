@@ -1,6 +1,6 @@
 # SPEC-TEC-04 · Deploy en Vercel con chequeo de la base
 
-**Tarea:** TEC-04 (#15) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Borrador
+**Tarea:** TEC-04 (#15) · **Responsable:** Bravo, Carolina · **Sprint:** 1 · **Estado:** Implementada (falta que Juan Pablo cargue `DATABASE_URL` en Vercel)
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. Depende de TEC-03 (#67, PR #91):
 > la conexión a PostgreSQL (`postgres.Conectar`) y la variable `DATABASE_URL`.
@@ -76,5 +76,14 @@ Issue: #15 · Feature: `features/tec-04-health.feature` · Pasos BDD: `features/
 
 | Capa | Código | Tests |
 |---|---|---|
-| Pantalla / HTTP | `internal/server/health.go` | `internal/server/health_test.go` |
-| Armado de la app | `app/app.go` | `app/app_test.go` |
+| HTTP | `internal/server/health.go` (`health`, `verificarBase`, `estadoGeneral`, `VerificadorBase`) | `internal/server/health_test.go` |
+| Armado de la app | `app/app.go` (`NewHandlerConBase` pasa el pool como `Base`) | `app/app_test.go` |
+| Documentación | `docs/deploy.md` (cómo se publica, variables y cómo leer `/health`) | — |
+
+| Criterio / regla | Escenarios BDD | Tests |
+|---|---|---|
+| CA-04.3 y RN2 (ping, 503) | La base de datos responde · La base de datos no responde | `TestHealth_ConBaseQueRespondeInformaOK`, `TestHealth_ConBaseCaidaResponde503`, `TestNewHandlerConBase_ConBaseHealthInformaOK`, `TestNewHandlerConBase_ConBaseInalcanzableHealthResponde503` |
+| RN1 (memoria) | La app corre sin base de datos | `TestHealth_SinBaseInformaMemoria`, `TestNewHandlerConBase_SinURLHealthInformaMemoria` |
+| RN3 (3 segundos) | La base de datos tarda en responder (2 y 4 s) | `TestHealth_EsperaALaBaseComoMaximo3Segundos` |
+| RN4 (no mostrar el error) | — | `TestHealth_NoMuestraElErrorDeLaBase` |
+| CA-04.1 y CA-04.2 | — | Se comprueban en Vercel con `/health` (`docs/deploy.md`) |
