@@ -145,3 +145,43 @@ func TestHistorias_NoSeGuardaUnaHistoriaDeUnProyectoQueNoExiste(t *testing.T) {
 		t.Error("se esperaba un error por el proyecto inexistente y se guardó")
 	}
 }
+
+// docs/modelo-datos.md pide una sola constante de la escala en Go y un test que compruebe que coincide con el
+// CHECK de la migración: la base acepta exactamente los valores de la escala, ni uno más ni uno menos.
+func TestHistorias_LaEscalaDelCodigoCoincideConElCheckDeLaMigracion(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	enLaEscala := map[int]bool{}
+	for _, v := range backlog.EscalaStoryPoints {
+		enLaEscala[v] = true
+	}
+
+	for puntos := -2; puntos <= 25; puntos++ {
+		_, err := pool.Exec(ctx,
+			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad, story_points) VALUES ($1, $2, 'x', 'Alta', $3)`,
+			proyectoA, puntos+100, puntos)
+
+		if aceptada := err == nil; aceptada != enLaEscala[puntos] {
+			t.Errorf("story points %d: la escala del código dice que vale=%v y la base lo aceptó=%v", puntos, enLaEscala[puntos], aceptada)
+		}
+	}
+}
+
+// Lo mismo para las prioridades: la base acepta las del código y rechaza cualquier otra.
+func TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+
+	for i, p := range backlog.Prioridades {
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad) VALUES ($1, $2, 'x', $3)`, proyectoA, i+1, string(p)); err != nil {
+			t.Errorf("la base rechazó la prioridad %q del código: %v", p, err)
+		}
+	}
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO historias (proyecto_id, numero, titulo, prioridad) VALUES ($1, 99, 'x', 'Urgente')`, proyectoA); err == nil {
+		t.Error("la base aceptó una prioridad que no está en el código")
+	}
+}
