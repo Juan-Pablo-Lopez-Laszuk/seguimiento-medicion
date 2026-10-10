@@ -29,18 +29,15 @@ const (
 func health(base VerificadorBase) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		estadoBase := verificarBase(r.Context(), base)
-		status, codigo := "ok", http.StatusOK
-		if estadoBase == BaseSinConexion {
-			status, codigo = "error", http.StatusServiceUnavailable
-		}
+		status, codigo := estadoGeneral(estadoBase)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(codigo)
 		_ = json.NewEncoder(w).Encode(map[string]string{"status": status, "base": estadoBase})
 	}
 }
 
-// verificarBase le hace ping a la base, con un tiempo máximo, y devuelve su estado. El error solo va al log del servidor: la
-// respuesta no lo muestra porque puede traer el host o el usuario (RN4).
+// verificarBase le hace ping a la base, con un tiempo máximo (RN3), y devuelve su estado. El error solo va al
+// log del servidor: la respuesta no lo muestra porque puede traer el host o el usuario (RN4).
 func verificarBase(ctx context.Context, base VerificadorBase) string {
 	if base == nil {
 		return BaseMemoria
@@ -52,4 +49,13 @@ func verificarBase(ctx context.Context, base VerificadorBase) string {
 		return BaseSinConexion
 	}
 	return BaseOK
+}
+
+// estadoGeneral traduce el estado de la base al estado de la app: sin conexión la app está viva pero no puede
+// guardar, por eso responde 503 (RN2). En memoria o con la base ok, responde 200 (RN1).
+func estadoGeneral(estadoBase string) (status string, codigo int) {
+	if estadoBase == BaseSinConexion {
+		return "error", http.StatusServiceUnavailable
+	}
+	return "ok", http.StatusOK
 }
