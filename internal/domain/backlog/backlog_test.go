@@ -2,6 +2,7 @@ package backlog_test
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -211,6 +212,80 @@ func TestPrioridades_EnElOrdenDelFormulario(t *testing.T) {
 	for i, p := range esperadas {
 		if backlog.Prioridades[i] != p {
 			t.Errorf("Prioridades[%d] = %q, se esperaba %q", i, backlog.Prioridades[i], p)
+		}
+	}
+}
+
+// CA-05.3 y RN4 · los story points son opcionales: vacío es "sin estimar", que no es lo mismo que 0
+func TestNueva_StoryPointsVacios_QuedaSinEstimar(t *testing.T) {
+	for _, texto := range []string{"", "   "} {
+		d := datosValidos()
+		d.StoryPoints = texto
+
+		h, err := backlog.Nueva(d, 7, nil)
+		if err != nil {
+			t.Fatalf("story points %q: no se esperaba error: %v", texto, err)
+		}
+
+		if h.StoryPoints != nil {
+			t.Errorf("story points %q: tendría que quedar sin estimar y quedó en %d", texto, *h.StoryPoints)
+		}
+	}
+}
+
+// RN4 · todos los valores de la escala valen, incluidos los extremos 0 y 21
+func TestNueva_StoryPointsDeLaEscala(t *testing.T) {
+	for _, puntos := range []int{0, 1, 2, 3, 5, 8, 13, 21} {
+		d := datosValidos()
+		d.StoryPoints = strconv.Itoa(puntos)
+
+		h, err := backlog.Nueva(d, 7, nil)
+		if err != nil {
+			t.Fatalf("story points %d: no se esperaba error: %v", puntos, err)
+		}
+
+		if h.StoryPoints == nil || *h.StoryPoints != puntos {
+			t.Errorf("story points %d: se guardó %v", puntos, h.StoryPoints)
+		}
+	}
+}
+
+// RN4 · los espacios alrededor del número no importan
+func TestNueva_StoryPointsConEspaciosAlrededor(t *testing.T) {
+	d := datosValidos()
+	d.StoryPoints = " 8 "
+
+	h, err := backlog.Nueva(d, 7, nil)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if h.StoryPoints == nil || *h.StoryPoints != 8 {
+		t.Errorf("se esperaban 8 story points y se guardó %v", h.StoryPoints)
+	}
+}
+
+// RN4 · fuera de la escala, o algo que no es un número entero, es un error
+func TestNueva_StoryPointsInvalidos(t *testing.T) {
+	for _, texto := range []string{"4", "22", "-1", "3,5", "3.5", "abc", "5 puntos", "99999999999999999999"} {
+		d := datosValidos()
+		d.StoryPoints = texto
+
+		_, err := backlog.Nueva(d, 7, nil)
+
+		verificarErrorDeCampo(t, err, backlog.CampoStoryPoints, backlog.ErrStoryPointsInvalidos)
+	}
+}
+
+// El formulario ofrece la escala de menor a mayor
+func TestEscalaStoryPoints_EsLaAcordada(t *testing.T) {
+	esperada := []int{0, 1, 2, 3, 5, 8, 13, 21}
+	if len(backlog.EscalaStoryPoints) != len(esperada) {
+		t.Fatalf("EscalaStoryPoints = %v, se esperaba %v", backlog.EscalaStoryPoints, esperada)
+	}
+	for i, v := range esperada {
+		if backlog.EscalaStoryPoints[i] != v {
+			t.Errorf("EscalaStoryPoints[%d] = %d, se esperaba %d", i, backlog.EscalaStoryPoints[i], v)
 		}
 	}
 }
