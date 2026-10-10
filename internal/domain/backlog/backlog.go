@@ -23,6 +23,13 @@ const (
 	PrioridadBaja  Prioridad = "Baja"
 )
 
+// Prioridades es la lista de prioridades válidas, en el orden en que se ofrecen en el formulario.
+var Prioridades = []Prioridad{PrioridadAlta, PrioridadMedia, PrioridadBaja}
+
+func (p Prioridad) valida() bool {
+	return p == PrioridadAlta || p == PrioridadMedia || p == PrioridadBaja
+}
+
 // Estado es la etapa en la que está una historia.
 type Estado string
 
@@ -33,6 +40,7 @@ const EstadoPendiente Estado = "Pendiente"
 const (
 	CampoTitulo      = "titulo"
 	CampoDescripcion = "descripcion"
+	CampoPrioridad   = "prioridad"
 )
 
 // Límites, en caracteres: el del título (RN1) y el de la descripción (RN2).
@@ -46,6 +54,7 @@ var (
 	ErrTituloObligatorio = errors.New("el título es obligatorio")
 	ErrTituloLargo       = errors.New("el título no puede superar los 120 caracteres")
 	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 2000 caracteres")
+	ErrPrioridadInvalida = errors.New("la prioridad tiene que ser Alta, Media o Baja")
 )
 
 // Datos son los campos que carga el usuario para crear una historia.
@@ -81,6 +90,7 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoTitulo, validarTitulo(titulo))
 	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
+	errs.Agregar(CampoPrioridad, validarPrioridad(d.Prioridad))
 	if len(errs) > 0 {
 		return Historia{}, errs
 	}
@@ -92,6 +102,13 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
 	}, nil
+}
+
+func validarPrioridad(p Prioridad) error {
+	if !p.valida() {
+		return ErrPrioridadInvalida
+	}
+	return nil
 }
 
 func validarDescripcion(descripcion string) error {
