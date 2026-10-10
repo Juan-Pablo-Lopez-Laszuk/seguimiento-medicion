@@ -7,6 +7,8 @@ package backlog
 import (
 	"errors"
 	"fmt"
+	"slices"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -41,7 +43,12 @@ const (
 	CampoTitulo      = "titulo"
 	CampoDescripcion = "descripcion"
 	CampoPrioridad   = "prioridad"
+	CampoStoryPoints = "story_points"
 )
+
+// EscalaStoryPoints es la escala acordada (Fibonacci) de story points, de menor a mayor. La misma que valida la
+// base (historias_story_points_ck) y que usa HU-16 para estimar.
+var EscalaStoryPoints = []int{0, 1, 2, 3, 5, 8, 13, 21}
 
 // Límites, en caracteres: el del título (RN1) y el de la descripción (RN2).
 const (
@@ -55,6 +62,8 @@ var (
 	ErrTituloLargo       = errors.New("el título no puede superar los 120 caracteres")
 	ErrDescripcionLarga  = errors.New("la descripción no puede superar los 2000 caracteres")
 	ErrPrioridadInvalida = errors.New("la prioridad tiene que ser Alta, Media o Baja")
+	// ErrStoryPointsInvalidos cubre un valor fuera de la escala y un texto que no es un número entero.
+	ErrStoryPointsInvalidos = errors.New("los story points tienen que ser 0, 1, 2, 3, 5, 8, 13 o 21")
 )
 
 // Datos son los campos que carga el usuario para crear una historia.
@@ -91,6 +100,8 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 	errs.Agregar(CampoTitulo, validarTitulo(titulo))
 	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
 	errs.Agregar(CampoPrioridad, validarPrioridad(d.Prioridad))
+	puntos, errPuntos := parsearStoryPoints(d.StoryPoints)
+	errs.Agregar(CampoStoryPoints, errPuntos)
 	if len(errs) > 0 {
 		return Historia{}, errs
 	}
@@ -101,7 +112,23 @@ func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
 		Descripcion: descripcion,
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
+		StoryPoints: puntos,
 	}, nil
+}
+
+// parsearStoryPoints convierte el texto del formulario. Vacío es "sin estimar" (nil, RN4); si no, tiene que ser
+// un número entero de la escala.
+func parsearStoryPoints(texto string) (*int, error) {
+	texto = strings.TrimSpace(texto)
+	if texto == "" {
+		return nil, nil
+	}
+	n, err := strconv.Atoi(texto)
+	// Atoi acepta un signo adelante ("+5"); acá solo valen dígitos.
+	if err != nil || texto[0] < '0' || texto[0] > '9' || !slices.Contains(EscalaStoryPoints, n) {
+		return nil, ErrStoryPointsInvalidos
+	}
+	return &n, nil
 }
 
 func validarPrioridad(p Prioridad) error {
