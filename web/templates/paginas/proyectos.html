@@ -31,6 +31,7 @@
         <td>{{.FechaFin.Format "02/01/2006"}}</td>
         <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
         <td class="text-end text-nowrap">
+          <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/backlog">Backlog</a>
           <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/integrantes">Integrantes</a>
           <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/sprints">Sprints</a>
         </td>

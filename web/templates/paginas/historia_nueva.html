@@ -1,0 +1,72 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog">{{with .Proyecto.Nombre}}{{.}}{{else}}Proyecto{{end}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Nueva historia</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-3">Nueva historia</h1>
+
+    {{with .ErrorGeneral}}
+    <div class="alert alert-danger" role="alert">{{.}}</div>
+    {{end}}
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.Proyecto.ID}}/backlog" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="titulo">Título</label>
+        <input class="form-control{{if index .Errores "titulo"}} is-invalid{{end}}" id="titulo" name="titulo"
+               value="{{.Titulo}}" maxlength="120" required autofocus>
+        {{with index .Errores "titulo"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">Hasta 120 caracteres.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="descripcion">Descripción <span class="text-body-secondary">(opcional)</span></label>
+        <textarea class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion"
+                  name="descripcion" rows="4" maxlength="2000">{{.Descripcion}}</textarea>
+        {{with index .Errores "descripcion"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">Hasta 2000 caracteres.</div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="prioridad">Prioridad</label>
+          <select class="form-select{{if index .Errores "prioridad"}} is-invalid{{end}}" id="prioridad" name="prioridad" required>
+            <option value="">Elegí una prioridad</option>
+            {{$elegida := .Prioridad}}
+            {{range .Prioridades}}
+            <option value="{{.}}"{{if eq . $elegida}} selected{{end}}>{{.}}</option>
+            {{end}}
+          </select>
+          {{with index .Errores "prioridad"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        </div>
+
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="story_points">Story points <span class="text-body-secondary">(opcional)</span></label>
+          <select class="form-select{{if index .Errores "story_points"}} is-invalid{{end}}" id="story_points" name="story_points">
+            <option value="">Sin estimar</option>
+            {{$puntos := .StoryPoints}}
+            {{range .Escala}}
+            <option value="{{.}}"{{if eq (printf "%d" .) $puntos}} selected{{end}}>{{.}}</option>
+            {{end}}
+          </select>
+          {{with index .Errores "story_points"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+          <div class="form-text">Escala de Fibonacci. Se puede estimar más adelante.</div>
+        </div>
+      </div>
+
+      <p class="form-text mt-0">El identificador (HU-1, HU-2...) lo asigna el sistema y la historia nace en estado Pendiente.</p>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Crear historia</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog">Cancelar</a>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}
