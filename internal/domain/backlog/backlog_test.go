@@ -120,3 +120,55 @@ func TestNueva_LargoDelTitulo(t *testing.T) {
 		})
 	}
 }
+
+// RN2 · la descripción es opcional y se guarda sin los espacios del inicio y del final
+func TestNueva_Descripcion_EsOpcionalYSeGuardaSinEspaciosSobrantes(t *testing.T) {
+	casos := []struct{ cargada, guardada string }{
+		{"", ""},
+		{"   ", ""},
+		{"  Con Google \n", "Con Google"},
+	}
+	for _, c := range casos {
+		d := datosValidos()
+		d.Descripcion = c.cargada
+
+		h, err := backlog.Nueva(d, 7, nil)
+		if err != nil {
+			t.Fatalf("descripción %q: no se esperaba error: %v", c.cargada, err)
+		}
+
+		if h.Descripcion != c.guardada {
+			t.Errorf("descripción %q: se guardó %q y se esperaba %q", c.cargada, h.Descripcion, c.guardada)
+		}
+	}
+}
+
+// RN2 · hasta 2000 caracteres (no bytes) valen; 2001 no
+func TestNueva_LargoDeLaDescripcion(t *testing.T) {
+	casos := []struct {
+		nombre      string
+		descripcion string
+		esperado    error
+	}{
+		{"2000 caracteres", strings.Repeat("a", 2000), nil},
+		{"2001 caracteres", strings.Repeat("a", 2001), backlog.ErrDescripcionLarga},
+		{"2000 caracteres con tildes (más de 2000 bytes)", strings.Repeat("ñ", 2000), nil},
+		{"2001 caracteres con tildes", strings.Repeat("ñ", 2001), backlog.ErrDescripcionLarga},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			d := datosValidos()
+			d.Descripcion = c.descripcion
+
+			_, err := backlog.Nueva(d, 7, nil)
+
+			if c.esperado == nil {
+				if err != nil {
+					t.Errorf("no se esperaba error y se obtuvo %v", err)
+				}
+				return
+			}
+			verificarErrorDeCampo(t, err, backlog.CampoDescripcion, c.esperado)
+		})
+	}
+}
