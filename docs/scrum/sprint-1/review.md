@@ -37,7 +37,7 @@ métricas están **hechos**; la base en Supabase (TEC-03) está **en revisión**
 
 | Issue | Historia / tarea | SP | Responsable | Estado al 09/10 | Qué pasa |
 |---|---|---|---|---|---|
-| #67 | TEC-03 · Base de datos y migraciones | 3 | Mariano | En revisión (PR #91), con el CI en rojo | [A COMPLETAR] |
+| #67 | TEC-03 · Base de datos y migraciones | 3 | Mariano | En revisión (PR #91): CI en verde el 10/10 después de la revisión, falta la aprobación | [A COMPLETAR] |
 | #18 | HU-05 · Crear ítem del Product Backlog | 3 | Mariano | Sin empezar | [A COMPLETAR] |
 | #15 | TEC-04 · Deploy en Vercel con la base | 3 | Carolina | Esperando TEC-03 | [A COMPLETAR] |
 | #80 | Decidir cómo se conectan las métricas con el backlog | 1 | Juan Pablo y Mariano | Propuesta sin confirmar | [A COMPLETAR] |

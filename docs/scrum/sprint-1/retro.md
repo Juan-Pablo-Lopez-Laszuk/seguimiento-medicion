@@ -33,10 +33,10 @@ SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · S
 - **La Planning se hizo tarde** (el miércoles 07/10 en lugar del lunes 05/10): el sprint arrancó con dos días sin
   objetivo acordado.
 - **El camino crítico arrancó tarde:** TEC-03 era lo que más bloqueaba (TEC-04 y el deploy real dependen de él) y llegó
-  a revisión el viernes 09/10 con el CI en rojo. Mientras tanto, los datos de la app se guardan en memoria y en Vercel
+  a revisión el viernes 09/10 con el CI en rojo (se corrigió el 10/10). Mientras tanto, los datos de la app se guardan en memoria y en Vercel
   se pierden.
-- **Dailies:** en el issue #86 hay 2 dailies (las dos de Carolina); Juan Pablo y Mariano no dejaron ninguna.
-  [A COMPLETAR]
+- **Dailies:** en el issue #86 Carolina las dejó el día que correspondía (08 y 09/10); Mariano cargó las del 05 al
+  07/10 recién el 09/10, y Juan Pablo no dejó ninguna. [A COMPLETAR]
 - **Estado del tablero distinto de `main`:** #1 se cerró a mano antes de mergear su PR (#89), y el tablero contó 2 SP
   de más durante unas horas. Lo que cierra una issue es el merge del PR (`Closes #n`).
 - **Issues creadas después del trabajo:** #83 y #84 se crearon y cerraron el mismo día, al terminar. [A COMPLETAR si
@@ -61,4 +61,4 @@ SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · S
 | Mergear TEC-01 y armar el CI (TEC-02) antes de empezar las historias | Sí: los dos el lunes 05/10 (#70 y #75) |
 | Todo issue del sprint lleva SP antes de la Planning | Sí: todas las historias del sprint tenían SP al cerrar la Planning |
 | Un PR no se aprueba sin el preview de Vercel en verde | Sí: los PRs mergeados tenían el preview en verde; en HU-11 (#88) la revisión documentó la prueba caso por caso |
-| Daily por mensaje en el issue del sprint | Parcial: solo Carolina las dejó (#86) |
+| Daily por mensaje en el issue del sprint | Parcial: Carolina al día, Mariano cargó las atrasadas el 09/10 y Juan Pablo ninguna (#86) |
