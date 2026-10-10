@@ -39,6 +39,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		}
 		sprints     service.RepositorioSprints
 		integrantes service.RepositorioIntegrantes
+		base        server.VerificadorBase // queda en nil en modo memoria: /health informa "memoria"
 	)
 	if url == "" {
 		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
@@ -48,10 +49,12 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			return nil, err
 		}
 		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
+		base = pool
 	}
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
+		Base:        base,
 	}), nil
 }
