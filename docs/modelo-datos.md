@@ -5,7 +5,8 @@ de las entidades del Plan de trabajo (sección 2.1) y de los ejemplos de la Guí
 datos de `internal/store/postgres` comprueban las restricciones de este documento.
 
 **Estado:** aprobado en la revisión de Juan Pablo (PR #56) y cerrado en la Review del Sprint 0.
-Queda pendiente la conformidad de Carolina sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto).
+Carolina dio su conformidad sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto) el 10/10/2026, en
+el PR #91 (TEC-03).
 Cualquier cambio posterior se hace con una migración nueva y se actualiza este documento.
 
 ## Diagrama entidad-relación
@@ -214,8 +215,10 @@ HU-37) deben leer de esta tabla y no del estado actual de las historias.
 | `registros_esfuerzo.horas` | `> 0 AND <= 24` | HU-24 |
 | `registros_esfuerzo` | `historia_id IS NOT NULL OR tarea_id IS NOT NULL` | todo registro pertenece a una historia o a una tarea |
 
-La escala también existe en el código de Go: debe haber una sola constante que la defina, y los
-tests deben comprobar que coincide con el `CHECK` de la migración.
+La escala también existe en el código de Go: hay una sola constante que la define
+(`backlog.EscalaStoryPoints`), y `TestHistorias_LaEscalaDelCodigoCoincideConElCheckDeLaMigracion`
+comprueba que la base acepta exactamente esos valores. Lo mismo hace
+`TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion` con las prioridades.
 
 ## Reglas que valida la aplicación (no la base)
 
@@ -223,6 +226,8 @@ Dependen de varias filas o de datos de otras tablas, así que no se expresan con
 
 - El total diario de horas de un integrante no supera las 24 (HU-24).
 - Los sprints de un proyecto no se superponen y quedan dentro del rango del proyecto.
+- El título de una historia tiene hasta 120 caracteres y su descripción hasta 2000 (HU-05). Las columnas
+  son `text`: el límite lo pone la aplicación, no la base.
 - `defectos.sprint_resolucion_id` no es anterior a `sprint_deteccion_id`.
 - Una historia solo pasa a Hecho si todos sus criterios de aceptación están cumplidos (CA-08.2).
 - No se eliminan historias Hechas ni asignadas a un sprint cerrado (CA-06.2).

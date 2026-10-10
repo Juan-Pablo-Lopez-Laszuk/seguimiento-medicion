@@ -1,6 +1,6 @@
 # SPEC-05 · Crear ítem del Product Backlog
 
-**Historia:** HU-05 (#18) · **Responsable:** Piastrellini, Mariano · **Sprint:** 1 · **Estado:** Borrador
+**Historia:** HU-05 (#18) · **Responsable:** Piastrellini, Mariano · **Sprint:** 1 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla Historia de
 > `docs/modelo-datos.md`.
@@ -108,4 +108,19 @@ En la pantalla, cada mensaje aparece debajo de su campo y se conservan los datos
 
 Issue: #18 · Feature: `features/hu-05-crear-item-backlog.feature` · Pasos BDD: `features/hu05_steps_test.go`
 
-Se completa al terminar la implementación.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/backlog.go` (`Nueva`, `Historia.Identificador`, `Prioridades`, `EscalaStoryPoints`) | `internal/domain/backlog/backlog_test.go` |
+| Repositorio en memoria | `internal/store/memory/historias.go` | `internal/store/memory/historias_test.go` |
+| Repositorio PostgreSQL | `internal/store/postgres/historias.go` | `internal/store/postgres/historias_test.go` |
+| Caso de uso | `internal/service/historias.go` (`Crear`, `Listar`) | `internal/service/historias_test.go` |
+| Pantalla | `internal/server/historias.go`, `web/templates/paginas/backlog.html`, `historia_nueva.html` | `internal/server/historias_test.go` |
+| Aplicación | `app/app.go` (elige memoria o PostgreSQL según `DATABASE_URL`) | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-05.1 Identificador correlativo por proyecto | Crear la primera historia del backlog · La siguiente historia lleva el número que sigue · Cada proyecto numera sus propias historias | `TestNueva_PrimeraHistoria_*`, `TestNueva_ElNumeroSigueAlMasAlto`, `TestNueva_NoReutilizaNumerosQueFaltan`, `TestCrearHistoria_DatosValidos_GuardaConNumeroCorrelativo`, `TestCrearHistoria_CadaProyectoNumeraLasSuyas`, `TestHistorias_GuardarAsignaIDsYListarPorProyecto`, `TestCrearHistoria_DatosValidos_VuelveALaListaConLaHistoria` |
+| CA-05.2 Título obligatorio y prioridad Alta, Media o Baja | Prioridad de la historia · Largo del título · El título es obligatorio | `TestNueva_TituloVacioOSoloEspacios_*`, `TestNueva_QuitaLosEspaciosAlrededorDelTitulo`, `TestNueva_LargoDelTitulo`, `TestNueva_Descripcion_*`, `TestNueva_LargoDeLaDescripcion`, `TestNueva_PrioridadesValidas`, `TestNueva_PrioridadInvalida`, `TestNueva_InformaTodosLosCamposInvalidosJuntos`, `TestCrearHistoria_DatosInvalidos_*`, `TestFormularioNuevaHistoria_MuestraLosCampos`, `TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion` |
+| CA-05.3 Estado inicial Pendiente y story points opcionales | Crear la primera historia del backlog · Crear una historia ya estimada · Story points de la historia | `TestNueva_PrimeraHistoria_*`, `TestNueva_StoryPointsVacios_*`, `TestNueva_StoryPointsDeLaEscala`, `TestNueva_StoryPointsConEspaciosAlrededor`, `TestNueva_StoryPointsInvalidos`, `TestEscalaStoryPoints_EsLaAcordada`, `TestHistorias_SinEstimarYEstimadaEnCero_SeDistinguen`, `TestHistorias_LaEscalaDelCodigoCoincideConElCheckDeLaMigracion`, `TestListaDelBacklog_DiferenciaSinEstimarDeEstimadaEnCero` |
+| Se guarda en la base (TEC-03) | — | `TestHistorias_GuardaYDevuelveTodosLosCampos`, `TestHistorias_LaBaseRechazaUnNumeroRepetidoEnElProyecto`, `TestHistorias_NoSeGuardaUnaHistoriaDeUnProyectoQueNoExiste`, `TestNewHandlerConBase_ConURLLasHistoriasSobrevivenAUnReinicio` |
+| Proyecto inexistente (sección 7) | — | `TestCrearHistoria_ProyectoInexistente_*`, `TestListarHistorias_ProyectoInexistente_*`, `TestHistorias_ProyectoInexistente_Responde404` |
