@@ -172,3 +172,45 @@ func TestNueva_LargoDeLaDescripcion(t *testing.T) {
 		})
 	}
 }
+
+// CA-05.2 · la prioridad es Alta, Media o Baja
+func TestNueva_PrioridadesValidas(t *testing.T) {
+	for _, p := range []backlog.Prioridad{backlog.PrioridadAlta, backlog.PrioridadMedia, backlog.PrioridadBaja} {
+		d := datosValidos()
+		d.Prioridad = p
+
+		h, err := backlog.Nueva(d, 7, nil)
+		if err != nil {
+			t.Fatalf("prioridad %q: no se esperaba error: %v", p, err)
+		}
+
+		if h.Prioridad != p {
+			t.Errorf("prioridad = %q, se esperaba %q", h.Prioridad, p)
+		}
+	}
+}
+
+// RN3 · sin prioridad, o con una que no existe, es un error: no se elige una por el usuario
+func TestNueva_PrioridadInvalida(t *testing.T) {
+	for _, p := range []backlog.Prioridad{"", "Urgente", "alta", "Alta "} {
+		d := datosValidos()
+		d.Prioridad = p
+
+		_, err := backlog.Nueva(d, 7, nil)
+
+		verificarErrorDeCampo(t, err, backlog.CampoPrioridad, backlog.ErrPrioridadInvalida)
+	}
+}
+
+// El formulario ofrece las prioridades en este orden, de la más importante a la menos
+func TestPrioridades_EnElOrdenDelFormulario(t *testing.T) {
+	esperadas := []backlog.Prioridad{backlog.PrioridadAlta, backlog.PrioridadMedia, backlog.PrioridadBaja}
+	if len(backlog.Prioridades) != len(esperadas) {
+		t.Fatalf("Prioridades = %v, se esperaba %v", backlog.Prioridades, esperadas)
+	}
+	for i, p := range esperadas {
+		if backlog.Prioridades[i] != p {
+			t.Errorf("Prioridades[%d] = %q, se esperaba %q", i, backlog.Prioridades[i], p)
+		}
+	}
+}
