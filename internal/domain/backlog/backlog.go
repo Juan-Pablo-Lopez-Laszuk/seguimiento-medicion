@@ -5,8 +5,12 @@
 package backlog
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
+
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 )
 
 // Prioridad es la importancia de una historia. Los valores son los mismos que guarda la base.
@@ -24,6 +28,20 @@ type Estado string
 
 // EstadoPendiente es el estado con el que nace toda historia (RN6). Los demás llegan con HU-08.
 const EstadoPendiente Estado = "Pendiente"
+
+// Nombres de los campos, tal como se informan en los errores y en el formulario.
+const (
+	CampoTitulo = "titulo"
+)
+
+// TituloMax es el largo máximo del título, en caracteres (RN1).
+const TituloMax = 120
+
+// Errores de validación (sección 7 de la spec).
+var (
+	ErrTituloObligatorio = errors.New("el título es obligatorio")
+	ErrTituloLargo       = errors.New("el título no puede superar los 120 caracteres")
+)
 
 // Datos son los campos que carga el usuario para crear una historia.
 type Datos struct {
@@ -51,13 +69,31 @@ func (h Historia) Identificador() string {
 }
 
 // Nueva valida los datos contra las historias que ya tiene el proyecto y devuelve la historia lista para guardar.
+// Si algún dato es inválido, devuelve domain.ErroresValidacion con todos los campos que fallaron (RN7).
 func Nueva(d Datos, proyectoID int64, _ []Historia) (Historia, error) {
+	titulo := strings.TrimSpace(d.Titulo)
+
+	errs := domain.ErroresValidacion{}
+	errs.Agregar(CampoTitulo, validarTitulo(titulo))
+	if len(errs) > 0 {
+		return Historia{}, errs
+	}
 	return Historia{
 		ProyectoID:  proyectoID,
 		Numero:      1,
-		Titulo:      strings.TrimSpace(d.Titulo),
+		Titulo:      titulo,
 		Descripcion: strings.TrimSpace(d.Descripcion),
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
 	}, nil
+}
+
+func validarTitulo(titulo string) error {
+	switch largo := utf8.RuneCountInString(titulo); {
+	case largo == 0:
+		return ErrTituloObligatorio
+	case largo > TituloMax:
+		return ErrTituloLargo
+	}
+	return nil
 }
