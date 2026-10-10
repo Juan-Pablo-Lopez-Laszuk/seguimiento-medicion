@@ -1,7 +1,8 @@
 # Modelo de datos (acordado · Sprint 0)
 
-Base de la migración inicial (TEC-03, Sprint 1). Se armó a partir de las entidades del Plan de
-trabajo (sección 2.1) y de los ejemplos de la Guía de desarrollo.
+Base de la migración inicial (TEC-03, Sprint 1), que está en `migrations/0001_modelo_inicial.sql`. Se armó a partir
+de las entidades del Plan de trabajo (sección 2.1) y de los ejemplos de la Guía de desarrollo. Los tests con base de
+datos de `internal/store/postgres` comprueban las restricciones de este documento.
 
 **Estado:** aprobado en la revisión de Juan Pablo (PR #56) y cerrado en la Review del Sprint 0.
 Queda pendiente la conformidad de Carolina sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto).
@@ -79,7 +80,7 @@ sección 5.6). Los paquetes de Go siguen en inglés (Guía, sección 5). Las cla
 | proyecto_id | bigint FK | |
 | nombre | text | |
 | email | text | único dentro del proyecto |
-| rol | text | AgileEnabler / ProductBuilder — un solo AgileEnabler por proyecto |
+| rol | text | AgileEnabler / ProductBuilder — un solo AgileEnabler **activo** por proyecto |
 | activo | bool | baja lógica, no se borra si tiene esfuerzo registrado |
 | auth_user_id | uuid | referencia al usuario de Supabase Auth (TEC-05) |
 
@@ -194,8 +195,8 @@ HU-37) deben leer de esta tabla y no del estado actual de las historias.
 | `proyectos` | `lower(nombre)` | el nombre no se repite sin distinguir mayúsculas (HU-01) |
 | `historias` | `(proyecto_id, numero)` | el número de HU es correlativo **por proyecto**, no puede repetirse dentro del mismo |
 | `sprints` | `(proyecto_id, numero)` | mismo criterio que historias |
-| `integrantes` | `(proyecto_id, email)` | el email no se repite dentro de un proyecto (CA-03.1), pero sí puede pertenecer a otro proyecto distinto |
-| `integrantes` | `(proyecto_id)` solo donde `rol = 'AgileEnabler'` (índice único parcial) | un solo Agile Enabler por proyecto |
+| `integrantes` | `(proyecto_id, email)` | el email no se repite dentro de un proyecto (CA-03.1), tampoco el de alguien dado de baja, pero sí puede pertenecer a otro proyecto distinto |
+| `integrantes` | `(proyecto_id)` solo donde `rol = 'AgileEnabler' AND activo` (índice único parcial) | un solo Agile Enabler **activo** por proyecto: si se da de baja, se puede registrar otro (HU-03, RN6) |
 | `sprint_historias` | clave primaria `(sprint_id, historia_id)` | una fila por historia en cada sprint cerrado |
 | `sesiones_poker` | `(historia_id)` solo donde `estado = 'Abierta'` (índice único parcial) | una única sesión abierta por historia (CA-17.2) |
 | `rondas_poker` | `(sesion_id, numero)` | la numeración de rondas no se repite dentro de la sesión (CA-21.3) |
@@ -232,7 +233,8 @@ Dependen de varias filas o de datos de otras tablas, así que no se expresan con
 Supabase publica cada tabla del esquema `public` por una API que se maneja con la clave `anon`. Para que
 esa API no pueda leer ni escribir nuestras tablas (en particular `votos` antes de revelar), **todas las tablas
 se crean con RLS activado y sin políticas**. La aplicación entra por `DATABASE_URL` con el usuario `postgres`,
-que no está sujeto a RLS, así que no se ve afectada. Esto se comprueba en la primera prueba de TEC-03.
+que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que las 12 tablas tengan RLS activado. La tabla `goose_db_version` (donde goose anota las
+migraciones aplicadas) no es del modelo, pero también queda en `public` y expuesta: la migración `0002` le activa RLS.
 
 ## Decisiones tomadas en el Sprint 0
 
@@ -246,3 +248,13 @@ que no está sujeto a RLS, así que no se ve afectada. Esto se comprueba en la p
    sigue siendo también una regla de la aplicación.
 4. ~~Convención de nombres~~ **Resuelto:** tablas en plural y en español, columnas en `snake_case`
    (ver "Convención de nombres").
+
+## Decisiones de la migración inicial (TEC-03)
+
+La migración sigue este documento al pie de la letra. Dos cosas quedaron fuera a propósito y se resuelven con una
+migración nueva cuando la historia que las necesita las defina:
+
+- **Sin `CHECK` en los estados** (`proyectos.estado`, `sprints.estado`, `integrantes.rol`, etc.): este documento los
+  describe en las notas pero no los lista en "Restricciones de valores". Hoy los controla la aplicación.
+- **Sin borrado en cascada** de las claves foráneas: eliminar una historia con criterios o tareas falla hasta que HU-06
+  (editar y eliminar ítem) decida qué pasa con ellos.

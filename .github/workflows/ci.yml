@@ -19,6 +19,25 @@ jobs:
   calidad:
     name: Calidad (formato, análisis, tests y BDD)
     runs-on: ubuntu-latest
+
+    # Base PostgreSQL descartable para los tests de internal/store/postgres, app y cmd/migrar (TEC-03).
+    # Cada test crea y borra su propio esquema; sin TEST_DATABASE_URL esos tests se omiten.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: seguimiento
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d seguimiento"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://postgres:test@localhost:5432/seguimiento?sslmode=disable
+
     steps:
       - uses: actions/checkout@v5
 

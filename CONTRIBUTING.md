@@ -53,3 +53,30 @@ Registrar qué se pidió, qué se usó y cómo se validó en [`docs/ia/registro.
 ## 6. Secretos
 
 Las claves de Supabase van en `.env` (copiar desde `.env.example`). **Nunca** subir `.env` al repositorio.
+
+## 7. Base de datos y migraciones
+
+El esquema de la base (Supabase) se arma con migraciones SQL versionadas en [`migrations/`](migrations/), que se aplican con goose
+desde un comando propio. Una migración que ya se aplicó **nunca se edita**: cualquier cambio es una migración nueva
+(`0002_...sql`) y se actualiza [`docs/modelo-datos.md`](docs/modelo-datos.md).
+
+| Quiero... | Comando |
+|---|---|
+| Ver qué migraciones están aplicadas | `go run ./cmd/migrar status` |
+| Aplicar las que faltan | `go run ./cmd/migrar up` |
+| Deshacer todo (borra los datos; solo en bases de desarrollo) | `go run ./cmd/migrar down --borrar-todo` |
+
+El comando usa `MIGRATIONS_DATABASE_URL` o, si no está, `DATABASE_URL` (ver `.env.example`). **Nunca** apuntarlo a producción
+sin que el equipo lo haya decidido.
+
+**Tests con base de datos.** Los tests de `internal/store/postgres`, `app` y `cmd/migrar` necesitan un PostgreSQL descartable
+y se omiten si no existe `TEST_DATABASE_URL`. Con Docker Desktop abierto:
+
+```bash
+docker run -d --name seguimiento-pg-test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=seguimiento -p 54329:5432 postgres:16-alpine
+export TEST_DATABASE_URL='postgres://postgres:test@localhost:54329/seguimiento?sslmode=disable'
+go test ./...
+```
+
+En PowerShell, la segunda línea es `$env:TEST_DATABASE_URL = 'postgres://postgres:test@localhost:54329/seguimiento?sslmode=disable'`.
+Cada test crea su propio esquema y lo borra al terminar, así que no ensucian la base. El CI levanta su propio Postgres.
