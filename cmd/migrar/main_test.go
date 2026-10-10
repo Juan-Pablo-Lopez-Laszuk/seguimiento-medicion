@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -58,7 +59,10 @@ func TestRun_MigrationsDatabaseURLTienePrioridad(t *testing.T) {
 	}
 }
 
-func TestRun_UpStatusYDownContraUnaBase(t *testing.T) {
+// baseConEsquema devuelve un getenv cuya DATABASE_URL apunta a un esquema vacío y exclusivo de este test, que se
+// borra al terminar. Sin TEST_DATABASE_URL, omite el test.
+func baseConEsquema(t *testing.T) func(string) string {
+	t.Helper()
 	base := os.Getenv("TEST_DATABASE_URL")
 	if base == "" {
 		t.Skip("TEST_DATABASE_URL no está definida: se omiten los tests con base de datos")
@@ -80,12 +84,17 @@ func TestRun_UpStatusYDownContraUnaBase(t *testing.T) {
 		_, _ = admin.Exec(ctx, "DROP SCHEMA "+esquema+" CASCADE")
 		admin.Close()
 	})
-	getenv := func(clave string) string {
+	return func(clave string) string {
 		if clave == "DATABASE_URL" {
 			return base + separador + "search_path=" + esquema
 		}
 		return ""
 	}
+}
+
+func TestRun_UpStatusYDownContraUnaBase(t *testing.T) {
+	ctx := context.Background()
+	getenv := baseConEsquema(t)
 
 	estado := func() string {
 		var salida bytes.Buffer
@@ -109,5 +118,23 @@ func TestRun_UpStatusYDownContraUnaBase(t *testing.T) {
 	}
 	if s := estado(); !strings.Contains(s, "pendiente") {
 		t.Errorf("después de bajar, la 0001 debería volver a figurar como pendiente:\n%s", s)
+	}
+}
+
+// escritorRoto simula una salida que no se puede escribir (por ejemplo, un pipe cerrado).
+type escritorRoto struct{}
+
+func (escritorRoto) Write([]byte) (int, error) { return 0, errors.New("pipe cerrado") }
+
+// Si no se puede escribir qué se hizo, el comando no puede decir que terminó bien.
+func TestRun_InformaSiNoPuedeEscribirLaSalida(t *testing.T) {
+	ctx := context.Background()
+	getenv := baseConEsquema(t)
+
+	for _, args := range [][]string{{"status"}, {"up"}, {"down", "--borrar-todo"}} {
+		err := run(ctx, args, getenv, escritorRoto{})
+		if err == nil || !strings.Contains(err.Error(), "pipe cerrado") {
+			t.Errorf("%v: se esperaba el error de escritura y se obtuvo %v", args, err)
+		}
 	}
 }
