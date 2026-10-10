@@ -37,7 +37,7 @@ func main() {
 // run ejecuta el comando contra la base. getenv y out se reciben para poder probarlo.
 func run(ctx context.Context, args []string, getenv func(string) string, out io.Writer) error {
 	if len(args) == 0 {
-		return errors.New(ayuda)
+		return fmt.Errorf("falta el comando\n\n%s", ayuda)
 	}
 	comando := args[0]
 	if comando != "up" && comando != "status" && comando != "down" {
