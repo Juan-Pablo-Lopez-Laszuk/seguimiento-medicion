@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -219,5 +220,43 @@ func TestNewHandlerConBase_ConURLLasHistoriasSobrevivenAUnReinicio(t *testing.T)
 	segunda := neturl.Values{"titulo": {"Segunda historia"}, "prioridad": {"Baja"}}
 	if rec := post(reiniciada, "/proyectos/1/backlog", segunda); rec.Header().Get("Location") != "/proyectos/1/backlog?creada=2" {
 		t.Errorf("la segunda historia tenía que ser la HU-2 y se redirigió a %q", rec.Header().Get("Location"))
+	}
+}
+
+// saludDe pide /health a la app y devuelve el código y el estado de la base que informa (TEC-04).
+func saludDe(t *testing.T, h http.Handler) (int, string) {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/health", nil))
+	var cuerpo map[string]string
+	if err := json.Unmarshal(rec.Body.Bytes(), &cuerpo); err != nil {
+		t.Fatalf("/health no respondió JSON: %v\n%s", err, rec.Body.String())
+	}
+	return rec.Code, cuerpo["base"]
+}
+
+// TEC-04: sin DATABASE_URL, /health avisa que la app guarda en memoria.
+func TestNewHandlerConBase_SinURLHealthInformaMemoria(t *testing.T) {
+	if codigo, base := saludDe(t, nuevaApp(t, "")); codigo != http.StatusOK || base != "memoria" {
+		t.Errorf("/health = %d y base %q, se esperaba 200 y \"memoria\"", codigo, base)
+	}
+}
+
+// TEC-04: con una DATABASE_URL que apunta a un puerto cerrado, /health avisa que no hay conexión. Es lo que
+// pasaría en Vercel con la variable mal cargada.
+func TestNewHandlerConBase_ConBaseInalcanzableHealthResponde503(t *testing.T) {
+	h := nuevaApp(t, "postgres://usuario:clave@127.0.0.1:1/seguimiento?sslmode=disable&connect_timeout=1")
+
+	if codigo, base := saludDe(t, h); codigo != http.StatusServiceUnavailable || base != "sin conexión" {
+		t.Errorf("/health = %d y base %q, se esperaba 503 y \"sin conexión\"", codigo, base)
+	}
+}
+
+// TEC-04: con la base de pruebas funcionando, /health informa que la base responde.
+func TestNewHandlerConBase_ConBaseHealthInformaOK(t *testing.T) {
+	h := nuevaApp(t, urlConEsquemaMigrado(t))
+
+	if codigo, base := saludDe(t, h); codigo != http.StatusOK || base != "ok" {
+		t.Errorf("/health = %d y base %q, se esperaba 200 y \"ok\"", codigo, base)
 	}
 }
