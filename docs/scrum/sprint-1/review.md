@@ -30,17 +30,17 @@ métricas están **hechos**; la base en Supabase (TEC-03) está **en revisión**
 | #9 | HU-31 · Velocidad del equipo | 3 | Carolina | PR #76 · `internal/metrics/velocity.go` |
 | #10 | HU-32 · Porcentaje de historias completadas | 2 | Carolina | PR #87 · `internal/metrics/completion.go` |
 | #1 | HU-23 · Registrar horas estimadas (la regla) | 2 | Carolina | PR #89 · `internal/domain/effort/horas.go` |
+| #67 | TEC-03 · Base de datos y migraciones | 3 | Mariano | PR #91 · `migrations/`, `internal/store/postgres` |
+| #80 | Decidir cómo se conectan las métricas con el backlog | 1 | Juan Pablo y Mariano | Decisión publicada en el issue (10/10) |
 
-**Total terminado al 09/10: 29 SP** de 39 comprometidos.
+**Total terminado al 11/10 (mañana): 33 SP** de 39 comprometidos.
 
-## No terminado al 09/10
+## No terminado al 11/10 (mañana)
 
-| Issue | Historia / tarea | SP | Responsable | Estado al 09/10 | Qué pasa |
+| Issue | Historia / tarea | SP | Responsable | Estado | Qué pasa |
 |---|---|---|---|---|---|
-| #67 | TEC-03 · Base de datos y migraciones | 3 | Mariano | En revisión (PR #91): CI en verde el 10/10 después de la revisión, falta la aprobación | [A COMPLETAR] |
-| #18 | HU-05 · Crear ítem del Product Backlog | 3 | Mariano | Sin empezar | [A COMPLETAR] |
-| #15 | TEC-04 · Deploy en Vercel con la base | 3 | Carolina | Esperando TEC-03 | [A COMPLETAR] |
-| #80 | Decidir cómo se conectan las métricas con el backlog | 1 | Juan Pablo y Mariano | Propuesta sin confirmar | [A COMPLETAR] |
+| #18 | HU-05 · Crear ítem del Product Backlog | 3 | Mariano | En revisión (PR #93, abierto el 10/10 a la noche) | [A COMPLETAR] |
+| #15 | TEC-04 · Deploy en Vercel con la base | 3 | Carolina | Código mergeado (PR #92); falta cargar la base de producción en Vercel (Juan Pablo) | [A COMPLETAR] |
 
 ## Demo
 

@@ -7,15 +7,16 @@ Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
 ## Métricas del sprint
 
-SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados al 09/10: 29 · Velocidad:
+SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados al 11/10: 33 · Velocidad:
 [A COMPLETAR el domingo] · Defectos abiertos: 0
 
 | Integrante | Terminado | SP |
 |---|---|---|
 | Juan Pablo | TEC-01, TEC-02, HU-01, HU-11, HU-03 | 14 |
 | Carolina | #71, HU-30, HU-31, HU-32, HU-23 | 12 |
-| Mariano | #83, #84 | 3 |
-| [A COMPLETAR] | TEC-03, HU-05, TEC-04, #80 | hasta 10 |
+| Mariano | #83, #84, TEC-03 | 6 |
+| Juan Pablo y Mariano | #80 (decisión) | 1 |
+| [A COMPLETAR] | HU-05 (Mariano, en revisión) y TEC-04 (Carolina, falta producción) | hasta 6 |
 
 ## ¿Qué salió bien?
 
