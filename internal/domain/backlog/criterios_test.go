@@ -1,6 +1,7 @@
 package backlog_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
@@ -33,5 +34,42 @@ func TestNuevoCriterio_NaceNoCumplidoYSinEspaciosSobrantes(t *testing.T) {
 	}
 	if c.HistoriaID != 4 {
 		t.Errorf("historia = %d, se esperaba 4", c.HistoriaID)
+	}
+}
+
+// RN1 · la descripción es obligatoria: vacía o de solo espacios es un error del campo "descripcion"
+func TestNuevoCriterio_DescripcionVaciaOSoloEspacios_EsObligatoria(t *testing.T) {
+	for _, descripcion := range []string{"", "   ", "\t\n "} {
+		_, err := backlog.NuevoCriterio(descripcion, historiaPendiente())
+
+		verificarErrorDeCampo(t, err, backlog.CampoDescripcion, backlog.ErrDescripcionCriterioObligatoria)
+	}
+}
+
+// RN1 · hasta 300 caracteres (no bytes) valen; 301 no
+func TestNuevoCriterio_LargoDeLaDescripcion(t *testing.T) {
+	casos := []struct {
+		nombre      string
+		descripcion string
+		esperado    error
+	}{
+		{"300 caracteres", strings.Repeat("a", 300), nil},
+		{"301 caracteres", strings.Repeat("a", 301), backlog.ErrDescripcionCriterioLarga},
+		{"300 caracteres con tildes (más de 300 bytes)", strings.Repeat("ó", 300), nil},
+		{"301 caracteres con tildes", strings.Repeat("ó", 301), backlog.ErrDescripcionCriterioLarga},
+		{"300 caracteres con espacios sobrantes", "  " + strings.Repeat("a", 300) + "  ", nil},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			_, err := backlog.NuevoCriterio(c.descripcion, historiaPendiente())
+
+			if c.esperado == nil {
+				if err != nil {
+					t.Errorf("no se esperaba error y se obtuvo %v", err)
+				}
+				return
+			}
+			verificarErrorDeCampo(t, err, backlog.CampoDescripcion, c.esperado)
+		})
 	}
 }
