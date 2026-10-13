@@ -9,7 +9,7 @@
 
 Las 23 historias que hoy tienen Sprint = 2 en el tablero están en formato Como / Quiero / Para, tienen criterios de
 aceptación, story points y responsable. Lo que falta es **marcar dependencias** y **recortar**: suman **69 SP** y el
-Sprint 1 terminó cerca de 30 (ver la Retro del Sprint 1), así que en la Planning hay que elegir.
+Sprint 1 cerró con una velocidad de 39, con un día extra (ver la Retro del Sprint 1), así que en la Planning hay que elegir.
 
 | Responsable | Historias | SP |
 |---|---|---|
