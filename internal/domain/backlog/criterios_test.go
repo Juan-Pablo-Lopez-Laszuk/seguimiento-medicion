@@ -173,3 +173,77 @@ func TestMarcar_HistoriaHecha_MarcarCumplidoNoCambiaNada(t *testing.T) {
 		t.Errorf("se esperaba que siga cumplido sin error y se obtuvo %+v, %v", otraVez, err)
 	}
 }
+
+// criteriosConCumplidos arma una lista de total criterios de la historia, los primeros cumplidos.
+func criteriosConCumplidos(total, cumplidos int) []backlog.Criterio {
+	var lista []backlog.Criterio
+	for i := 0; i < total; i++ {
+		lista = append(lista, backlog.Criterio{ID: int64(i + 1), HistoriaID: 4, Descripcion: "Criterio", Cumplido: i < cumplidos})
+	}
+	return lista
+}
+
+// CA-07.3 y RN4 · el progreso es cumplidos sobre el total, y se muestra como "2/3"
+func TestProgresoDe_CuentaCumplidosYTotal(t *testing.T) {
+	casos := []struct {
+		total, cumplidos int
+		texto            string
+	}{
+		{0, 0, "0/0"},
+		{1, 0, "0/1"},
+		{3, 2, "2/3"},
+		{3, 3, "3/3"},
+	}
+	for _, c := range casos {
+		p := backlog.ProgresoDe(criteriosConCumplidos(c.total, c.cumplidos))
+
+		if p.Total != c.total || p.Cumplidos != c.cumplidos {
+			t.Errorf("%d de %d: se obtuvo %+v", c.cumplidos, c.total, p)
+		}
+		if p.Texto() != c.texto {
+			t.Errorf("%d de %d: texto = %q, se esperaba %q", c.cumplidos, c.total, p.Texto(), c.texto)
+		}
+	}
+}
+
+func TestProgresoDe_SinListaEsCeroDeCero(t *testing.T) {
+	if p := backlog.ProgresoDe(nil); p.Total != 0 || p.Cumplidos != 0 || p.Texto() != "0/0" {
+		t.Errorf("se esperaba 0/0 y se obtuvo %+v (%s)", p, p.Texto())
+	}
+}
+
+// CA-07.1 y RN5 · una historia tiene criterios si su total es al menos 1
+func TestProgreso_TieneCriterios(t *testing.T) {
+	casos := []struct {
+		total, cumplidos int
+		esperado         bool
+	}{
+		{0, 0, false},
+		{1, 0, true},
+		{3, 3, true},
+	}
+	for _, c := range casos {
+		if got := backlog.ProgresoDe(criteriosConCumplidos(c.total, c.cumplidos)).TieneCriterios(); got != c.esperado {
+			t.Errorf("%d de %d: TieneCriterios = %v, se esperaba %v", c.cumplidos, c.total, got, c.esperado)
+		}
+	}
+}
+
+// RN6 · completa quiere decir con criterios y todos cumplidos; 0/0 no cuenta
+func TestProgreso_Completo(t *testing.T) {
+	casos := []struct {
+		total, cumplidos int
+		esperado         bool
+	}{
+		{0, 0, false},
+		{2, 0, false},
+		{2, 1, false},
+		{2, 2, true},
+		{1, 1, true},
+	}
+	for _, c := range casos {
+		if got := backlog.ProgresoDe(criteriosConCumplidos(c.total, c.cumplidos)).Completo(); got != c.esperado {
+			t.Errorf("%d de %d: Completo = %v, se esperaba %v", c.cumplidos, c.total, got, c.esperado)
+		}
+	}
+}
