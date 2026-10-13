@@ -240,7 +240,7 @@ func TestListarConEstado(t *testing.T) {
 		t.Fatalf("no se pudo crear el segundo proyecto: %v", err)
 	}
 
-	lista, err := e.caso(fechaISO(t, "2026-10-13").Add(18*time.Hour)).Listar(context.Background())
+	lista, err := e.caso(fechaISO(t, "2026-10-13").Add(18 * time.Hour)).Listar(context.Background())
 	if err != nil {
 		t.Fatalf("no se esperaba error: %v", err)
 	}
