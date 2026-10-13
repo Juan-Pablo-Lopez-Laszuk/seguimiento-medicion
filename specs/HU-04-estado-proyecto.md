@@ -1,6 +1,6 @@
 # SPEC-04 · Consultar estado del proyecto
 
-**Historia:** HU-04 (#42) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
+**Historia:** HU-04 (#42) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, las tablas Proyecto, Sprint e
 > Historia de `docs/modelo-datos.md` y las métricas M1 y M2 de `docs/metricas.md`.
@@ -28,8 +28,8 @@ La página `/proyectos/{id}` muestra:
   y, si existe, cuál es el próximo y cuándo empieza.
 - **Días restantes del proyecto** (RN3).
 - **Porcentaje de story points completados** del proyecto (RN4), con 1 decimal y coma (por ejemplo "37,5 %").
-- Enlaces a los **Sprints** y a los **Integrantes** del proyecto. En la lista de proyectos, el nombre pasa a ser el
-  enlace a esta vista.
+- Enlaces al **Backlog**, a los **Sprints** y a los **Integrantes** del proyecto. En la lista de proyectos, el nombre
+  pasa a ser el enlace a esta vista, y la columna Estado también muestra el estado calculado (RN1).
 
 ## 4. Reglas de negocio
 
@@ -58,10 +58,15 @@ La página `/proyectos/{id}` muestra:
 ## 5. Restricciones
 
 - RN1, RN2 y RN3 son **funciones puras** en el dominio (`project.EstadoActual`, `sprint.Activo` y `domain.DiasRestantes`)
-  que reciben "hoy" como parámetro, así los tests no dependen del reloj.
+  que reciben "hoy" como parámetro, así los tests no dependen del reloj. `project.EstadoActual` recibe la fecha de
+  inicio del primer sprint (`sprint.InicioDelPrimero`, fecha cero si no hay sprints) y no la lista de sprints, porque el
+  paquete `sprint` ya importa a `project` y al revés habría un ciclo.
+- El caso de uso es `service.EstadoProyectos` (en `internal/service/estado.go`), aparte de `service.Proyectos`, para no
+  cambiar el constructor que ya usan HU-01 y los demás tests. Lee proyectos, sprints e historias; no escribe nada (RN5).
 - El caso de uso arma la vista con el proyecto, sus sprints y sus historias. Las historias se leen con
   `RepositorioHistorias.ListarPorProyecto` de HU-05 (ya en `main`) y se pasan a `metrics.Historia` (`Hecha` = estado
-  Hecho, `SinEstimar` = sin story points).
+  Hecho, `SinEstimar` = sin story points). Se agregó la constante `backlog.EstadoHecho`; las demás transiciones llegan
+  con HU-08.
 - La columna `proyectos.estado` de la migración de TEC-03 queda con el valor con el que se creó: el estado que se
   muestra es siempre el calculado (RN1). Se puede quitar más adelante, sin apuro.
 
@@ -104,12 +109,12 @@ Issue: #42 · Feature: `features/hu-04-estado-proyecto.feature` · Pasos BDD: `f
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | `internal/domain/project` (`EstadoActual`), `internal/domain/sprint` (`Activo`), `internal/domain` (`DiasRestantes`) | `*_test.go` de cada paquete |
-| Caso de uso | `internal/service/proyectos.go` (`Estado`) | `internal/service/proyectos_test.go` |
-| Pantalla | `internal/server/proyectos.go`, `web/templates/paginas/proyecto.html` | `internal/server/proyectos_test.go` |
+| Dominio | `internal/domain/project/estado.go` (`EstadoActual`), `internal/domain/sprint/activo.go` (`Activo`, `Proximo`, `Terminado`, `InicioDelPrimero`), `internal/domain/fecha.go` (`DiasRestantes`, `HoyEnArgentina`) | `project/estado_test.go`, `sprint/activo_test.go`, `fecha_test.go` |
+| Caso de uso | `internal/service/estado.go` (`EstadoProyectos.Consultar` y `Listar`) | `internal/service/estado_test.go` |
+| Pantalla | `internal/server/proyectos.go` (`ver`, `listar`), `web/templates/paginas/proyecto.html`, `proyectos.html` | `internal/server/proyecto_test.go` |
 
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-04.1 Muestra estado, sprint activo, días y % de SP | Proyecto en curso con sprint activo · Sprint terminado sin cerrar · Porcentaje de SP | se completa con el código |
-| CA-04.2 Estado derivado de fechas y sprints | Estado según la fecha | se completa con el código |
-| CA-04.3 Sin sprints es Planificado | Proyecto sin sprints | se completa con el código |
+| CA-04.1 Muestra estado, sprint activo, días y % de SP | Proyecto en curso con su sprint activo · Un sprint terminado sin cerrar sigue activo · Porcentaje de story points completados | `TestActivo`, `TestProximo`, `TestTerminado`, `TestDiasRestantes`, `TestConsultarEstado_ConSprintActivo`, `TestConsultarEstado_SprintVencidoSinCerrar`, `TestConsultarEstado_SinSprintActivo_InformaElProximo`, `TestConsultarEstado_PorcentajeDeStoryPoints`, `TestConsultarEstado_SinHistoriasEstimadas`, `TestVistaDelProyecto_*` |
+| CA-04.2 Estado derivado de fechas y sprints | El estado depende de la fecha y los sprints | `TestEstadoActual`, `TestEstadoActual_PrimerSprintPosteriorAlInicio`, `TestHoyEnArgentina`, `TestConsultarEstado_FinDelProyecto`, `TestConsultarEstado_HoyEsLaFechaDeArgentina`, `TestListarConEstado`, `TestListaDeProyectos_MuestraElEstadoCalculado` |
+| CA-04.3 Sin sprints es Planificado | Un proyecto sin sprints está Planificado | `TestEstadoActual` (casos sin sprints), `TestConsultarEstado_SinSprints_EstaPlanificado`, `TestVistaDelProyecto_SinSprints` |
