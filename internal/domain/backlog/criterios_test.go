@@ -112,3 +112,64 @@ func TestNuevoCriterio_HistoriaEnSprintOEnProgreso_AdmiteCriterios(t *testing.T)
 		}
 	}
 }
+
+// CA-07.2 y RN3 · un criterio se marca cumplido o no cumplido de forma explícita, y el original no cambia
+func TestMarcar_PasaDeUnEstadoAlOtro(t *testing.T) {
+	original := backlog.Criterio{ID: 9, HistoriaID: 4, Descripcion: "Entra con su cuenta"}
+
+	cumplido, err := original.Marcar(true, historiaPendiente())
+	if err != nil {
+		t.Fatalf("no se esperaba error al marcar cumplido: %v", err)
+	}
+	if !cumplido.Cumplido || cumplido.ID != 9 || cumplido.Descripcion != "Entra con su cuenta" {
+		t.Errorf("se esperaba el mismo criterio ya cumplido y se obtuvo %+v", cumplido)
+	}
+	if original.Cumplido {
+		t.Error("marcar no tiene que modificar el criterio original")
+	}
+
+	desmarcado, err := cumplido.Marcar(false, historiaPendiente())
+	if err != nil {
+		t.Fatalf("no se esperaba error al marcar no cumplido: %v", err)
+	}
+	if desmarcado.Cumplido {
+		t.Error("el criterio tenía que quedar no cumplido")
+	}
+}
+
+// RN3 · marcar un criterio que ya está en ese estado no es un error: queda igual
+func TestMarcar_ElMismoEstadoDosVeces_QuedaIgual(t *testing.T) {
+	c := backlog.Criterio{ID: 9, HistoriaID: 4, Descripcion: "Entra con su cuenta", Cumplido: true}
+
+	otraVez, err := c.Marcar(true, historiaPendiente())
+
+	if err != nil || !otraVez.Cumplido {
+		t.Errorf("se esperaba que siga cumplido sin error y se obtuvo %+v, %v", otraVez, err)
+	}
+	sinCumplir := backlog.Criterio{ID: 10, HistoriaID: 4, Descripcion: "Muestra su nombre"}
+	if sigue, err := sinCumplir.Marcar(false, historiaPendiente()); err != nil || sigue.Cumplido {
+		t.Errorf("se esperaba que siga no cumplido sin error y se obtuvo %+v, %v", sigue, err)
+	}
+}
+
+// RN7 · en una historia Hecha no se desmarca ningún criterio
+func TestMarcar_HistoriaHecha_NoSeDesmarca(t *testing.T) {
+	c := backlog.Criterio{ID: 9, HistoriaID: 4, Descripcion: "Entra con su cuenta", Cumplido: true}
+
+	_, err := c.Marcar(false, historiaHecha())
+
+	if !errors.Is(err, backlog.ErrHistoriaHecha) {
+		t.Errorf("se esperaba backlog.ErrHistoriaHecha y se obtuvo: %v", err)
+	}
+}
+
+// RN7 · marcar como cumplido en una historia Hecha no cambia nada (todos ya están cumplidos), así que no es un error
+func TestMarcar_HistoriaHecha_MarcarCumplidoNoCambiaNada(t *testing.T) {
+	c := backlog.Criterio{ID: 9, HistoriaID: 4, Descripcion: "Entra con su cuenta", Cumplido: true}
+
+	otraVez, err := c.Marcar(true, historiaHecha())
+
+	if err != nil || !otraVez.Cumplido {
+		t.Errorf("se esperaba que siga cumplido sin error y se obtuvo %+v, %v", otraVez, err)
+	}
+}
