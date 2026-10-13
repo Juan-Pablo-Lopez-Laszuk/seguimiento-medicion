@@ -49,7 +49,8 @@ La página `/proyectos/{id}` muestra:
 - RN4: **Porcentaje de SP completados** = SP de las historias Hechas ÷ SP de todas las historias estimadas del
   proyecto × 100. Se calcula con `metrics.CalcularStoryPoints` (M1 y M2, HU-30). Las historias sin estimar no suman y se
   avisa cuántas son. Si no hay SP estimados, se muestra "Sin historias estimadas" en lugar de 0 % (RG-3: nunca se
-  divide por cero).
+  divide por cero). Hasta que lleguen HU-08 y HU-13 todas las historias nacen y quedan en "Pendiente" (HU-05 RN6), así
+  que el porcentaje va a dar 0 %: es lo esperado, no un error.
 - RN5: La pantalla **solo lee**: no cambia nada del proyecto, de los sprints ni de las historias.
 - RN6: "Hoy" se toma en la **zona horaria de Argentina** (UTC−3). Vercel corre en UTC: entre las 21:00 y las 24:00 de
   Argentina, en UTC ya es el día siguiente y el estado o los días restantes darían mal.
@@ -58,9 +59,9 @@ La página `/proyectos/{id}` muestra:
 
 - RN1, RN2 y RN3 son **funciones puras** en el dominio (`project.EstadoActual`, `sprint.Activo` y `domain.DiasRestantes`)
   que reciben "hoy" como parámetro, así los tests no dependen del reloj.
-- El caso de uso arma la vista con el proyecto, sus sprints y sus historias. Las historias vienen del repositorio de
-  E2 (HU-05, Mariano): **HU-04 se termina después de que HU-05 esté en `main`**. Hasta entonces se puede avanzar todo lo
-  demás.
+- El caso de uso arma la vista con el proyecto, sus sprints y sus historias. Las historias se leen con
+  `RepositorioHistorias.ListarPorProyecto` de HU-05 (ya en `main`) y se pasan a `metrics.Historia` (`Hecha` = estado
+  Hecho, `SinEstimar` = sin story points).
 - La columna `proyectos.estado` de la migración de TEC-03 queda con el valor con el que se creó: el estado que se
   muestra es siempre el calculado (RN1). Se puede quitar más adelante, sin apuro.
 
