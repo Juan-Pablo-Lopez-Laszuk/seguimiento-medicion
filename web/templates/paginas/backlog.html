@@ -1,5 +1,6 @@
 {{define "contenido"}}
 {{with .Datos}}
+{{$datos := .}}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
@@ -29,14 +30,15 @@
         <th scope="col">Prioridad</th>
         <th scope="col">Estado</th>
         <th scope="col">Story points</th>
+        <th scope="col">Criterios</th>
       </tr>
     </thead>
     <tbody>
       {{range .Historias}}
       <tr>
-        <td class="fw-semibold text-nowrap">{{.Identificador}}</td>
+        <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
         <td>
-          {{.Titulo}}
+          <a class="text-reset text-decoration-none" href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Titulo}}</a>
           {{with .Descripcion}}<div class="small text-body-secondary">{{.}}</div>{{end}}
         </td>
         <td>
@@ -44,6 +46,8 @@
         </td>
         <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
         <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
+        {{$progreso := index $datos.Progresos .ID}}
+        <td class="text-nowrap">{{if $progreso.TieneCriterios}}{{$progreso.Texto}}{{else}}<span class="text-body-secondary">Sin criterios</span>{{end}}</td>
       </tr>
       {{end}}
     </tbody>

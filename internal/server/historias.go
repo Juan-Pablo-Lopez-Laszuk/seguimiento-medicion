@@ -15,7 +15,8 @@ import (
 
 // historias agrupa los handlers del Product Backlog (HU-05).
 type historias struct {
-	casos *service.Historias
+	casos     *service.Historias
+	criterios *service.Criterios // para mostrar el progreso de cada historia en la lista (HU-07)
 }
 
 // listaHistorias son los datos de la página backlog.html.
@@ -23,6 +24,8 @@ type listaHistorias struct {
 	Proyecto  project.Proyecto
 	Historias []backlog.Historia
 	Creada    int // número de la historia recién creada, para el aviso "Historia HU-N creada"; 0 si no hay
+	// Progresos tiene el progreso de los criterios de cada historia, por su ID (HU-07).
+	Progresos map[int64]backlog.Progreso
 }
 
 // formHistoria son los datos de la página historia_nueva.html: el proyecto (para el título y los enlaces), lo que
@@ -50,10 +53,16 @@ func (h historias) listar(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	progresos, err := h.criterios.Progresos(r.Context(), lista)
+	if err != nil {
+		log.Printf("progreso de las historias del proyecto %d: %v", p.ID, err)
+		http.Error(w, "No se pudo cargar el backlog. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
+		return
+	}
 	creada, _ := strconv.Atoi(r.URL.Query().Get("creada"))
 	render(w, http.StatusOK, "backlog.html", Pagina{
 		Titulo: "Backlog",
-		Datos:  listaHistorias{Proyecto: p, Historias: lista, Creada: max(creada, 0)},
+		Datos:  listaHistorias{Proyecto: p, Historias: lista, Creada: max(creada, 0), Progresos: progresos},
 	})
 }
 

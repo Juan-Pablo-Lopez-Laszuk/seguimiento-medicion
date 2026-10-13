@@ -1,0 +1,77 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$hecha := eq .Historia.Estado "Hecho"}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{.Historia.Identificador}}</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+{{template "aviso" .Aviso}}
+
+<div class="mb-4">
+  <h1 class="h3 mb-2">{{.Historia.Identificador}} · {{.Historia.Titulo}}</h1>
+  <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+    <span class="badge {{if eq .Historia.Prioridad "Alta"}}text-bg-danger{{else if eq .Historia.Prioridad "Media"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Historia.Prioridad}}</span>
+    <span class="badge text-bg-secondary">{{.Historia.Estado}}</span>
+    <span class="small text-body-secondary">Story points: {{with .Historia.StoryPoints}}{{.}}{{else}}Sin estimar{{end}}</span>
+  </div>
+  {{with .Historia.Descripcion}}<p class="mb-0">{{.}}</p>{{end}}
+</div>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-criterios">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h5 mb-0" id="titulo-criterios">Criterios de aceptación</h2>
+    <span class="fw-semibold" aria-label="{{.Progreso.Cumplidos}} de {{.Progreso.Total}} criterios cumplidos">{{.Progreso.Texto}}</span>
+  </div>
+  <div class="progress mb-3" role="progressbar" aria-label="Progreso de los criterios" aria-valuenow="{{.Progreso.Cumplidos}}" aria-valuemin="0" aria-valuemax="{{.Progreso.Total}}">
+    <div class="progress-bar bg-success" style="width: {{.Porcentaje}}%"></div>
+  </div>
+
+  {{if .Criterios}}
+  <ul class="list-group mb-3">
+    {{range .Criterios}}
+    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        {{.Descripcion}}
+        {{if .Cumplido}}<span class="badge text-bg-success ms-2">Cumplido</span>{{else}}<span class="badge text-bg-secondary ms-2">No cumplido</span>{{end}}
+      </div>
+      {{if not $hecha}}
+      <form action="/proyectos/{{$.Datos.Proyecto.ID}}/backlog/{{$.Datos.Historia.Numero}}/criterios/{{.ID}}/cumplido" method="post">
+        <input type="hidden" name="cumplido" value="{{if .Cumplido}}0{{else}}1{{end}}">
+        <button class="btn btn-sm btn-outline-primary" type="submit">{{if .Cumplido}}Marcar no cumplido{{else}}Marcar cumplido{{end}}</button>
+      </form>
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="text-body-secondary">
+    Sin criterios todavía. La historia necesita al menos uno para entrar a un sprint.
+  </p>
+  {{end}}
+
+  {{if $hecha}}
+  {{if not .Aviso}}{{template "aviso" "la historia está Hecha: no se pueden cambiar sus criterios"}}{{end}}
+  {{else}}
+  <form action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/criterios" method="post" novalidate>
+    <label class="form-label" for="descripcion">Nuevo criterio</label>
+    <div class="input-group">
+      <input class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion" name="descripcion"
+             value="{{.Descripcion}}" maxlength="300" required placeholder="Qué tiene que cumplirse para dar la historia por terminada">
+      <button class="btn btn-primary" type="submit">Agregar criterio</button>
+      {{template "errorCampo" (index .Errores "descripcion")}}
+    </div>
+    <div class="form-text">Hasta 300 caracteres. Cada criterio nace no cumplido.</div>
+  </form>
+  {{end}}
+</section>
+
+<div class="mt-3">
+  <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog">Volver al backlog</a>
+</div>
+{{end}}
+{{end}}
