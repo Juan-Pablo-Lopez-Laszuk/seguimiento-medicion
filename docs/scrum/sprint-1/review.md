@@ -1,20 +1,21 @@
 # Sprint Review · Sprint 1 · 11/10/2026
 
-Participantes: López, Piastrellini, Bravo · Product Architect (profesores): [A COMPLETAR el domingo]
-
-> **Borrador armado el viernes 09/10** con el estado del tablero y de los PRs a esa fecha. El domingo se actualizan
-> las tablas con lo que se termine el fin de semana y se completan las partes marcadas [A COMPLETAR].
+Participantes: López, Piastrellini, Bravo · Product Architect (profesores): no estuvieron
 
 ## Sprint Goal
 
 > Primer MVP: crear proyectos y sprints, registrar integrantes y cargar historias en el backlog, con los datos
 > guardados en Supabase y las métricas de story points, velocidad y porcentaje de completadas ya calculadas.
 
-¿Se cumplió? [A COMPLETAR el domingo]. Al 09/10: crear proyectos, crear sprints, registrar integrantes y las tres
-métricas están **hechos**; la base en Supabase (TEC-03) está **en revisión** y cargar historias en el backlog (HU-05)
-**no empezó**.
+¿Se cumplió? **Parcialmente.** Al cierre (domingo 11/10) estaban hechos crear proyectos, crear sprints, registrar
+integrantes, las tres métricas y la base de datos en Supabase (TEC-03). Faltaban cargar historias en el backlog (HU-05,
+en revisión) y conectar la base en producción (TEC-04: el código estaba mergeado, faltaba cargar la base en Vercel).
+Las dos se terminaron el lunes 12/10, antes de la Planning del Sprint 2.
 
-## Terminado
+Las tablas muestran el estado **al cierre del sprint, el domingo 11/10**. Lo que se terminó después cuenta para el
+Sprint 2, igual que en el Sprint 0.
+
+## Terminado al cierre (11/10)
 
 | Issue | Historia / tarea | SP | Responsable | Evidencia |
 |---|---|---|---|---|
@@ -33,31 +34,37 @@ métricas están **hechos**; la base en Supabase (TEC-03) está **en revisión**
 | #67 | TEC-03 · Base de datos y migraciones | 3 | Mariano | PR #91 · `migrations/`, `internal/store/postgres` |
 | #80 | Decidir cómo se conectan las métricas con el backlog | 1 | Juan Pablo y Mariano | Decisión publicada en el issue (10/10) |
 
-**Total terminado al 11/10 (mañana): 33 SP** de 39 comprometidos.
+**Total terminado al cierre: 33 SP** de 39 comprometidos.
 
-## No terminado al 11/10 (mañana)
+## No terminado al cierre (pasa al Sprint 2)
 
-| Issue | Historia / tarea | SP | Responsable | Estado | Qué pasa |
+| Issue | Historia / tarea | SP | Responsable | Estado al 11/10 | Qué pasó después |
 |---|---|---|---|---|---|
-| #18 | HU-05 · Crear ítem del Product Backlog | 3 | Mariano | En revisión (PR #93, abierto el 10/10 a la noche) | [A COMPLETAR] |
-| #15 | TEC-04 · Deploy en Vercel con la base | 3 | Carolina | Código mergeado (PR #92); falta cargar la base de producción en Vercel (Juan Pablo) | [A COMPLETAR] |
+| #18 | HU-05 · Crear ítem del Product Backlog | 3 | Mariano | En revisión (PR #93, abierto el sábado 10/10 a la noche) | Aprobado y mergeado el lunes 12/10 (PR #93) · `/proyectos/{id}/backlog` |
+| #15 | TEC-04 · Deploy en Vercel con la base | 3 | Carolina | Código mergeado (PR #92); faltaba cargar la base de producción en Vercel | El lunes 12/10 Juan Pablo aplicó las migraciones en producción y cargó `DATABASE_URL` en Vercel; `/health` responde `"base":"ok"` y Carolina cerró el issue |
+
+Como las dos se terminaron después del cierre, sus 6 SP cuentan para el Sprint 2 ("viene del Sprint 1").
 
 ## Demo
 
-Lo que se muestra en la app (preview o producción):
+Lo que se muestra en la app:
 
 1. **Proyectos:** alta con validaciones por campo y nombre único (HU-01).
 2. **Sprints de un proyecto:** número correlativo, fechas dentro del proyecto y sin superponerse (HU-11).
 3. **Integrantes:** alta con rol, un solo Agile Enabler activo, email único y baja lógica (HU-03).
-4. **Métricas:** se muestran con los tests y los escenarios BDD (`go test ./features/ -v`), porque la pantalla de
-   métricas llega con la épica E8. [A COMPLETAR: si TEC-03 se mergea, mostrar que los datos quedan guardados]
+4. **Datos guardados en Supabase** (TEC-03): con `DATABASE_URL` cargada, lo que se crea queda guardado al reiniciar la
+   app. Al cierre funcionaba con la base de desarrollo; en producción, desde el 12/10 (TEC-04).
+5. **Métricas:** se muestran con los tests y los escenarios BDD (`go test ./features/ -v`), porque la pantalla de
+   métricas llega con la épica E8.
 
 ## Feedback del cliente
 
-[A COMPLETAR el domingo]
+- No hubo feedback durante la Review porque los profesores no estuvieron.
 
 ## Cambios en el Product Backlog
 
-- [A COMPLETAR] Lo no terminado pasa al Sprint 2 (se decide en la Planning del lunes 12/10).
+- HU-05 (#18) y TEC-04 (#15) pasan al Sprint 2 como terminadas ("viene del Sprint 1"); en el tablero quedan asignadas
+  al Sprint 2, como se hizo con TEC-01 y TEC-02 en el Sprint 0.
 - Refinamiento de las historias del Sprint 2 en [`../sprint-2/refinamiento.md`](../sprint-2/refinamiento.md): specs de
-  HU-02 y HU-04 en borrador y las preguntas abiertas de HU-12 a HU-15.
+  HU-02 y HU-04 en borrador y las preguntas abiertas de HU-12 a HU-15. HU-05 ya está en `main`, así que la cadena de
+  dependencias del backlog (HU-07, HU-08, HU-16, HU-25) queda desbloqueada para el Sprint 2.

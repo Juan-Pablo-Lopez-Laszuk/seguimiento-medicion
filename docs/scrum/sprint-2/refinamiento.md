@@ -17,7 +17,8 @@ Sprint 1 terminó cerca de 30 (ver la Retro del Sprint 1), así que en la Planni
 | Mariano | HU-06, HU-07, HU-08, HU-09, HU-10, HU-16, HU-17, HU-18, HU-19, TEC-05 | 30 |
 | Carolina | HU-24, HU-25, HU-26, HU-27, HU-28, HU-29, TEC-07 | 20 |
 
-A eso se suma lo que no se termine del Sprint 1 (HU-05, TEC-04 y lo que quede de TEC-03).
+A eso se suman HU-05 y TEC-04 (6 SP), que no llegaron al cierre del Sprint 1 y se terminaron el lunes 12/10: cuentan
+para el Sprint 2 como ya hechas (ver la Review del Sprint 1).
 
 ## Cadena de dependencias
 
@@ -32,8 +33,9 @@ HU-12 + HU-13 ──► HU-14 (cerrar sprint) ──► HU-15 (sprints anteriore
 HU-03 (hecha) ──► HU-24 (esfuerzo de un integrante)
 ```
 
-**Propuesta para la Planning:** HU-05 primero (es del Sprint 1 y no empezó), y que el resto del equipo arranque por lo
-que **no** depende de la cadena: HU-04 y HU-02 (Juan Pablo), TEC-07 y HU-27 a HU-29 (Carolina).
+**Propuesta para la Planning:** TEC-03 y HU-05 ya están en `main`, así que la cadena arranca desbloqueada. Mariano
+empieza por HU-07, HU-08 y HU-16, que destraban al resto; mientras tanto Juan Pablo hace HU-04 y HU-02 y Carolina
+TEC-07, HU-25 y HU-27 a HU-29.
 
 ## Historias de Juan Pablo
 
@@ -72,8 +74,8 @@ que **no** depende de la cadena: HU-04 y HU-02 (Juan Pablo), TEC-07 y HU-27 a HU
 8. **HU-12, advertencia por velocidad (CA-12.3):** con un solo sprint cerrado la velocidad es la de ese sprint (HU-31);
    sin sprints cerrados no hay advertencia.
 
-## Para avisar a Mariano (TEC-03 en revisión)
+## Para avisar a Mariano
 
 - HU-02 necesita en el repositorio de proyectos `Actualizar` y buscar nombre repetido **sin contar al propio proyecto**.
-  Si entra en TEC-03, mejor; si no, se agrega con HU-02.
-- HU-04 lee historias por proyecto (para el % de SP): lo cubre el repositorio de HU-05.
+  No entró en TEC-03, así que se agrega con HU-02.
+- HU-04 lee historias por proyecto (para el % de SP): lo cubre el repositorio de HU-05, ya mergeado.

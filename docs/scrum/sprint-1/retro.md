@@ -2,21 +2,19 @@
 
 Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
-> **Borrador armado el viernes 09/10**: los puntos son una propuesta a partir de lo que pasó en el repo y en el
-> tablero. Cada uno agrega, saca o corrige en la reunión del domingo.
-
 ## Métricas del sprint
 
-SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados al 11/10: 33 · Velocidad:
-[A COMPLETAR el domingo] · Defectos abiertos: 0
+SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados al cierre (11/10): 33 ·
+Velocidad: 33 (primer sprint de construcción; el Sprint 0 fue de preparación y no se promedia) · Defectos abiertos: 0
 
-| Integrante | Terminado | SP |
+| Integrante | Terminado al cierre | SP |
 |---|---|---|
 | Juan Pablo | TEC-01, TEC-02, HU-01, HU-11, HU-03 | 14 |
 | Carolina | #71, HU-30, HU-31, HU-32, HU-23 | 12 |
 | Mariano | #83, #84, TEC-03 | 6 |
 | Juan Pablo y Mariano | #80 (decisión) | 1 |
-| [A COMPLETAR] | HU-05 (Mariano, en revisión) y TEC-04 (Carolina, falta producción) | hasta 6 |
+
+HU-05 (Mariano, 3 SP) y TEC-04 (Carolina, 3 SP) se terminaron el lunes 12/10 y cuentan para el Sprint 2.
 
 ## ¿Qué salió bien?
 
@@ -24,6 +22,8 @@ SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · S
   los revisores comprobaron que cada RED falle (#76, #79, #88).
 - **La revisión cruzada funcionó y se probó en el preview:** Carolina aprobó HU-11 después de probar cada caso en el
   preview de Vercel (#88).
+- **Las revisiones encontraron problemas reales:** en TEC-03 (#91) la revisión contra una base real detectó que Vercel
+  no subía `migrations/` y cinco errores del linter, y se corrigieron antes de mergear.
 - **Las specs se revisaron antes del código:** las decisiones de HU-11 y HU-03 se acordaron antes de programar y
   quedaron explicadas en el PR.
 - **El CI frenó problemas antes de `main`:** formato, linter y tests en cada PR.
@@ -33,27 +33,32 @@ SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · S
 
 - **La Planning se hizo tarde** (el miércoles 07/10 en lugar del lunes 05/10): el sprint arrancó con dos días sin
   objetivo acordado.
-- **El camino crítico arrancó tarde:** TEC-03 era lo que más bloqueaba (TEC-04 y el deploy real dependen de él) y llegó
-  a revisión el viernes 09/10 con el CI en rojo (se corrigió el 10/10). Mientras tanto, los datos de la app se guardan en memoria y en Vercel
-  se pierden.
-- **Dailies:** en el issue #86 Carolina las dejó el día que correspondía (08 y 09/10); Mariano cargó las del 05 al
-  07/10 recién el 09/10, y Juan Pablo no dejó ninguna. [A COMPLETAR]
+- **El camino crítico arrancó tarde:** TEC-03 era lo que más bloqueaba (HU-05, TEC-04 y el deploy real dependen de él)
+  y llegó a revisión el viernes 09/10 con el CI en rojo (se corrigió el 10/10). HU-05 recién se pudo empezar el sábado
+  10/10 y no llegó al cierre.
+- **Revisiones que tardaron:** HU-05 (#93) esperó dos días la revisión de Juan Pablo (del sábado 10/10 a la noche al
+  lunes 12/10 a la noche) y por eso no entró en el sprint. HU-32 (#87) esperó casi un día.
+- **TEC-04 esperó la configuración de producción:** el código se mergeó el sábado 10/10, pero la base de producción
+  recién se cargó en Vercel el lunes 12/10. Las credenciales de producción las maneja solo Juan Pablo, así que ese
+  paso dependía de una sola persona.
+- **Dailies:** en el issue #86 Carolina dejó las del 08 y el 09/10; Mariano cargó las del 05 al 07/10 recién el 09/10
+  y después las del 09 y el 10/10; Juan Pablo cargó todas las suyas juntas el 12/10. Las dailies atrasadas no sirven
+  para detectar bloqueos a tiempo.
 - **Estado del tablero distinto de `main`:** #1 se cerró a mano antes de mergear su PR (#89), y el tablero contó 2 SP
   de más durante unas horas. Lo que cierra una issue es el merge del PR (`Closes #n`).
-- **Issues creadas después del trabajo:** #83 y #84 se crearon y cerraron el mismo día, al terminar. [A COMPLETAR si
-  se repitió]
-- **Revisiones que tardaron:** HU-32 (#87) esperó un día la revisión. [A COMPLETAR]
+- **Issues creadas después del trabajo:** #83 y #84 se crearon y cerraron el mismo día, al terminar.
 
 ## Acciones
 
 | Acción | Responsable | Para cuándo |
 |---|---|---|
-| La Planning se hace el lunes a primera hora; el domingo se dejan listos los datos y el refinamiento | Juan Pablo | Lunes 12/10 |
-| Lo que bloquea a otros (camino crítico) se marca en la Planning y se revisa en cada daily | Todos · controla Juan Pablo | Sprint 2 |
+| La Planning se hace el lunes; el domingo se dejan listos los datos y el refinamiento | Juan Pablo | Cada sprint |
+| Lo que bloquea a otros (camino crítico) se marca en la Planning, se empieza primero y se revisa en cada daily | Todos · controla Juan Pablo | Sprint 2 |
+| Una revisión pedida se hace en menos de 24 horas; si el revisor no puede, avisa y revisa otro | Todos | Sprint 2 |
+| Lo que hay que hacer en producción (migraciones, variables en Vercel) se hace el mismo día que se mergea el PR que lo necesita | Juan Pablo | Sprint 2 |
+| Daily de lunes a viernes en el issue del sprint, el mismo día, también del Agile Enabler | Todos | Sprint 2 |
 | Una issue se cierra solo con el merge de su PR (`Closes #n`), nunca a mano | Todos | Sprint 2 |
-| Daily de lunes a viernes en el issue del sprint, también del Agile Enabler | Todos | Sprint 2 |
-| Una revisión pedida se hace en menos de 24 horas | Todos | Sprint 2 |
-| [A COMPLETAR] | | |
+| Toda tarea tiene su issue antes de empezarla | Todos | Sprint 2 |
 
 ## Seguimiento de las acciones del sprint anterior
 
@@ -62,4 +67,4 @@ SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · S
 | Mergear TEC-01 y armar el CI (TEC-02) antes de empezar las historias | Sí: los dos el lunes 05/10 (#70 y #75) |
 | Todo issue del sprint lleva SP antes de la Planning | Sí: todas las historias del sprint tenían SP al cerrar la Planning |
 | Un PR no se aprueba sin el preview de Vercel en verde | Sí: los PRs mergeados tenían el preview en verde; en HU-11 (#88) la revisión documentó la prueba caso por caso |
-| Daily por mensaje en el issue del sprint | Parcial: Carolina al día, Mariano cargó las atrasadas el 09/10 y Juan Pablo ninguna (#86) |
+| Daily por mensaje en el issue del sprint | Parcial: Carolina el día que correspondía, Mariano con atraso y Juan Pablo todas juntas al final (#86) |
