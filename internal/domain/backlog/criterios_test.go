@@ -1,6 +1,7 @@
 package backlog_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -71,5 +72,43 @@ func TestNuevoCriterio_LargoDeLaDescripcion(t *testing.T) {
 			}
 			verificarErrorDeCampo(t, err, backlog.CampoDescripcion, c.esperado)
 		})
+	}
+}
+
+// historiaHecha es la misma historia de ejemplo, ya Hecha.
+func historiaHecha() backlog.Historia {
+	h := historiaPendiente()
+	h.Estado = backlog.EstadoHecho
+	return h
+}
+
+// RN7 · una historia Hecha no admite criterios nuevos: agregarlos rompería que todos están cumplidos
+func TestNuevoCriterio_HistoriaHecha_NoAdmiteCriteriosNuevos(t *testing.T) {
+	_, err := backlog.NuevoCriterio("Un criterio más", historiaHecha())
+
+	if !errors.Is(err, backlog.ErrHistoriaHecha) {
+		t.Errorf("se esperaba backlog.ErrHistoriaHecha y se obtuvo: %v", err)
+	}
+}
+
+// RN7 · el estado de la historia se revisa antes que la descripción: no tiene sentido corregir un texto que igual
+// no se va a poder guardar
+func TestNuevoCriterio_HistoriaHechaConDescripcionInvalida_InformaQueEstaHecha(t *testing.T) {
+	_, err := backlog.NuevoCriterio("   ", historiaHecha())
+
+	if !errors.Is(err, backlog.ErrHistoriaHecha) {
+		t.Errorf("se esperaba backlog.ErrHistoriaHecha y se obtuvo: %v", err)
+	}
+}
+
+// RN7 · en cualquier otro estado se pueden agregar criterios
+func TestNuevoCriterio_HistoriaEnSprintOEnProgreso_AdmiteCriterios(t *testing.T) {
+	for _, estado := range []backlog.Estado{backlog.EstadoPendiente, "En sprint", "En progreso"} {
+		h := historiaPendiente()
+		h.Estado = estado
+
+		if _, err := backlog.NuevoCriterio("Un criterio", h); err != nil {
+			t.Errorf("estado %q: no se esperaba error y se obtuvo %v", estado, err)
+		}
 	}
 }
