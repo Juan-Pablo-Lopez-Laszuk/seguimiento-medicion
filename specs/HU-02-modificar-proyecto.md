@@ -1,6 +1,6 @@
 # SPEC-02 · Modificar proyecto
 
-**Historia:** HU-02 (#40) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-02 (#40) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Reutiliza las reglas de `specs/HU-01-crear-proyecto.md`, la de
 > sprints de `specs/HU-11-crear-sprint.md` y el estado calculado de `specs/HU-04-estado-proyecto.md`.
@@ -37,7 +37,7 @@ sprints afuera del proyecto y sin tocar un proyecto que ya terminó.
 - RN3: La fecha de fin **no puede quedar antes del fin del último sprint** (CA-02.2). Puede ser el mismo día.
 - RN4: La fecha de inicio **no puede quedar después del inicio del primer sprint**. Puede ser el mismo día. No está
   escrita en la historia, pero sale de HU-11 RN3 (todo sprint queda dentro del proyecto): sin esta regla, achicar el
-  inicio dejaría al Sprint 1 afuera. **A confirmar en el refinamiento.**
+  inicio dejaría al Sprint 1 afuera. Confirmada en la Planning del Sprint 2 (decisión 4).
 - RN5: Un proyecto **Finalizado** (estado calculado de HU-04 RN1, con "hoy" en la hora de Argentina) **no se puede
   modificar** (CA-02.3): no se muestra el formulario y, si igual llega el pedido, se rechaza.
 - RN6: El estado no se edita: se sigue calculando (HU-04).
