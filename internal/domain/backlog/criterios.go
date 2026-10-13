@@ -2,6 +2,7 @@ package backlog
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"unicode/utf8"
 
@@ -68,4 +69,39 @@ func (c Criterio) Marcar(cumplido bool, h Historia) (Criterio, error) {
 	}
 	c.Cumplido = cumplido
 	return c, nil
+}
+
+// Progreso es cuántos criterios de una historia están cumplidos sobre el total (RN4). Es lo que se muestra como
+// "2/3" y lo que HU-12 y HU-08 le preguntan a la historia.
+type Progreso struct {
+	Cumplidos int
+	Total     int
+}
+
+// ProgresoDe cuenta los criterios cumplidos y el total de la lista. Sin criterios es 0/0.
+func ProgresoDe(criterios []Criterio) Progreso {
+	p := Progreso{Total: len(criterios)}
+	for _, c := range criterios {
+		if c.Cumplido {
+			p.Cumplidos++
+		}
+	}
+	return p
+}
+
+// Texto devuelve el progreso como se muestra en pantalla: "2/3".
+func (p Progreso) Texto() string {
+	return fmt.Sprintf("%d/%d", p.Cumplidos, p.Total)
+}
+
+// TieneCriterios dice si la historia tiene al menos un criterio (RN5). Es la regla de CA-07.1: HU-12 la usa para no
+// asignar al sprint una historia sin criterios.
+func (p Progreso) TieneCriterios() bool {
+	return p.Total > 0
+}
+
+// Completo dice si la historia tiene criterios y todos están cumplidos (RN6). Con 0/0 no está completa: que no haya
+// nada que cumplir no es lo mismo que haberlo cumplido. HU-08 la usa para pasar a Hecho (CA-08.2).
+func (p Progreso) Completo() bool {
+	return p.Total > 0 && p.Cumplidos == p.Total
 }
