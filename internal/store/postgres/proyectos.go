@@ -72,6 +72,35 @@ func (r *Proyectos) ExisteNombre(ctx context.Context, nombre string) (bool, erro
 	return existe, nil
 }
 
+// ExisteOtroConNombre informa si otro proyecto (no el de exceptoID) ya tiene ese nombre, sin distinguir
+// mayúsculas (HU-02 RN2). Compara igual que el índice único de la base: lower(nombre).
+func (r *Proyectos) ExisteOtroConNombre(ctx context.Context, nombre string, exceptoID int64) (bool, error) {
+	var existe bool
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM proyectos WHERE lower(nombre) = lower($1) AND id <> $2)`, nombre, exceptoID,
+	).Scan(&existe)
+	if err != nil {
+		return false, fmt.Errorf("buscar el nombre del proyecto: %w", err)
+	}
+	return existe, nil
+}
+
+// Actualizar guarda el nombre, la descripción y las fechas del proyecto (HU-02). El estado guardado y la fecha de
+// creación no cambian. Si no hay un proyecto con ese ID devuelve project.ErrNoEncontrado.
+func (r *Proyectos) Actualizar(ctx context.Context, p project.Proyecto) error {
+	res, err := r.pool.Exec(ctx,
+		`UPDATE proyectos SET nombre = $2, descripcion = $3, fecha_inicio = $4, fecha_fin = $5 WHERE id = $1`,
+		p.ID, p.Nombre, p.Descripcion, p.FechaInicio, p.FechaFin,
+	)
+	if err != nil {
+		return fmt.Errorf("actualizar el proyecto: %w", err)
+	}
+	if res.RowsAffected() == 0 {
+		return project.ErrNoEncontrado
+	}
+	return nil
+}
+
 // BuscarPorID devuelve el proyecto con ese ID, o project.ErrNoEncontrado si no existe.
 func (r *Proyectos) BuscarPorID(ctx context.Context, id int64) (project.Proyecto, error) {
 	p, err := leerProyecto(r.pool.QueryRow(ctx, `SELECT `+columnasProyecto+` FROM proyectos WHERE id = $1`, id))
