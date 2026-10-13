@@ -23,3 +23,29 @@
 
 {{/* errorCampo: el error debajo de un campo del formulario. Uso: {{template "errorCampo" (index .Errores "nombre")}} */}}
 {{define "errorCampo"}}{{with .}}<div class="invalid-feedback">{{.}}</div>{{end}}{{end}}
+
+{{/*
+  confirmar: un botón que abre una ventana para confirmar una acción que no se puede deshacer; recién al confirmar se
+  envía el formulario (RN4). Uso:
+  {{template "confirmar" (dict "ID" "confirmar-baja-1" "Titulo" "¿Dar de baja a Ana?" "Texto" "…" "Accion" "/ruta" "Boton" "Dar de baja")}}
+*/}}
+{{define "confirmar"}}
+<button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#{{.ID}}">{{.Boton}}</button>
+<div class="modal fade" id="{{.ID}}" tabindex="-1" aria-labelledby="{{.ID}}-titulo" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-start">
+      <div class="modal-header">
+        <h2 class="modal-title fs-5" id="{{.ID}}-titulo">{{.Titulo}}</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body">{{.Texto}}</div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <form action="{{.Accion}}" method="post">
+          <button class="btn btn-danger" type="submit">{{.Boton}}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

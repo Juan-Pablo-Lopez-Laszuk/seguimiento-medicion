@@ -41,10 +41,12 @@
         </td>
         <td class="text-end">
           {{if .Activo}}
-          <form action="/proyectos/{{$proyecto}}/integrantes/{{.ID}}/baja" method="post" class="d-inline"
-                onsubmit="return confirm('¿Dar de baja a este integrante? Queda en el historial pero ya no participa del proyecto.')">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Dar de baja</button>
-          </form>
+          {{template "confirmar" (dict
+              "ID" (printf "confirmar-baja-%d" .ID)
+              "Titulo" (printf "¿Dar de baja a %s?" .Nombre)
+              "Texto" "Queda en el historial, pero ya no participa del proyecto."
+              "Accion" (printf "/proyectos/%d/integrantes/%d/baja" $proyecto .ID)
+              "Boton" "Dar de baja")}}
           {{end}}
         </td>
       </tr>
