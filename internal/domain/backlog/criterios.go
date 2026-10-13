@@ -58,3 +58,14 @@ func validarDescripcionCriterio(descripcion string) error {
 	}
 	return nil
 }
+
+// Marcar devuelve el criterio marcado como cumplido o no cumplido, según cumplido; el original no cambia. Es
+// explícito y no un "alternar" (RN3): marcar un criterio que ya está en ese estado lo deja igual. En una historia
+// Hecha no se desmarca ningún criterio (RN7): devuelve ErrHistoriaHecha.
+func (c Criterio) Marcar(cumplido bool, h Historia) (Criterio, error) {
+	if h.Estado == EstadoHecho && !cumplido {
+		return Criterio{}, ErrHistoriaHecha
+	}
+	c.Cumplido = cumplido
+	return c, nil
+}
