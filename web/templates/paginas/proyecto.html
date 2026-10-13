@@ -7,6 +7,10 @@
   </ol>
 </nav>
 
+{{if .Modificado}}
+<div class="alert alert-success" role="status">Proyecto modificado.</div>
+{{end}}
+
 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
   <div>
     <h1 class="h3 mb-1">
@@ -19,6 +23,7 @@
     {{with .Proyecto.Descripcion}}<p class="mt-2 mb-0">{{.}}</p>{{end}}
   </div>
   <div class="d-flex flex-wrap gap-2">
+    {{if ne .Estado "Finalizado"}}<a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/editar">Modificar</a>{{end}}
     <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/backlog">Backlog</a>
     <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/sprints">Sprints</a>
     <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes">Integrantes</a>

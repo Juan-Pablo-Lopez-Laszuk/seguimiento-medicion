@@ -17,15 +17,22 @@ import (
 // depende del día en que corren los tests.
 func relojDeLaVista() time.Time { return time.Date(2026, 10, 13, 18, 0, 0, 0, time.UTC) }
 
-// nuevoRouter arma la aplicación con repositorios en memoria vacíos.
+// nuevoRouter arma la aplicación con repositorios en memoria vacíos y "hoy" en el 13/10/2026.
 func nuevoRouter() http.Handler {
+	return nuevoRouterConReloj(relojDeLaVista)
+}
+
+// nuevoRouterConReloj arma la aplicación con repositorios en memoria vacíos; ahora fija "hoy" para la vista del
+// proyecto (HU-04) y para la modificación (HU-02).
+func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, memory.NuevoIntegrantes()),
 		Historias:   service.NuevoHistorias(proyectos, historias),
-		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, relojDeLaVista),
+		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
+		Edicion:     service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 	})
 }
 

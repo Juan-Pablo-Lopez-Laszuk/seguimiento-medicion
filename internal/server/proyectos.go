@@ -23,6 +23,12 @@ type listaProyectos struct {
 	Creado    bool                      // muestra el aviso "Proyecto creado" al volver del formulario
 }
 
+// vistaProyecto son los datos de la página proyecto.html: el estado (HU-04) y si se vuelve de modificarlo (HU-02).
+type vistaProyecto struct {
+	service.EstadoProyecto
+	Modificado bool // muestra el aviso "Proyecto modificado"
+}
+
 // formProyecto son los datos de la página proyecto_nuevo.html: lo que cargó el usuario (como texto,
 // para volver a mostrarlo tal cual) y el error de cada campo.
 type formProyecto struct {
@@ -64,7 +70,10 @@ func (h proyectos) ver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No se pudo cargar el proyecto. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
 		return
 	}
-	render(w, http.StatusOK, "proyecto.html", Pagina{Titulo: estado.Proyecto.Nombre, Datos: estado})
+	render(w, http.StatusOK, "proyecto.html", Pagina{
+		Titulo: estado.Proyecto.Nombre,
+		Datos:  vistaProyecto{EstadoProyecto: estado, Modificado: r.URL.Query().Get("modificado") == "1"},
+	})
 }
 
 // nuevo muestra el formulario vacío.

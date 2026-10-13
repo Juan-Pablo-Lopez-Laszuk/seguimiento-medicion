@@ -50,6 +50,32 @@ func (r *Proyectos) ExisteNombre(_ context.Context, nombre string) (bool, error)
 	return false, nil
 }
 
+// ExisteOtroConNombre informa si otro proyecto (no el de exceptoID) ya tiene ese nombre, sin distinguir
+// mayúsculas (HU-02 RN2).
+func (r *Proyectos) ExisteOtroConNombre(_ context.Context, nombre string, exceptoID int64) (bool, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, p := range r.lista {
+		if p.ID != exceptoID && strings.EqualFold(p.Nombre, nombre) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// Actualizar reemplaza el proyecto que tiene el mismo ID, o devuelve project.ErrNoEncontrado si no existe.
+func (r *Proyectos) Actualizar(_ context.Context, p project.Proyecto) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.lista {
+		if r.lista[i].ID == p.ID {
+			r.lista[i] = p
+			return nil
+		}
+	}
+	return project.ErrNoEncontrado
+}
+
 // BuscarPorID devuelve el proyecto con ese ID, o project.ErrNoEncontrado si no existe.
 func (r *Proyectos) BuscarPorID(_ context.Context, id int64) (project.Proyecto, error) {
 	r.mu.Lock()

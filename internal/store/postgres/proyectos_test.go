@@ -144,3 +144,70 @@ func TestProyectos_LaBaseRechazaUnNombreRepetidoAunqueSeSalteExisteNombre(t *tes
 		t.Errorf("tenía que quedar un solo proyecto y hay %d", len(lista))
 	}
 }
+
+// HU-02 RN2 · el nombre repetido no cuenta al propio proyecto, sin distinguir mayúsculas
+func TestProyectos_ExisteOtroConNombre(t *testing.T) {
+	ctx := context.Background()
+	repo := postgres.NuevoProyectos(baseMigrada(t))
+	propio, err := repo.Guardar(ctx, proyectoDeEjemplo("Software Metrics"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if _, err := repo.Guardar(ctx, proyectoDeEjemplo("Otro proyecto")); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	casos := []struct {
+		nombre   string
+		esperado bool
+	}{
+		{"software METRICS", false}, // el propio, con otras mayúsculas
+		{"OTRO PROYECTO", true},
+		{"Nuevo nombre", false},
+	}
+	for _, c := range casos {
+		existe, err := repo.ExisteOtroConNombre(ctx, c.nombre, propio.ID)
+		if err != nil {
+			t.Fatalf("no se esperaba error: %v", err)
+		}
+		if existe != c.esperado {
+			t.Errorf("%q: se esperaba %v y se obtuvo %v", c.nombre, c.esperado, existe)
+		}
+	}
+}
+
+// HU-02 · Actualizar cambia nombre, descripción y fechas; el estado guardado y la creación no se tocan
+func TestProyectos_Actualizar(t *testing.T) {
+	ctx := context.Background()
+	repo := postgres.NuevoProyectos(baseMigrada(t))
+	p, err := repo.Guardar(ctx, proyectoDeEjemplo("Software Metrics"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	otro, err := repo.Guardar(ctx, proyectoDeEjemplo("Otro proyecto"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	p.Nombre, p.Descripcion = "software METRICS", "TPI de ICS 2026"
+	p.FechaInicio, p.FechaFin = fecha(2026, time.October, 1), fecha(2026, time.November, 8)
+	if err := repo.Actualizar(ctx, p); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	guardado, err := repo.BuscarPorID(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if guardado.Nombre != p.Nombre || guardado.Descripcion != p.Descripcion ||
+		!guardado.FechaInicio.Equal(p.FechaInicio) || !guardado.FechaFin.Equal(p.FechaFin) ||
+		guardado.Estado != p.Estado || !guardado.CreadoEn.Equal(p.CreadoEn) {
+		t.Errorf("se esperaba %+v y se obtuvo %+v", p, guardado)
+	}
+	if sinTocar, _ := repo.BuscarPorID(ctx, otro.ID); sinTocar.Nombre != "Otro proyecto" {
+		t.Errorf("el otro proyecto no tenía que cambiar: %+v", sinTocar)
+	}
+	if err := repo.Actualizar(ctx, project.Proyecto{ID: 999, Nombre: "No existe"}); !errors.Is(err, project.ErrNoEncontrado) {
+		t.Errorf("con un ID que no existe se esperaba project.ErrNoEncontrado y se obtuvo %v", err)
+	}
+}
