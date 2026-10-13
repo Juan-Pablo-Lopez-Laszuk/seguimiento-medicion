@@ -1,6 +1,6 @@
 # Sprint Review · Sprint 0 · 05/10/2026
 
-Participantes: López, Piastrellini, Bravo · Product Architect (profesores): por confirmar
+Participantes: López, Piastrellini, Bravo · Product Architect (profesores): no estuvieron. Las preguntas que dependían de la cátedra se les hicieron por separado (ver "Preguntas abiertas")
 
 ## Sprint Goal
 
@@ -57,7 +57,8 @@ Las que dependen de la cátedra se consultaron a los profesores; las que la cons
 
 ## Feedback del cliente
 
-- Respuestas a las preguntas abiertas (tabla de arriba).
+- No hubo feedback durante la Review porque los profesores no estuvieron. Lo que llegó de la cátedra son las
+  respuestas a las preguntas abiertas, consultadas por separado (tabla de arriba).
 
 ## Cambios en el Product Backlog
 
