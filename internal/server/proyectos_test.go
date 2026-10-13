@@ -13,6 +13,7 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
 // get y post simulan pedidos al mismo router, así lo que se crea en un pedido se ve en el siguiente.
@@ -141,10 +142,16 @@ func (repoCaido) Guardar(_ context.Context, p project.Proyecto) (project.Proyect
 	return p, errBaseCaida
 }
 func (repoCaido) Listar(context.Context) ([]project.Proyecto, error) { return nil, errBaseCaida }
+func (repoCaido) BuscarPorID(context.Context, int64) (project.Proyecto, error) {
+	return project.Proyecto{}, errBaseCaida
+}
 
 // Si falla la base se muestra un mensaje general, sin detalles internos, y se conservan los datos del formulario.
 func TestProyectos_ErrorDeLaBase_MuestraUnMensajeGeneral(t *testing.T) {
-	h := server.NewRouter(server.Dependencias{Proyectos: service.NuevoProyectos(repoCaido{}, time.Now)})
+	h := server.NewRouter(server.Dependencias{
+		Proyectos: service.NuevoProyectos(repoCaido{}, time.Now),
+		Estado:    service.NuevoEstadoProyectos(repoCaido{}, sprintsCaidos{}, memory.NuevoHistorias(), time.Now),
+	})
 
 	lista := get(h, "/proyectos")
 	creacion := post(h, "/proyectos", formularioValido())

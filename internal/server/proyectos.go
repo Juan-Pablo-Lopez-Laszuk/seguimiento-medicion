@@ -11,15 +11,16 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
 
-// proyectos agrupa los handlers de la épica E1 (HU-01).
+// proyectos agrupa los handlers de la épica E1 (HU-01 y HU-04).
 type proyectos struct {
-	casos *service.Proyectos
+	casos  *service.Proyectos
+	estado *service.EstadoProyectos
 }
 
 // listaProyectos son los datos de la página proyectos.html.
 type listaProyectos struct {
-	Proyectos []project.Proyecto
-	Creado    bool // muestra el aviso "Proyecto creado" al volver del formulario
+	Proyectos []service.ResumenProyecto // con el estado calculado (HU-04 RN1)
+	Creado    bool                      // muestra el aviso "Proyecto creado" al volver del formulario
 }
 
 // formProyecto son los datos de la página proyecto_nuevo.html: lo que cargó el usuario (como texto,
@@ -35,7 +36,7 @@ type formProyecto struct {
 
 // listar muestra todos los proyectos.
 func (h proyectos) listar(w http.ResponseWriter, r *http.Request) {
-	lista, err := h.casos.Listar(r.Context())
+	lista, err := h.estado.Listar(r.Context())
 	if err != nil {
 		log.Printf("listar proyectos: %v", err)
 		http.Error(w, "No se pudieron cargar los proyectos. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
@@ -45,6 +46,25 @@ func (h proyectos) listar(w http.ResponseWriter, r *http.Request) {
 		Titulo: "Proyectos",
 		Datos:  listaProyectos{Proyectos: lista, Creado: r.URL.Query().Get("creado") == "1"},
 	})
+}
+
+// ver muestra la vista del proyecto con su estado (HU-04).
+func (h proyectos) ver(w http.ResponseWriter, r *http.Request) {
+	id, ok := idDeProyecto(w, r)
+	if !ok {
+		return
+	}
+	estado, err := h.estado.Consultar(r.Context(), id)
+	switch {
+	case errors.Is(err, project.ErrNoEncontrado):
+		proyectoNoEncontrado(w)
+		return
+	case err != nil:
+		log.Printf("consultar el estado del proyecto %d: %v", id, err)
+		http.Error(w, "No se pudo cargar el proyecto. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
+		return
+	}
+	render(w, http.StatusOK, "proyecto.html", Pagina{Titulo: estado.Proyecto.Nombre, Datos: estado})
 }
 
 // nuevo muestra el formulario vacío.

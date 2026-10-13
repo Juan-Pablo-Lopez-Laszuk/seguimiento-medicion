@@ -23,17 +23,21 @@
     <tbody>
       {{range .}}
       <tr>
+        {{with .Proyecto}}
         <td>
-          <div class="fw-semibold">{{.Nombre}}</div>
+          <a class="fw-semibold" href="/proyectos/{{.ID}}">{{.Nombre}}</a>
           {{with .Descripcion}}<div class="small text-body-secondary">{{.}}</div>{{end}}
         </td>
         <td>{{.FechaInicio.Format "02/01/2006"}}</td>
         <td>{{.FechaFin.Format "02/01/2006"}}</td>
-        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+        {{end}}
+        <td>{{template "estadoProyecto" .Estado}}</td>
         <td class="text-end text-nowrap">
+          {{with .Proyecto}}
           <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/backlog">Backlog</a>
           <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/integrantes">Integrantes</a>
           <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.ID}}/sprints">Sprints</a>
+          {{end}}
         </td>
       </tr>
       {{end}}
@@ -46,4 +50,9 @@
   <a class="btn btn-outline-primary" href="/proyectos/nuevo">Crear el primero</a>
 </div>
 {{end}}
+{{end}}
+
+{{/* El mismo badge que en proyecto.html: cada página se arma por separado con el layout base. */}}
+{{define "estadoProyecto"}}
+<span class="badge {{if eq . "En curso"}}text-bg-primary{{else if eq . "Finalizado"}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.}}</span>
 {{end}}

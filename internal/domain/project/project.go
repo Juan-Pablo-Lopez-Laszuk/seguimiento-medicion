@@ -16,8 +16,13 @@ import (
 // Estado es la etapa en la que está un proyecto.
 type Estado string
 
-// EstadoPlanificado es el estado con el que nace todo proyecto (RN6).
-const EstadoPlanificado Estado = "Planificado"
+// Estados del proyecto. EstadoPlanificado es con el que nace (RN6); después el estado que se muestra
+// siempre es el calculado por EstadoActual (HU-04).
+const (
+	EstadoPlanificado Estado = "Planificado"
+	EstadoEnCurso     Estado = "En curso"
+	EstadoFinalizado  Estado = "Finalizado"
+)
 
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (

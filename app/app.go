@@ -35,7 +35,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	var (
 		proyectos interface {
 			service.RepositorioProyectos
-			service.BuscadorProyectos
+			service.ListadorProyectos
 		}
 		sprints     service.RepositorioSprints
 		integrantes service.RepositorioIntegrantes
@@ -59,6 +59,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:   service.NuevoHistorias(proyectos, historias),
+		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Base:        base,
 	}), nil
 }

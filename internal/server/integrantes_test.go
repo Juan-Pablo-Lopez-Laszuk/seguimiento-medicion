@@ -22,7 +22,7 @@ func integranteValido() url.Values {
 	}
 }
 
-// Hasta que exista la vista del proyecto (HU-04), a los integrantes se llega desde la lista de proyectos.
+// A los integrantes se llega desde la lista de proyectos y desde la vista del proyecto (HU-04).
 func TestListaDeProyectos_TieneEnlaceALosIntegrantesDeCadaProyecto(t *testing.T) {
 	verificarContiene(t, get(conProyecto(t), "/proyectos").Body.String(), `href="/proyectos/1/integrantes"`)
 }

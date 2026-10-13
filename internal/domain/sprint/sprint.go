@@ -18,8 +18,12 @@ import (
 // Estado es la etapa en la que está un sprint.
 type Estado string
 
-// EstadoPlanificado es el estado con el que nace todo sprint (RN6).
-const EstadoPlanificado Estado = "Planificado"
+// Estados del sprint. EstadoPlanificado es con el que nace (RN6) y EstadoCerrado lo pone el cierre (HU-14).
+// Que un sprint esté activo no se guarda: se calcula con Activo (HU-04 RN2).
+const (
+	EstadoPlanificado Estado = "Planificado"
+	EstadoCerrado     Estado = "Cerrado"
+)
 
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (

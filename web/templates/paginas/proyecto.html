@@ -1,0 +1,73 @@
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{.Proyecto.Nombre}}</li>
+  </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div>
+    <h1 class="h3 mb-1">
+      {{.Proyecto.Nombre}}
+      {{template "estadoProyecto" .Estado}}
+    </h1>
+    <div class="small text-body-secondary">
+      Del {{.Proyecto.FechaInicio.Format "02/01/2006"}} al {{.Proyecto.FechaFin.Format "02/01/2006"}}
+    </div>
+    {{with .Proyecto.Descripcion}}<p class="mt-2 mb-0">{{.}}</p>{{end}}
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/backlog">Backlog</a>
+    <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/sprints">Sprints</a>
+    <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes">Integrantes</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-12 col-md-6 col-lg-4">
+    <section class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6 text-body-secondary mb-2">Sprint activo</h2>
+      {{with .Activo}}
+      <div class="fw-semibold">Sprint {{.Numero}}</div>
+      <div>{{.Objetivo}}</div>
+      <div class="small text-body-secondary mb-2">
+        Del {{.FechaInicio.Format "02/01/2006"}} al {{.FechaFin.Format "02/01/2006"}}
+      </div>
+      {{if .Terminado}}
+      <div class="alert alert-warning mb-0 py-2" role="status">Terminó el {{.FechaFin.Format "02/01/2006"}}: falta cerrarlo</div>
+      {{else}}
+      <div>Le quedan {{.DiasRestantes}} días</div>
+      {{end}}
+      {{else}}
+      <div class="fw-semibold">Sin sprint activo</div>
+      {{with $.Datos.Proximo}}
+      <div class="small text-body-secondary">Próximo: Sprint {{.Numero}}, empieza el {{.FechaInicio.Format "02/01/2006"}}</div>
+      {{end}}
+      {{end}}
+    </section>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-4">
+    <section class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6 text-body-secondary mb-2">Días restantes del proyecto</h2>
+      <div class="display-6">{{.DiasRestantes}} días</div>
+      <div class="small text-body-secondary">Hasta el {{.Proyecto.FechaFin.Format "02/01/2006"}}</div>
+    </section>
+  </div>
+
+  <div class="col-12 col-md-6 col-lg-4">
+    <section class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6 text-body-secondary mb-2">Story points completados</h2>
+      <div class="display-6">{{.PorcentajeSP}}</div>
+      {{with .StoryPoints.Advertencia}}<div class="small text-warning-emphasis">Ojo: {{.}}</div>{{end}}
+    </section>
+  </div>
+</div>
+{{end}}
+{{end}}
+
+{{define "estadoProyecto"}}
+<span class="badge align-middle fs-6 {{if eq . "En curso"}}text-bg-primary{{else if eq . "Finalizado"}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.}}</span>
+{{end}}

@@ -13,14 +13,19 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
+// relojDeLaVista fija "hoy" en el 13/10/2026 a las 15:00 de Argentina, así la vista del proyecto (HU-04) no
+// depende del día en que corren los tests.
+func relojDeLaVista() time.Time { return time.Date(2026, 10, 13, 18, 0, 0, 0, time.UTC) }
+
 // nuevoRouter arma la aplicación con repositorios en memoria vacíos.
 func nuevoRouter() http.Handler {
-	proyectos := memory.NuevoProyectos()
+	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
-		Sprints:     service.NuevoSprints(proyectos, memory.NuevoSprints()),
+		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, memory.NuevoIntegrantes()),
-		Historias:   service.NuevoHistorias(proyectos, memory.NuevoHistorias()),
+		Historias:   service.NuevoHistorias(proyectos, historias),
+		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, relojDeLaVista),
 	})
 }
 
