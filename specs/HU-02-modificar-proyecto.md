@@ -1,6 +1,6 @@
 # SPEC-02 · Modificar proyecto
 
-**Historia:** HU-02 (#40) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
+**Historia:** HU-02 (#40) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Reutiliza las reglas de `specs/HU-01-crear-proyecto.md`, la de
 > sprints de `specs/HU-11-crear-sprint.md` y el estado calculado de `specs/HU-04-estado-proyecto.md`.
@@ -45,13 +45,19 @@ sprints afuera del proyecto y sin tocar un proyecto que ya terminó.
 
 ## 5. Restricciones
 
-- `project.Nuevo` de HU-01 se reutiliza para RN1. RN3 a RN5 son funciones puras que reciben el proyecto, sus sprints y
-  "hoy" (en `internal/domain/project`).
+- `project.Nuevo` de HU-01 se reutiliza para RN1 (las dos usan la misma validación interna). RN3 a RN5 son funciones
+  puras en `internal/domain/project` que reciben el proyecto, los límites de sus sprints (`project.LimitesSprints`: inicio
+  del primero y fin del último, que arma `sprint.Limites`) y "hoy". Reciben los límites y no la lista de sprints porque
+  el paquete `sprint` ya importa a `project` y al revés habría un ciclo.
+- El caso de uso es `service.EdicionProyectos` (en `internal/service/edicion.go`), aparte de `service.Proyectos`, igual
+  que el de HU-04, para no cambiar el constructor que ya usan HU-01 y los demás tests.
 - El caso de uso busca el proyecto y sus sprints, valida y guarda. El repositorio de proyectos necesita
   `Actualizar(ctx, p)` y que la búsqueda de nombre repetido pueda **excluir al propio proyecto**
-  (`ExisteNombre(ctx, nombre, exceptoID)` o una función aparte). TEC-03 no los trajo, así que se agregan con esta
-  historia **en los dos repositorios** (memoria y `internal/store/postgres`, con su test contra la base). El índice
-  único sobre `lower(nombre)` ya lo cubre en la base.
+  (se agregó `ExisteOtroConNombre(ctx, nombre, exceptoID)`, así `ExisteNombre` de HU-01 queda igual). TEC-03 no los
+  trajo, así que se agregaron con esta historia **en los dos repositorios** (memoria y `internal/store/postgres`, con su
+  test contra la base). El índice único sobre `lower(nombre)` ya lo cubre en la base.
+- En la interfaz: botón **Modificar** en la vista del proyecto (no aparece si está Finalizado), formulario en
+  `/proyectos/{id}/editar` (GET y POST) y, al guardar, vuelta a la vista con `?modificado=1`.
 - Depende de **HU-04** (estado calculado y vista del proyecto): se implementa después.
 
 ## 6. Casos límite
@@ -80,7 +86,7 @@ Proyecto "Software Metrics" del 05/10/2026 al 01/11/2026, con el Sprint 1 del 05
 | Las de HU-01 | los de HU-01 | los de HU-01 | los de HU-01 |
 | Fin antes del fin del último sprint | fecha_fin | `ErrFinAntesDelUltimoSprint` | "la fecha de finalización no puede ser anterior al fin del último sprint (el Sprint 2 termina el 18/10/2026)" |
 | Inicio después del inicio del primer sprint | fecha_inicio | `ErrInicioDespuesDelPrimerSprint` | "la fecha de inicio no puede ser posterior al inicio del primer sprint (el Sprint 1 empieza el 05/10/2026)" |
-| Proyecto Finalizado | — | `ErrProyectoFinalizado` | "un proyecto Finalizado no se puede modificar" (aviso en la vista, 409) |
+| Proyecto Finalizado | — | `ErrProyectoFinalizado` | "Este proyecto ya terminó, y un proyecto Finalizado no se puede modificar." (aviso en lugar del formulario, 409) |
 | El proyecto no existe | — | `project.ErrNoEncontrado` | Página 404 "No encontramos ese proyecto" |
 
 ## 8. Criterios de aceptación
@@ -95,14 +101,14 @@ Issue: #40 · Feature: `features/hu-02-modificar-proyecto.feature` · Pasos BDD:
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | `internal/domain/project/project.go` (`Modificar`) | `internal/domain/project/project_test.go` |
-| Repositorio en memoria | `internal/store/memory/proyectos.go` (`Actualizar`, nombre repetido sin contar al propio) | `internal/store/memory/proyectos_test.go` |
+| Dominio | `internal/domain/project/modificar.go` (`Modificar`, `PuedeModificarse`, `LimitesSprints`), `internal/domain/sprint/limites.go` (`Limites`) | `project/modificar_test.go`, `sprint/limites_test.go` |
+| Repositorio en memoria | `internal/store/memory/proyectos.go` (`Actualizar`, `ExisteOtroConNombre`) | `internal/store/memory/proyectos_test.go` |
 | Repositorio PostgreSQL | `internal/store/postgres/proyectos.go` (lo mismo) | `internal/store/postgres/proyectos_test.go` |
-| Caso de uso | `internal/service/proyectos.go` (`Modificar`) | `internal/service/proyectos_test.go` |
-| Pantalla | `internal/server/proyectos.go`, `web/templates/paginas/proyecto_editar.html` | `internal/server/proyectos_test.go` |
+| Caso de uso | `internal/service/edicion.go` (`EdicionProyectos.Preparar` y `Modificar`) | `internal/service/edicion_test.go` |
+| Pantalla | `internal/server/edicion.go`, `web/templates/paginas/proyecto_editar.html`, botón y aviso en `proyecto.html` | `internal/server/edicion_test.go` |
 
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-02.1 Mismas validaciones que al crear | Modificar la descripción · Nombre propio con otras mayúsculas · Nombre de otro proyecto · Errores juntos | se completa con el código |
-| CA-02.2 Fin no antes del último sprint | Fechas contra los sprints | se completa con el código |
-| CA-02.3 Finalizado no se modifica | Un proyecto Finalizado no se modifica | se completa con el código |
+| CA-02.1 Mismas validaciones que al crear | Modificar la descripción · Cambiar las mayúsculas del propio nombre · Se informan los errores de la creación | `TestModificar_CambiarDescripcion`, `TestModificar_NormalizaElNombre`, `TestModificar_ValidacionesDeLaCreacion`, `TestProyectos_ExisteOtroConNombre`, `TestProyectos_Actualizar`, `TestModificarProyecto_DatosValidos_QuedaGuardado`, `TestModificarProyecto_PropioNombreConOtrasMayusculas`, `TestModificarProyecto_NombreDeOtroYFechasInvalidas`, `TestModificarProyecto_NombreInvalido_NoSeBuscaRepetido`, `TestFormularioModificar_CargaLosDatosActuales`, `TestModificar_DatosValidos_VuelveALaVistaConElMensaje`, `TestModificar_Errores_MuestraElFormularioConLosErrores` |
+| CA-02.2 Fin no antes del último sprint (y RN4, inicio no después del primero) | Fechas contra los sprints | `TestModificar_FechasContraLosSprints`, `TestModificar_UnErrorPorCampo`, `TestModificar_SinSprints`, `TestLimites`, `TestLimites_SinSprints`, `TestModificarProyecto_FinAntesDelUltimoSprint` |
+| CA-02.3 Finalizado no se modifica | Un proyecto Finalizado no se modifica | `TestModificar_ProyectoFinalizado`, `TestModificar_SinSprintsYFechaPasada_SePuedeModificar`, `TestPuedeModificarse`, `TestModificarProyecto_Finalizado`, `TestModificarProyecto_HoyEsLaFechaDeArgentina`, `TestPrepararModificacion`, `TestModificar_ProyectoFinalizado` (pantalla) |
