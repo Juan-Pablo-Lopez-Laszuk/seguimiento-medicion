@@ -1,6 +1,6 @@
 # SPEC-13 · Registrar historias completadas
 
-**Historia:** HU-13 (#45) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-13 (#45) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa la página del sprint de `specs/HU-12-asignar-historias.md`, el
 > sprint activo de `specs/HU-04-estado-proyecto.md` (RN2) y la regla de estados de HU-08 (Mariano). Lo que viene de HU-08
@@ -36,11 +36,12 @@ en que se terminó (la usan las métricas y el burndown).
 - RN1: **Solo historias del sprint activo** (CA-13.1). El sprint activo es el de HU-04 RN2. En un sprint futuro o
   cerrado no se completa nada.
 - RN2: **Hay que pasar por En progreso** (CA-08.1: Pendiente → En sprint → En progreso → Hecho). Una historia En sprint
-  primero se empieza y después se completa. **A confirmar con Mariano (decisión 6).**
+  primero se empieza y después se completa. Aprobada por Juan Pablo el 13/10; falta la conformidad de Mariano
+  (decisión 6).
 - RN3: **Todos los criterios cumplidos** (CA-13.3 y CA-08.2). La regla es la de HU-08; HU-13 la usa, no la repite.
 - RN4: **Fecha de completado** (CA-13.2): se guarda hoy, en la hora de Argentina. No la elige el usuario.
 - RN5: **No se deshace.** Una historia Hecha no vuelve atrás desde esta pantalla: CA-08.1 solo prevé la vuelta a
-  Pendiente al cerrar el sprint (HU-14). **A confirmar.**
+  Pendiente al cerrar el sprint (HU-14). Confirmada por Juan Pablo (13/10).
 - RN6: Completar una historia no cambia los SP comprometidos del sprint, solo los completados.
 
 ## 5. Restricciones

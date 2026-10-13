@@ -30,7 +30,7 @@ Característica: Registrar historias completadas
     Entonces completar da el error "HU-2 no se puede completar: falta cumplir 1 de 2 criterios"
     Y "HU-2" sigue "En progreso"
 
-  # Caso de ERROR: hay que pasar por En progreso (CA-08.1, decisión 6 a confirmar)
+  # Caso de ERROR: hay que pasar por En progreso (CA-08.1, decisión 6)
   @CA-13.3
   Escenario: Hay que empezarla antes
     Dado que hoy es el "2026-10-15" para completar
