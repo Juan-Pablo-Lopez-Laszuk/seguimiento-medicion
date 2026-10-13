@@ -35,8 +35,12 @@ func (p Prioridad) valida() bool {
 // Estado es la etapa en la que está una historia.
 type Estado string
 
-// EstadoPendiente es el estado con el que nace toda historia (RN6). Los demás llegan con HU-08.
-const EstadoPendiente Estado = "Pendiente"
+// EstadoPendiente es el estado con el que nace toda historia (RN6). Los demás llegan con HU-08; EstadoHecho
+// ya está porque lo lee HU-04 para el porcentaje de story points completados.
+const (
+	EstadoPendiente Estado = "Pendiente"
+	EstadoHecho     Estado = "Hecho"
+)
 
 // Nombres de los campos, tal como se informan en los errores y en el formulario.
 const (
