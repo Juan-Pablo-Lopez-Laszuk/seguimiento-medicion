@@ -2,6 +2,7 @@ package memory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
@@ -54,5 +55,24 @@ func TestHistorias_LosStoryPointsGuardadosNoSeComparten(t *testing.T) {
 
 	if otraVez[0].StoryPoints == nil || *otraVez[0].StoryPoints != 5 {
 		t.Errorf("se esperaban 5 story points guardados y se obtuvo %v", otraVez[0].StoryPoints)
+	}
+}
+
+// HU-07: la página de una historia se pide por su número dentro del proyecto (HU-N)
+func TestHistorias_BuscarPorNumero(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	_, _ = repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "HU-1 del proyecto 1"})
+	_, _ = repo.Guardar(ctx, backlog.Historia{ProyectoID: 2, Numero: 1, Titulo: "HU-1 del proyecto 2"})
+
+	h, err := repo.BuscarPorNumero(ctx, 2, 1)
+	if err != nil || h.Titulo != "HU-1 del proyecto 2" || h.ID != 2 {
+		t.Errorf("se esperaba la HU-1 del proyecto 2 y se obtuvo %+v, %v", h, err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 1, 2); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("número que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 3, 1); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("proyecto sin historias: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
