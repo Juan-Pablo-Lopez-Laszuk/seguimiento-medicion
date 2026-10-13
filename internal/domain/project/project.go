@@ -76,25 +76,27 @@ type Proyecto struct {
 // Nuevo valida los datos y devuelve el proyecto listo para guardar. Si algún dato es inválido,
 // devuelve domain.ErroresValidacion con todos los campos que fallaron.
 func Nuevo(d Datos) (Proyecto, error) {
+	p, errs := validarComoAlCrear(d)
+	if len(errs) > 0 {
+		return Proyecto{}, errs
+	}
+	p.Estado = EstadoPlanificado
+	return p, nil
+}
+
+// validarComoAlCrear normaliza y valida los datos (RN1 a RN7). Devuelve el proyecto con los datos ya normalizados y
+// los errores de todos los campos inválidos juntos (RN7). La usan Nuevo y Modificar (HU-02 RN1).
+func validarComoAlCrear(d Datos) (Proyecto, domain.ErroresValidacion) {
 	nombre := NormalizarNombre(d.Nombre)
 	inicio, fin := domain.SoloFecha(d.FechaInicio), domain.SoloFecha(d.FechaFin)
 
-	errs := domain.ErroresValidacion{} // RN7: se informan todos los campos juntos
+	errs := domain.ErroresValidacion{}
 	errs.Agregar(CampoNombre, validarNombre(nombre))
 	errs.Agregar(CampoDescripcion, validarDescripcion(d.Descripcion))
 	errInicio, errFin := validarFechas(inicio, fin)
 	errs.Agregar(CampoFechaInicio, errInicio)
 	errs.Agregar(CampoFechaFin, errFin)
-	if len(errs) > 0 {
-		return Proyecto{}, errs
-	}
-	return Proyecto{
-		Nombre:      nombre,
-		Descripcion: d.Descripcion,
-		FechaInicio: inicio,
-		FechaFin:    fin,
-		Estado:      EstadoPlanificado,
-	}, nil
+	return Proyecto{Nombre: nombre, Descripcion: d.Descripcion, FechaInicio: inicio, FechaFin: fin}, errs
 }
 
 // NormalizarNombre quita los espacios del inicio y del final (RN1). La usa también el caso de uso para
