@@ -17,6 +17,10 @@ var (
 	ErrDescripcionCriterioLarga       = errors.New("la descripción del criterio no puede superar los 300 caracteres")
 )
 
+// ErrHistoriaHecha se devuelve al querer cambiar los criterios de una historia Hecha (RN7): agregar uno o desmarcarlo
+// rompería que una historia Hecha tiene todos sus criterios cumplidos.
+var ErrHistoriaHecha = errors.New("la historia está Hecha: no se pueden cambiar sus criterios")
+
 // Criterio es un criterio de aceptación de una historia: algo que se verifica para dar la historia por terminada.
 //
 // Spec: specs/HU-07-criterios-aceptacion.md.
@@ -29,8 +33,12 @@ type Criterio struct {
 
 // NuevoCriterio valida la descripción y devuelve el criterio listo para guardar en la historia. Todo criterio nace
 // no cumplido (RN2) y se guarda sin los espacios del inicio y del final de la descripción (RN1). Si la descripción
-// es inválida, devuelve domain.ErroresValidacion con el error del campo CampoDescripcion.
+// es inválida, devuelve domain.ErroresValidacion con el error del campo CampoDescripcion. En una historia Hecha no se
+// agregan criterios (RN7): devuelve ErrHistoriaHecha, y eso se revisa antes que la descripción.
 func NuevoCriterio(descripcion string, h Historia) (Criterio, error) {
+	if h.Estado == EstadoHecho {
+		return Criterio{}, ErrHistoriaHecha
+	}
 	descripcion = strings.TrimSpace(descripcion)
 
 	errs := domain.ErroresValidacion{}
