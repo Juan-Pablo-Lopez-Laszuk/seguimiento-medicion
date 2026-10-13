@@ -57,13 +57,13 @@ Característica: Asignar historias a un sprint
     Cuando asigno "HU-1" al Sprint 3
     Entonces la asignación da el error "HU-1 ya está en el Sprint 2"
 
-  # Caso ALTERNATIVO: planificar el sprint siguiente antes de que empiece (RN2, a confirmar)
+  # Caso ALTERNATIVO: planificar el sprint siguiente antes de que empiece (RN2)
   @CA-12.2
   Escenario: Planificar el sprint siguiente
     Cuando asigno "HU-1" al Sprint 3
     Entonces "HU-1" queda en el Sprint 3 en estado "En sprint"
 
-  # Caso ALTERNATIVO: quitar una historia que todavía no empezó (RN4, a confirmar)
+  # Caso ALTERNATIVO: quitar una historia que todavía no empezó (RN4)
   @CA-12.2
   Escenario: Quitar una historia del sprint
     Dado que asigné "HU-1" al Sprint 2

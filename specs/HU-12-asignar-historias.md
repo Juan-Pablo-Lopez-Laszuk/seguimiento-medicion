@@ -1,6 +1,6 @@
 # SPEC-12 · Asignar historias a un sprint
 
-**Historia:** HU-12 (#44) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-12 (#44) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa las tablas Historia, CriterioAceptacion y Sprint de
 > `docs/modelo-datos.md`, el sprint activo de `specs/HU-04-estado-proyecto.md` (RN2) y la velocidad de
@@ -40,18 +40,18 @@ con un aviso si se compromete más de lo que el equipo suele terminar.
   - está en **Pendiente** y sin sprint. Esto cubre "no Hecha" y "en un solo sprint abierto" (CA-12.2): una historia
     En sprint o En progreso ya está en un sprint abierto, y una Hecha ya terminó.
 - RN2: **Sprint abierto** (CA-12.2). No se asigna a un sprint **cerrado**. Sí al sprint activo y a uno futuro que
-  todavía no empezó, para poder planificar el siguiente antes de que arranque. **A confirmar.**
+  todavía no empezó, para poder planificar el siguiente antes de que arranque. Confirmada por Juan Pablo (13/10).
 - RN3: **Una historia, un sprint abierto** (CA-12.2). Si la historia ya está en otro sprint abierto se rechaza con el
   número de ese sprint. Para cambiarla de sprint primero se la quita (RN4).
 - RN4: **Quitar del sprint.** Mientras está **En sprint** (todavía no empezó), una historia se puede quitar: vuelve a
   Pendiente y sin sprint. Ya En progreso no se quita. No lo pide la historia, pero sin esto un error al planificar no
-  tiene vuelta atrás. **A confirmar.**
+  tiene vuelta atrás. Confirmada por Juan Pablo (13/10).
 - RN5: **Aviso por velocidad** (CA-12.3). Después de asignar, si los SP comprometidos del sprint superan la velocidad
   del equipo, se avisa: "Ojo: el Sprint 2 suma 21 SP y la velocidad del equipo es 16,5 SP". La velocidad es la de
   HU-31 (`metrics.CalcularVelocidad`, últimos 3 sprints cerrados, con su foto del cierre). Con un solo sprint cerrado,
-  es la de ese sprint; **sin sprints cerrados no hay aviso** (decisión 8 de la Planning, a confirmar).
+  es la de ese sprint; **sin sprints cerrados no hay aviso** (decisión 8 de la Planning, confirmada por Juan Pablo y Carolina en el #96).
 - RN6: El cambio de estado (Pendiente → En sprint, y la vuelta al quitar) usa las **transiciones de HU-08**, no las
-  repite (decisión 5 de la Planning, a confirmar con Mariano).
+  repite (decisión 5 de la Planning: la aprobó Juan Pablo el 13/10; falta la conformidad de Mariano).
 
 ## 5. Restricciones
 
