@@ -3,9 +3,7 @@
   <div class="col-lg-7">
     <h1 class="h3 mb-3">Nuevo proyecto</h1>
 
-    {{with .Datos.ErrorGeneral}}
-    <div class="alert alert-danger" role="alert">{{.}}</div>
-    {{end}}
+    {{template "error" .Datos.ErrorGeneral}}
 
     {{with .Datos}}
     <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos" method="post" novalidate>
@@ -13,7 +11,7 @@
         <label class="form-label" for="nombre">Nombre</label>
         <input class="form-control{{if index .Errores "nombre"}} is-invalid{{end}}" id="nombre" name="nombre"
                value="{{.Nombre}}" maxlength="100" required autofocus>
-        {{with index .Errores "nombre"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        {{template "errorCampo" (index .Errores "nombre")}}
         <div class="form-text">Entre 3 y 100 caracteres. No puede repetirse.</div>
       </div>
 
@@ -21,7 +19,7 @@
         <label class="form-label" for="descripcion">Descripción <span class="text-body-secondary">(opcional)</span></label>
         <textarea class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion"
                   name="descripcion" rows="3" maxlength="1000">{{.Descripcion}}</textarea>
-        {{with index .Errores "descripcion"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        {{template "errorCampo" (index .Errores "descripcion")}}
       </div>
 
       <div class="row">
@@ -29,13 +27,13 @@
           <label class="form-label" for="fecha_inicio">Fecha de inicio</label>
           <input class="form-control{{if index .Errores "fecha_inicio"}} is-invalid{{end}}" type="date"
                  id="fecha_inicio" name="fecha_inicio" value="{{.FechaInicio}}" required>
-          {{with index .Errores "fecha_inicio"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+          {{template "errorCampo" (index .Errores "fecha_inicio")}}
         </div>
         <div class="col-sm-6 mb-3">
           <label class="form-label" for="fecha_fin">Fecha de finalización</label>
           <input class="form-control{{if index .Errores "fecha_fin"}} is-invalid{{end}}" type="date"
                  id="fecha_fin" name="fecha_fin" value="{{.FechaFin}}" required>
-          {{with index .Errores "fecha_fin"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+          {{template "errorCampo" (index .Errores "fecha_fin")}}
         </div>
       </div>
 

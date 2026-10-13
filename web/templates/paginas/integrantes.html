@@ -12,15 +12,9 @@
   <a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes/nuevo">Nuevo integrante</a>
 </div>
 
-{{if .Registrado}}
-<div class="alert alert-success" role="status">Integrante registrado.</div>
-{{end}}
-{{if .Baja}}
-<div class="alert alert-success" role="status">Integrante dado de baja.</div>
-{{end}}
-{{with .Error}}
-<div class="alert alert-warning" role="alert">{{.}}</div>
-{{end}}
+{{if .Registrado}}{{template "exito" "Integrante registrado."}}{{end}}
+{{if .Baja}}{{template "exito" "Integrante dado de baja."}}{{end}}
+{{template "aviso" .Error}}
 
 {{if .Integrantes}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">
@@ -47,10 +41,12 @@
         </td>
         <td class="text-end">
           {{if .Activo}}
-          <form action="/proyectos/{{$proyecto}}/integrantes/{{.ID}}/baja" method="post" class="d-inline"
-                onsubmit="return confirm('¿Dar de baja a este integrante? Queda en el historial pero ya no participa del proyecto.')">
-            <button class="btn btn-sm btn-outline-danger" type="submit">Dar de baja</button>
-          </form>
+          {{template "confirmar" (dict
+              "ID" (printf "confirmar-baja-%d" .ID)
+              "Titulo" (printf "¿Dar de baja a %s?" .Nombre)
+              "Texto" "Queda en el historial, pero ya no participa del proyecto."
+              "Accion" (printf "/proyectos/%d/integrantes/%d/baja" $proyecto .ID)
+              "Boton" "Dar de baja")}}
           {{end}}
         </td>
       </tr>

@@ -2,6 +2,8 @@ package server
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"log"
@@ -20,9 +22,27 @@ type Pagina struct {
 // funciones son las funciones que pueden usar las plantillas.
 var funciones = template.FuncMap{
 	"fechaParaInput": fechaParaInput,
+	"dict":           dict,
 }
 
-// plantillas tiene cada página ya combinada con el layout base, indexada por nombre de archivo
+// dict arma un mapa con pares clave, valor para pasarle varios datos a un componente, por ejemplo
+// {{template "confirmar" (dict "ID" "confirmar-baja-1" "Titulo" "…")}} (TEC-07).
+func dict(pares ...any) (map[string]any, error) {
+	if len(pares)%2 != 0 {
+		return nil, errors.New("dict necesita pares de clave y valor")
+	}
+	m := make(map[string]any, len(pares)/2)
+	for i := 0; i < len(pares); i += 2 {
+		clave, ok := pares[i].(string)
+		if !ok {
+			return nil, fmt.Errorf("la clave %v de dict tiene que ser texto", pares[i])
+		}
+		m[clave] = pares[i+1]
+	}
+	return m, nil
+}
+
+// plantillas tiene cada página ya combinada con el layout base y los componentes (TEC-07), indexada por nombre de archivo
 // (por ejemplo "inicio.html"). Cada página se parsea por separado porque todas definen "contenido".
 var plantillas = cargarPlantillas()
 
@@ -33,7 +53,7 @@ func cargarPlantillas() map[string]*template.Template {
 	}
 	ps := make(map[string]*template.Template, len(archivos))
 	for _, a := range archivos {
-		ps[path.Base(a)] = template.Must(template.New(path.Base(a)).Funcs(funciones).ParseFS(web.Templates, "templates/base.html", a))
+		ps[path.Base(a)] = template.Must(template.New(path.Base(a)).Funcs(funciones).ParseFS(web.Templates, "templates/base.html", "templates/componentes.html", a))
 	}
 	return ps
 }
