@@ -47,10 +47,11 @@ sprints afuera del proyecto y sin tocar un proyecto que ya terminó.
 
 - `project.Nuevo` de HU-01 se reutiliza para RN1. RN3 a RN5 son funciones puras que reciben el proyecto, sus sprints y
   "hoy" (en `internal/domain/project`).
-- El caso de uso busca el proyecto y sus sprints, valida y guarda. **Para TEC-03:** el repositorio de proyectos necesita
+- El caso de uso busca el proyecto y sus sprints, valida y guarda. El repositorio de proyectos necesita
   `Actualizar(ctx, p)` y que la búsqueda de nombre repetido pueda **excluir al propio proyecto**
-  (`ExisteNombre(ctx, nombre, exceptoID)` o una función aparte). El índice único sobre `lower(nombre)` ya lo cubre en la
-  base.
+  (`ExisteNombre(ctx, nombre, exceptoID)` o una función aparte). TEC-03 no los trajo, así que se agregan con esta
+  historia **en los dos repositorios** (memoria y `internal/store/postgres`, con su test contra la base). El índice
+  único sobre `lower(nombre)` ya lo cubre en la base.
 - Depende de **HU-04** (estado calculado y vista del proyecto): se implementa después.
 
 ## 6. Casos límite
@@ -96,6 +97,7 @@ Issue: #40 · Feature: `features/hu-02-modificar-proyecto.feature` · Pasos BDD:
 |---|---|---|
 | Dominio | `internal/domain/project/project.go` (`Modificar`) | `internal/domain/project/project_test.go` |
 | Repositorio en memoria | `internal/store/memory/proyectos.go` (`Actualizar`, nombre repetido sin contar al propio) | `internal/store/memory/proyectos_test.go` |
+| Repositorio PostgreSQL | `internal/store/postgres/proyectos.go` (lo mismo) | `internal/store/postgres/proyectos_test.go` |
 | Caso de uso | `internal/service/proyectos.go` (`Modificar`) | `internal/service/proyectos_test.go` |
 | Pantalla | `internal/server/proyectos.go`, `web/templates/paginas/proyecto_editar.html` | `internal/server/proyectos_test.go` |
 
