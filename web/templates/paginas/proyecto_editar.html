@@ -1,0 +1,66 @@
+{{define "contenido"}}
+{{with .Datos}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.ID}}">Proyecto</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Modificar</li>
+      </ol>
+    </nav>
+
+    <h1 class="h3 mb-3">Modificar proyecto</h1>
+
+    {{if .Finalizado}}
+    <div class="alert alert-warning" role="alert">Este proyecto ya terminó, y un proyecto Finalizado no se puede modificar.</div>
+    <a class="btn btn-outline-secondary" href="/proyectos/{{.ID}}">Volver al proyecto</a>
+    {{else}}
+
+    {{with .ErrorGeneral}}
+    <div class="alert alert-danger" role="alert">{{.}}</div>
+    {{end}}
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.ID}}/editar" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="nombre">Nombre</label>
+        <input class="form-control{{if index .Errores "nombre"}} is-invalid{{end}}" id="nombre" name="nombre"
+               value="{{.Nombre}}" maxlength="100" required autofocus>
+        {{with index .Errores "nombre"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        <div class="form-text">Entre 3 y 100 caracteres. No puede repetir el de otro proyecto.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="descripcion">Descripción <span class="text-body-secondary">(opcional)</span></label>
+        <textarea class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion"
+                  name="descripcion" rows="3" maxlength="1000">{{.Descripcion}}</textarea>
+        {{with index .Errores "descripcion"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="fecha_inicio">Fecha de inicio</label>
+          <input class="form-control{{if index .Errores "fecha_inicio"}} is-invalid{{end}}" type="date"
+                 id="fecha_inicio" name="fecha_inicio" value="{{.FechaInicio}}" required>
+          {{with index .Errores "fecha_inicio"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+          <div class="form-text">No puede ser posterior al inicio del primer sprint.</div>
+        </div>
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="fecha_fin">Fecha de finalización</label>
+          <input class="form-control{{if index .Errores "fecha_fin"}} is-invalid{{end}}" type="date"
+                 id="fecha_fin" name="fecha_fin" value="{{.FechaFin}}" required>
+          {{with index .Errores "fecha_fin"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+          <div class="form-text">No puede ser anterior al fin del último sprint.</div>
+        </div>
+      </div>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.ID}}">Cancelar</a>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}
+{{end}}
