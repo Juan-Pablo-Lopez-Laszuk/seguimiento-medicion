@@ -1,6 +1,6 @@
 # SPEC-04 · Consultar estado del proyecto
 
-**Historia:** HU-04 (#42) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-04 (#42) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, las tablas Proyecto, Sprint e
 > Historia de `docs/modelo-datos.md` y las métricas M1 y M2 de `docs/metricas.md`.
