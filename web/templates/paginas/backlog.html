@@ -1,0 +1,59 @@
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{.Proyecto.Nombre}}</li>
+  </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h1 class="h3 mb-0">Backlog de {{.Proyecto.Nombre}}</h1>
+    <div class="small text-body-secondary">Product Backlog del proyecto</div>
+  </div>
+  <a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/backlog/nuevo">Nueva historia</a>
+</div>
+
+{{if .Creada}}
+<div class="alert alert-success" role="status">Historia HU-{{.Creada}} creada.</div>
+{{end}}
+
+{{if .Historias}}
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table table-hover align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Título</th>
+        <th scope="col">Prioridad</th>
+        <th scope="col">Estado</th>
+        <th scope="col">Story points</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Historias}}
+      <tr>
+        <td class="fw-semibold text-nowrap">{{.Identificador}}</td>
+        <td>
+          {{.Titulo}}
+          {{with .Descripcion}}<div class="small text-body-secondary">{{.}}</div>{{end}}
+        </td>
+        <td>
+          <span class="badge {{if eq .Prioridad "Alta"}}text-bg-danger{{else if eq .Prioridad "Media"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Prioridad}}</span>
+        </td>
+        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+        <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{else}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-3 text-body-secondary">Todavía no hay historias en este proyecto.</p>
+  <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/backlog/nuevo">Crear la primera</a>
+</div>
+{{end}}
+{{end}}
+{{end}}

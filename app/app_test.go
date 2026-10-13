@@ -182,6 +182,47 @@ func TestNewHandlerConBase_ConURLLosIntegrantesSobrevivenAUnReinicio(t *testing.
 	}
 }
 
+// HU-05: sin base, las historias del backlog también se guardan en memoria.
+func TestNewHandlerConBase_SinURLLasHistoriasSeGuardanEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+
+	campos := neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}}
+	if rec := post(h, "/proyectos/1/backlog", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("crear historia: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	if !strings.Contains(get(h, "/proyectos/1/backlog"), "Historia en memoria") {
+		t.Error("la historia recién creada debería estar en el backlog")
+	}
+}
+
+// HU-05: las historias quedan en la base, con sus story points, y la numeración sigue después de reiniciar.
+func TestNewHandlerConBase_ConURLLasHistoriasSobrevivenAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con backlog")
+
+	campos := neturl.Values{"titulo": {"Historia guardada en la base"}, "prioridad": {"Alta"}, "story_points": {"13"}}
+	if rec := post(primera, "/proyectos/1/backlog", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("crear historia: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	reiniciada := nuevaApp(t, url)
+	pagina := get(reiniciada, "/proyectos/1/backlog")
+	for _, esperado := range []string{"HU-1", "Historia guardada en la base", "Alta", "Pendiente", "13"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar el backlog debería mostrar %q:\n%s", esperado, pagina)
+		}
+	}
+
+	// la numeración sigue de donde quedó, leyendo lo que hay en la base
+	segunda := neturl.Values{"titulo": {"Segunda historia"}, "prioridad": {"Baja"}}
+	if rec := post(reiniciada, "/proyectos/1/backlog", segunda); rec.Header().Get("Location") != "/proyectos/1/backlog?creada=2" {
+		t.Errorf("la segunda historia tenía que ser la HU-2 y se redirigió a %q", rec.Header().Get("Location"))
+	}
+}
+
 // saludDe pide /health a la app y devuelve el código y el estado de la base que informa (TEC-04).
 func saludDe(t *testing.T, h http.Handler) (int, string) {
 	t.Helper()
