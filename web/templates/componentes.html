@@ -1,0 +1,25 @@
+{{/*
+  Componentes del diseño base (TEC-07, specs/TEC-07-diseno-base.md). Se cargan junto con base.html en todas las
+  páginas, así cada página los usa con {{template "nombre" …}} en lugar de repetir el HTML.
+*/}}
+
+{{/* exito: mensaje verde que se puede cerrar. Uso: {{template "exito" "Proyecto creado."}} */}}
+{{define "exito"}}{{with .}}
+<div class="alert alert-success alert-dismissible fade show" role="status">
+  {{.}}
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+</div>
+{{end}}{{end}}
+
+{{/* error: mensaje rojo que no se cierra. Si el texto está vacío no muestra nada. */}}
+{{define "error"}}{{with .}}
+<div class="alert alert-danger" role="alert">{{.}}</div>
+{{end}}{{end}}
+
+{{/* aviso: mensaje amarillo que no se cierra. Si el texto está vacío no muestra nada. */}}
+{{define "aviso"}}{{with .}}
+<div class="alert alert-warning" role="alert">{{.}}</div>
+{{end}}{{end}}
+
+{{/* errorCampo: el error debajo de un campo del formulario. Uso: {{template "errorCampo" (index .Errores "nombre")}} */}}
+{{define "errorCampo"}}{{with .}}<div class="invalid-feedback">{{.}}</div>{{end}}{{end}}

@@ -12,15 +12,9 @@
   <a class="btn btn-primary" href="/proyectos/{{.Proyecto.ID}}/integrantes/nuevo">Nuevo integrante</a>
 </div>
 
-{{if .Registrado}}
-<div class="alert alert-success" role="status">Integrante registrado.</div>
-{{end}}
-{{if .Baja}}
-<div class="alert alert-success" role="status">Integrante dado de baja.</div>
-{{end}}
-{{with .Error}}
-<div class="alert alert-warning" role="alert">{{.}}</div>
-{{end}}
+{{if .Registrado}}{{template "exito" "Integrante registrado."}}{{end}}
+{{if .Baja}}{{template "exito" "Integrante dado de baja."}}{{end}}
+{{template "aviso" .Error}}
 
 {{if .Integrantes}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">

@@ -22,7 +22,7 @@ var funciones = template.FuncMap{
 	"fechaParaInput": fechaParaInput,
 }
 
-// plantillas tiene cada página ya combinada con el layout base, indexada por nombre de archivo
+// plantillas tiene cada página ya combinada con el layout base y los componentes (TEC-07), indexada por nombre de archivo
 // (por ejemplo "inicio.html"). Cada página se parsea por separado porque todas definen "contenido".
 var plantillas = cargarPlantillas()
 
@@ -33,7 +33,7 @@ func cargarPlantillas() map[string]*template.Template {
 	}
 	ps := make(map[string]*template.Template, len(archivos))
 	for _, a := range archivos {
-		ps[path.Base(a)] = template.Must(template.New(path.Base(a)).Funcs(funciones).ParseFS(web.Templates, "templates/base.html", a))
+		ps[path.Base(a)] = template.Must(template.New(path.Base(a)).Funcs(funciones).ParseFS(web.Templates, "templates/base.html", "templates/componentes.html", a))
 	}
 	return ps
 }

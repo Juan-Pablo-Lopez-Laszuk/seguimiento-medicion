@@ -4,9 +4,7 @@
   <a class="btn btn-primary" href="/proyectos/nuevo">Nuevo proyecto</a>
 </div>
 
-{{if .Datos.Creado}}
-<div class="alert alert-success" role="status">Proyecto creado.</div>
-{{end}}
+{{if .Datos.Creado}}{{template "exito" "Proyecto creado."}}{{end}}
 
 {{with .Datos.Proyectos}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">
