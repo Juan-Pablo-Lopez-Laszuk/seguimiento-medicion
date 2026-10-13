@@ -1,6 +1,6 @@
 # SPEC-TEC-07 · Diseño base de la interfaz
 
-**Tarea:** TEC-07 (#16) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Borrador
+**Tarea:** TEC-07 (#16) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Implementada (primera entrega; las demás páginas adoptan los componentes cuando se toquen)
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. Es la primera entrega del diseño
 > base: un PR chico el primer día del sprint, como pide la Planning del Sprint 2, para que las pantallas nuevas ya nazcan
@@ -72,3 +72,21 @@ una acción que no se puede deshacer.
 - CA-07.1: `base.html` con menú, mensajes de error y confirmaciones.
 - CA-07.2: Se usa bien en celular y en compu.
 - CA-07.3: Componentes reutilizables (formularios, tablas, ventanas).
+
+## Trazabilidad
+
+Issue: #16 · Escenarios BDD: no aplica (no hay una regla de negocio nueva; el comportamiento se prueba con los tests de las
+pantallas, igual que en TEC-03).
+
+| Parte | Código | Tests |
+|---|---|---|
+| Layout | `web/templates/base.html` | `internal/server/layout_test.go` |
+| Componentes | `web/templates/componentes.html` (`exito`, `error`, `aviso`, `errorCampo`, `confirmar`) | `internal/server/componentes_test.go` |
+| Carga y `dict` | `internal/server/render.go` | `internal/server/dict_test.go` |
+| Páginas que ya los usan | `proyectos.html`, `integrantes.html`, `proyecto_nuevo.html` | los tests de cada pantalla siguen en verde |
+
+| Criterio | Tests |
+|---|---|
+| CA-07.1 Menú, errores y confirmaciones | `TestLayout_MenuSeColapsaEnElCelular`, `TestMensajeDeExito_SeAnunciaYSePuedeCerrar`, `TestAviso_NoSePuedeCerrar`, `TestDarDeBaja_PideConfirmacionEnUnaVentana` |
+| CA-07.2 Celular y compu | `TestLayout_MenuSeColapsaEnElCelular`, `TestLayout_EnlaceParaIrAlContenidoYPie` |
+| CA-07.3 Componentes reutilizables | `TestMensajeDeExito_*`, `TestAviso_*`, `TestDarDeBaja_*`, `TestDict` |
