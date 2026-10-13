@@ -51,3 +51,15 @@ func copiarHistoria(h backlog.Historia) backlog.Historia {
 	}
 	return h
 }
+
+// BuscarPorNumero devuelve la historia con ese número (HU-N) dentro del proyecto, o backlog.ErrHistoriaNoEncontrada.
+func (r *Historias) BuscarPorNumero(_ context.Context, proyectoID int64, numero int) (backlog.Historia, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, h := range r.lista {
+		if h.ProyectoID == proyectoID && h.Numero == numero {
+			return copiarHistoria(h), nil
+		}
+	}
+	return backlog.Historia{}, backlog.ErrHistoriaNoEncontrada
+}

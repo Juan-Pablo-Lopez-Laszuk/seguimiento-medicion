@@ -22,6 +22,12 @@ var (
 // rompería que una historia Hecha tiene todos sus criterios cumplidos.
 var ErrHistoriaHecha = errors.New("la historia está Hecha: no se pueden cambiar sus criterios")
 
+// Errores que no son de un campo del formulario: los devuelven los repositorios cuando no hay lo que se pidió.
+var (
+	ErrHistoriaNoEncontrada = errors.New("no existe la historia")
+	ErrCriterioNoEncontrado = errors.New("no existe el criterio")
+)
+
 // Criterio es un criterio de aceptación de una historia: algo que se verifica para dar la historia por terminada.
 //
 // Spec: specs/HU-07-criterios-aceptacion.md.
