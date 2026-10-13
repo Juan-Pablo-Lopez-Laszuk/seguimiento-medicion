@@ -23,7 +23,7 @@ func historiaValida() url.Values {
 	}
 }
 
-// Hasta que exista la vista del proyecto (HU-04), al backlog se llega desde la lista de proyectos.
+// Al backlog se llega desde la lista de proyectos y desde la vista del proyecto (HU-04).
 func TestListaDeProyectos_TieneEnlaceAlBacklogDeCadaProyecto(t *testing.T) {
 	verificarContiene(t, get(conProyecto(t), "/proyectos").Body.String(), `href="/proyectos/1/backlog"`)
 }

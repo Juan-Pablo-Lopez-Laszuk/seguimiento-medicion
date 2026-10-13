@@ -17,6 +17,7 @@ type Dependencias struct {
 	Sprints     *service.Sprints
 	Integrantes *service.Integrantes
 	Historias   *service.Historias
+	Estado      *service.EstadoProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
 	Base VerificadorBase
 }
@@ -27,10 +28,11 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/health", health(dep.Base))
 	r.Get("/", inicio)
 
-	p := proyectos{casos: dep.Proyectos}
+	p := proyectos{casos: dep.Proyectos, estado: dep.Estado}
 	r.Get("/proyectos", p.listar)
 	r.Get("/proyectos/nuevo", p.nuevo)
 	r.Post("/proyectos", p.crear)
+	r.Get("/proyectos/{id}", p.ver)
 
 	s := sprints{casos: dep.Sprints}
 	r.Get("/proyectos/{id}/sprints", s.listar)
