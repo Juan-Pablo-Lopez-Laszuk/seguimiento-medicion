@@ -110,7 +110,7 @@ Las 8 del [refinamiento](refinamiento.md#decisiones-a-confirmar-en-la-planning),
 - **Lo de producción, el mismo día del merge:** si un PR trae una migración nueva, Juan Pablo la aplica en producción
   ese día. Hoy ninguna historia del sprint la necesita, porque la 0001 ya tiene las 12 tablas.
 - **Dailies el mismo día**, de lunes a viernes, en el issue "Sprint 2 · Dailies" (#95).
-- **Issue antes de empezar**, y se cierra solo con el merge de su PR (`Closes #n`).
+- **Issue antes de empezar.**
 
 ## Riesgos y dependencias
 
