@@ -43,8 +43,6 @@ preparación y no se promedia) · Defectos abiertos: 0
 - **Dailies:** en el issue #86 Carolina dejó las del 08 y el 09/10; Mariano cargó las del 05 al 07/10 recién el 09/10
   y después las del 09 y el 10/10; Juan Pablo cargó todas las suyas juntas el 12/10. Las dailies atrasadas no sirven
   para detectar bloqueos a tiempo.
-- **Estado del tablero distinto de `main`:** #1 se cerró a mano antes de mergear su PR (#89), y el tablero contó 2 SP
-  de más durante unas horas. Lo que cierra una issue es el merge del PR (`Closes #n`).
 - **Issues creadas después del trabajo:** #83 y #84 se crearon y cerraron el mismo día, al terminar.
 
 ## Acciones
@@ -56,7 +54,6 @@ preparación y no se promedia) · Defectos abiertos: 0
 | Una revisión pedida se hace en menos de 24 horas; si el revisor no puede, avisa y revisa otro | Todos | Sprint 2 |
 | Lo que hay que hacer en producción (migraciones, variables en Vercel) se hace el mismo día que se mergea el PR que lo necesita | Juan Pablo | Sprint 2 |
 | Daily de lunes a viernes en el issue del sprint, el mismo día, también del Agile Enabler | Todos | Sprint 2 |
-| Una issue se cierra solo con el merge de su PR (`Closes #n`), nunca a mano | Todos | Sprint 2 |
 | Toda tarea tiene su issue antes de empezarla | Todos | Sprint 2 |
 
 ## Seguimiento de las acciones del sprint anterior

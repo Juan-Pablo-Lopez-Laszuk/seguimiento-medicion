@@ -42,7 +42,8 @@ Lo que se muestra en la app:
 1. **Proyectos:** alta con validaciones por campo y nombre único (HU-01).
 2. **Sprints de un proyecto:** número correlativo, fechas dentro del proyecto y sin superponerse (HU-11).
 3. **Integrantes:** alta con rol, un solo Agile Enabler activo, email único y baja lógica (HU-03).
-4. **Product Backlog:** alta de historias con criterios de aceptación y validaciones (HU-05).
+4. **Product Backlog:** alta de historias con título, prioridad y story points, con validaciones por campo (HU-05).
+   Los criterios de aceptación llegan con HU-07.
 5. **Datos guardados en Supabase** (TEC-03 y TEC-04): en producción, lo que se crea queda guardado al recargar y al
    redesplegar.
 6. **Métricas:** se muestran con los tests y los escenarios BDD (`go test ./features/ -v`), porque la pantalla de
