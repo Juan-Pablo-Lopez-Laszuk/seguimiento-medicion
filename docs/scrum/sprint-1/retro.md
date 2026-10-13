@@ -1,20 +1,19 @@
-# Retrospectiva · Sprint 1 · 11/10/2026
+# Retrospectiva · Sprint 1 · 12/10/2026
 
 Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
 ## Métricas del sprint
 
-SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados al cierre (11/10): 33 ·
-Velocidad: 33 (primer sprint de construcción; el Sprint 0 fue de preparación y no se promedia) · Defectos abiertos: 0
+SP comprometidos: 39 (19 ya terminados al hacer la Planning + 20 por hacer) · SP completados: 39 (33 al domingo 11/10
+y 6 el lunes 12/10, con el sprint estirado un día) · Velocidad: 39 (primer sprint de construcción; el Sprint 0 fue de
+preparación y no se promedia) · Defectos abiertos: 0
 
-| Integrante | Terminado al cierre | SP |
+| Integrante | Terminado | SP |
 |---|---|---|
 | Juan Pablo | TEC-01, TEC-02, HU-01, HU-11, HU-03 | 14 |
-| Carolina | #71, HU-30, HU-31, HU-32, HU-23 | 12 |
-| Mariano | #83, #84, TEC-03 | 6 |
+| Carolina | #71, HU-30, HU-31, HU-32, HU-23, TEC-04 (12/10) | 15 |
+| Mariano | #83, #84, TEC-03, HU-05 (12/10) | 9 |
 | Juan Pablo y Mariano | #80 (decisión) | 1 |
-
-HU-05 (Mariano, 3 SP) y TEC-04 (Carolina, 3 SP) se terminaron el lunes 12/10 y cuentan para el Sprint 2.
 
 ## ¿Qué salió bien?
 
@@ -35,9 +34,9 @@ HU-05 (Mariano, 3 SP) y TEC-04 (Carolina, 3 SP) se terminaron el lunes 12/10 y c
   objetivo acordado.
 - **El camino crítico arrancó tarde:** TEC-03 era lo que más bloqueaba (HU-05, TEC-04 y el deploy real dependen de él)
   y llegó a revisión el viernes 09/10 con el CI en rojo (se corrigió el 10/10). HU-05 recién se pudo empezar el sábado
-  10/10 y no llegó al cierre.
+  10/10 y no llegó al domingo: hubo que estirar el sprint un día.
 - **Revisiones que tardaron:** HU-05 (#93) esperó dos días la revisión de Juan Pablo (del sábado 10/10 a la noche al
-  lunes 12/10 a la noche) y por eso no entró en el sprint. HU-32 (#87) esperó casi un día.
+  lunes 12/10 a la noche), y fue una de las causas de estirar el sprint. HU-32 (#87) esperó casi un día.
 - **TEC-04 esperó la configuración de producción:** el código se mergeó el sábado 10/10, pero la base de producción
   recién se cargó en Vercel el lunes 12/10. Las credenciales de producción las maneja solo Juan Pablo, así que ese
   paso dependía de una sola persona.

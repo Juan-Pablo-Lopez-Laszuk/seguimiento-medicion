@@ -17,8 +17,7 @@ Sprint 1 terminó cerca de 30 (ver la Retro del Sprint 1), así que en la Planni
 | Mariano | HU-06, HU-07, HU-08, HU-09, HU-10, HU-16, HU-17, HU-18, HU-19, TEC-05 | 30 |
 | Carolina | HU-24, HU-25, HU-26, HU-27, HU-28, HU-29, TEC-07 | 20 |
 
-A eso se suman HU-05 y TEC-04 (6 SP), que no llegaron al cierre del Sprint 1 y se terminaron el lunes 12/10: cuentan
-para el Sprint 2 como ya hechas (ver la Review del Sprint 1).
+HU-05 y TEC-04 no se suman: el Sprint 1 se estiró hasta el lunes 12/10 y se cerraron ahí (ver la Review del Sprint 1).
 
 ## Cadena de dependencias
 
