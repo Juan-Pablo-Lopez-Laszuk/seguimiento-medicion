@@ -74,3 +74,53 @@ func TestProyectos_BuscarPorID(t *testing.T) {
 		t.Errorf("id inexistente: se esperaba project.ErrNoEncontrado y se obtuvo %v", err)
 	}
 }
+
+// HU-02 RN2 · el nombre repetido no cuenta al propio proyecto, sin distinguir mayúsculas
+func TestProyectos_ExisteOtroConNombre(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoProyectos()
+	propio, _ := repo.Guardar(ctx, project.Proyecto{Nombre: "Software Metrics"})
+	_, _ = repo.Guardar(ctx, project.Proyecto{Nombre: "Otro proyecto"})
+
+	casos := []struct {
+		nombre   string
+		esperado bool
+	}{
+		{"software METRICS", false}, // el propio, con otras mayúsculas
+		{"OTRO PROYECTO", true},
+		{"Nuevo nombre", false},
+	}
+	for _, c := range casos {
+		existe, err := repo.ExisteOtroConNombre(ctx, c.nombre, propio.ID)
+		if err != nil {
+			t.Fatalf("no se esperaba error: %v", err)
+		}
+		if existe != c.esperado {
+			t.Errorf("%q: se esperaba %v y se obtuvo %v", c.nombre, c.esperado, existe)
+		}
+	}
+}
+
+// HU-02 · Actualizar reemplaza los datos del proyecto con ese ID
+func TestProyectos_Actualizar(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoProyectos()
+	p, _ := repo.Guardar(ctx, project.Proyecto{Nombre: "Software Metrics"})
+	otro, _ := repo.Guardar(ctx, project.Proyecto{Nombre: "Otro proyecto"})
+
+	p.Nombre, p.Descripcion = "Software Metrics 2026", "TPI de ICS"
+	if err := repo.Actualizar(ctx, p); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	guardado, _ := repo.BuscarPorID(ctx, p.ID)
+	if guardado != p {
+		t.Errorf("se esperaba %+v y se obtuvo %+v", p, guardado)
+	}
+	if sinTocar, _ := repo.BuscarPorID(ctx, otro.ID); sinTocar != otro {
+		t.Errorf("el otro proyecto no tenía que cambiar: %+v", sinTocar)
+	}
+	if err := repo.Actualizar(ctx, project.Proyecto{ID: 99}); !errors.Is(err, project.ErrNoEncontrado) {
+		t.Errorf("con un ID que no existe se esperaba project.ErrNoEncontrado y se obtuvo %v", err)
+	}
+}
