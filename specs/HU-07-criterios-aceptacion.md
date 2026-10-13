@@ -1,6 +1,6 @@
 # SPEC-07 · Gestionar criterios de aceptación
 
-**Historia:** HU-07 (#20) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-07 (#20) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md` y la tabla CriterioAceptacion de
 > `docs/modelo-datos.md`.
@@ -73,8 +73,9 @@ El estado inicial de un criterio **no se carga**: nace no cumplido (RN2).
 - El caso de uso en `internal/service` busca la historia y sus criterios en los repositorios, llama al dominio y
   guarda. Los repositorios son interfaces: `internal/store/memory` en los tests y `internal/store/postgres` en la
   aplicación. **Cambios en los repositorios:** el de historias suma `BuscarPorNumero`, y hay uno nuevo de criterios
-  (`ListarPorHistoria`, `ListarPorProyecto` para calcular el progreso de toda la lista de una vez, `Guardar`,
-  `BuscarPorID` y `Actualizar`).
+  (`ListarPorHistoria`, `ListarPorHistorias` para calcular el progreso de toda la lista de una vez con una sola
+  consulta, `Guardar`, `BuscarPorID` y `Actualizar`). El de criterios no conoce los proyectos, así que la lista se
+  pide por los ids de las historias.
 - **Sin migración nueva:** la tabla `criterios_aceptacion` ya existe desde TEC-03 (`id`, `historia_id`, `descripcion`,
   `cumplido`), así que no hay nada que aplicar en producción.
 - Marcar y agregar se piden con un formulario `POST` (no con un enlace `GET`) y se vuelve a la página con una
@@ -121,7 +122,7 @@ Historia de ejemplo: HU-1 "Iniciar sesión con Google", Pendiente.
 | Descripción vacía o solo espacios | descripcion | `ErrDescripcionCriterioObligatoria` | "la descripción del criterio es obligatoria" |
 | Descripción de más de 300 caracteres | descripcion | `ErrDescripcionCriterioLarga` | "la descripción del criterio no puede superar los 300 caracteres" |
 | Historia Hecha (agregar o desmarcar) | — | `ErrHistoriaHecha` | "la historia está Hecha: no se pueden cambiar sus criterios" (aviso en la página, 409) |
-| Valor de marca que no es `1` ni `0` | — | `ErrValorDeMarcaInvalido` | Página 400 "Valor inválido" |
+| Valor de marca que no es `1` ni `0` | — | (lo controla el handler, antes del caso de uso) | Página 400 "Valor inválido." |
 | El proyecto no existe | — | `project.ErrNoEncontrado` | Página 404 "No encontramos ese proyecto" |
 | La historia no existe en el proyecto | — | `backlog.ErrHistoriaNoEncontrada` | Página 404 "No encontramos esa historia" |
 | El criterio no existe en la historia | — | `backlog.ErrCriterioNoEncontrado` | Página 404 "No encontramos ese criterio" |
@@ -138,4 +139,19 @@ En la pantalla, el error de la descripción aparece debajo del campo y se conser
 
 Issue: #20 · Feature: `features/hu-07-criterios-aceptacion.feature` · Pasos BDD: `features/hu07_steps_test.go`
 
-Se completa al terminar la implementación.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/criterios.go` (`NuevoCriterio`, `Criterio.Marcar`, `ProgresoDe`, `Progreso.TieneCriterios`, `Progreso.Completo`) | `internal/domain/backlog/criterios_test.go` |
+| Repositorio en memoria | `internal/store/memory/criterios.go`, `BuscarPorNumero` en `historias.go` | `internal/store/memory/criterios_test.go`, `historias_test.go` |
+| Repositorio PostgreSQL | `internal/store/postgres/criterios.go`, `BuscarPorNumero` en `historias.go` | `internal/store/postgres/criterios_test.go`, `historias_test.go` |
+| Caso de uso | `internal/service/criterios.go` (`Ver`, `Agregar`, `Marcar`, `Progresos`) | `internal/service/criterios_test.go` |
+| Pantalla | `internal/server/criterios.go`, `web/templates/paginas/historia.html` y la columna "Criterios" de `backlog.html` | `internal/server/criterios_test.go` |
+| Aplicación | `app/app.go` (elige memoria o PostgreSQL según `DATABASE_URL`) | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-07.1 Al menos un criterio para entrar a un sprint | Una historia necesita criterios para entrar a un sprint | `TestProgreso_TieneCriterios`, `TestPaginaDeLaHistoria_SinCriterios_AvisaQueNecesitaAlMenosUno` |
+| CA-07.2 Cada criterio se marca cumplido o no cumplido | Agregar el primer criterio de la historia · Marcar un criterio como cumplido y volver a desmarcarlo · Marcar dos veces un criterio como cumplido · Largo de la descripción del criterio · La descripción del criterio es obligatoria · Una historia Hecha no admite cambios en sus criterios | `TestNuevoCriterio_*`, `TestMarcar_*`, `TestAgregarCriterio_*`, `TestMarcarCriterio_*`, `TestCriterios_HistoriaHecha_NoSeCambian`, `TestHistoriaHecha_NoAdmiteCambiosEnSusCriterios`, `TestCriterios_Actualizar` |
+| CA-07.3 Se muestra el progreso | Agregar varios criterios · Cada historia tiene sus propios criterios · Cuándo una historia está completa | `TestProgresoDe_*`, `TestProgreso_Completo`, `TestVerHistoria_*`, `TestProgresos_CadaHistoriaCuentaSusCriterios`, `TestListaDelBacklog_MuestraElProgresoDeCadaHistoriaYEnlazaALaPagina`, `TestCriterios_ListarPorHistorias` |
+| Se guarda en la base (TEC-03) | — | `TestCriterios_GuardaYDevuelveTodosLosCampos`, `TestCriterios_NoSeGuardaUnCriterioDeUnaHistoriaQueNoExiste`, `TestNewHandlerConBase_ConURLLosCriteriosSobrevivenAUnReinicio` |
+| Proyecto, historia o criterio inexistente (sección 7) | — | `TestCriterios_ProyectoOHistoriaInexistente_DevuelveNoEncontrado`, `TestMarcarCriterio_DeOtraHistoriaOInexistente_DevuelveNoEncontrado`, `TestCriterios_ProyectoHistoriaOCriterioInexistente_Responde404`, `TestHistorias_BuscarPorNumero` |
