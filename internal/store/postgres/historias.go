@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
@@ -58,4 +60,22 @@ func (r *Historias) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]
 		return nil, fmt.Errorf("listar las historias del proyecto: %w", err)
 	}
 	return lista, nil
+}
+
+// BuscarPorNumero devuelve la historia con ese número (HU-N) dentro del proyecto, o backlog.ErrHistoriaNoEncontrada.
+func (r *Historias) BuscarPorNumero(ctx context.Context, proyectoID int64, numero int) (backlog.Historia, error) {
+	var h backlog.Historia
+	var prioridad, estado string
+	err := r.pool.QueryRow(ctx,
+		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points
+		 FROM historias WHERE proyecto_id = $1 AND numero = $2`, proyectoID, numero,
+	).Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return backlog.Historia{}, backlog.ErrHistoriaNoEncontrada
+	}
+	if err != nil {
+		return backlog.Historia{}, fmt.Errorf("buscar la historia HU-%d: %w", numero, err)
+	}
+	h.Prioridad, h.Estado = backlog.Prioridad(prioridad), backlog.Estado(estado)
+	return h, nil
 }
