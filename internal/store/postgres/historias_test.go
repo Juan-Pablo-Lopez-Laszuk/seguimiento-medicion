@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
@@ -183,5 +184,37 @@ func TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion(t *te
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO historias (proyecto_id, numero, titulo, prioridad) VALUES ($1, 99, 'x', 'Urgente')`, proyectoA); err == nil {
 		t.Error("la base aceptó una prioridad que no está en el código")
+	}
+}
+
+// HU-07: la página de una historia se pide por su número dentro del proyecto (HU-N)
+func TestHistorias_BuscarPorNumero(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, proyectoB := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	puntos := 5
+	conPuntos := historiaDeEjemplo(proyectoB, 1, "HU-1 del proyecto B")
+	conPuntos.StoryPoints = &puntos
+	if _, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "HU-1 del proyecto A")); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	guardada, err := repo.Guardar(ctx, conPuntos)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoB, 1)
+	if err != nil || h.ID != guardada.ID || h.Titulo != "HU-1 del proyecto B" || h.Estado != backlog.EstadoPendiente {
+		t.Errorf("se esperaba la HU-1 del proyecto B y se obtuvo %+v, %v", h, err)
+	}
+	if h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("story points: se guardaron 5 y se leyó %v", h.StoryPoints)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, proyectoA, 2); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("número que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 999, 1); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("proyecto que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
