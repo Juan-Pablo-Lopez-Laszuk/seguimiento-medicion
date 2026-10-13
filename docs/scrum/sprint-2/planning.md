@@ -2,8 +2,9 @@
 
 Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
-> **Borrador** armado el 12/10 a partir del [refinamiento](refinamiento.md), el tablero y la
-> [Retro del Sprint 1](../sprint-1/retro.md). Lo marcado [A CONFIRMAR] se cierra en la reunión.
+> Armada el 12/10 a partir del [refinamiento](refinamiento.md), el tablero y la
+> [Retro del Sprint 1](../sprint-1/retro.md). El compromiso ya está cargado en el tablero (Sprint Backlog). Lo marcado
+> [A CONFIRMAR] lo cierra el equipo comentando en el PR de esta acta.
 
 ## Fechas
 
@@ -92,10 +93,10 @@ Las 8 del [refinamiento](refinamiento.md#decisiones-a-confirmar-en-la-planning),
 
 | # | Decisión | Propuesta | ¿Confirmada? |
 |---|---|---|---|
-| 1 | ¿Cuándo un sprint está "activo"? | El no cerrado de menor número cuya fecha de inicio ya llegó; uno vencido sin cerrar sigue activo (HU-04 RN2) | [A CONFIRMAR] |
-| 2 | Estado del proyecto | Se calcula, no se guarda (HU-04 RN1) | [A CONFIRMAR] |
-| 3 | "Hoy" | En la hora de Argentina (HU-04 RN6) | [A CONFIRMAR] |
-| 4 | HU-02: fecha de inicio | Tampoco puede quedar después del inicio del primer sprint (HU-02 RN4) | [A CONFIRMAR] |
+| 1 | ¿Cuándo un sprint está "activo"? | El no cerrado de menor número cuya fecha de inicio ya llegó; uno vencido sin cerrar sigue activo (HU-04 RN2) | Sí (12/10, spec de HU-04 revisada) |
+| 2 | Estado del proyecto | Se calcula, no se guarda (HU-04 RN1) | Sí (12/10, spec de HU-04 revisada) |
+| 3 | "Hoy" | En la hora de Argentina (HU-04 RN6) | Sí (12/10, spec de HU-04 revisada) |
+| 4 | HU-02: fecha de inicio | Tampoco puede quedar después del inicio del primer sprint (HU-02 RN4) | Sí (12/10, spec de HU-02 revisada) |
 | 5 | HU-12 y HU-08 | HU-08 define las transiciones en `internal/domain/backlog` y HU-12 las usa | [A CONFIRMAR con Mariano] |
 | 6 | HU-13 y HU-08 | HU-08 tiene la regla y HU-13 es la acción desde el sprint activo, que además guarda `completada_en`. Hay que pasar por "En progreso" antes de "Hecho" (CA-08.1) | [A CONFIRMAR con Mariano] |
 | 7 | HU-14 y el #80 | El cierre guarda la foto en `sprint_historias` y `sprints.sp_*` | Ya acordado en el #80 (10/10) |
@@ -108,7 +109,7 @@ Las 8 del [refinamiento](refinamiento.md#decisiones-a-confirmar-en-la-planning),
   Carolina a Juan Pablo). Si el revisor no puede en el día, avisa y revisa otro.
 - **Lo de producción, el mismo día del merge:** si un PR trae una migración nueva, Juan Pablo la aplica en producción
   ese día. Hoy ninguna historia del sprint la necesita, porque la 0001 ya tiene las 12 tablas.
-- **Dailies el mismo día**, de lunes a viernes, en el issue "Sprint 2 · Dailies".
+- **Dailies el mismo día**, de lunes a viernes, en el issue "Sprint 2 · Dailies" (#95).
 - **Issue antes de empezar**, y se cierra solo con el merge de su PR (`Closes #n`).
 
 ## Riesgos y dependencias
@@ -123,5 +124,5 @@ Las 8 del [refinamiento](refinamiento.md#decisiones-a-confirmar-en-la-planning),
 
 ## Dailies
 
-Lunes a viernes, como comentario en el issue "Sprint 2 · Dailies". Al cerrar el sprint se copian a
+Lunes a viernes, como comentario en el issue "Sprint 2 · Dailies" (#95). Al cerrar el sprint se copian a
 [`dailies.md`](dailies.md).
