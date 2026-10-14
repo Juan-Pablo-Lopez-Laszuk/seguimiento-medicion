@@ -150,3 +150,45 @@ func TestNuevaTarea_InformaTodosLosErroresJuntos(t *testing.T) {
 		}
 	}
 }
+
+func tareaGuardada() effort.Tarea {
+	return effort.Tarea{ID: 5, HistoriaID: 9, Titulo: "Pantalla de login", ResponsableID: 2, HorasEstimadas: 3}
+}
+
+// CA-25.3 · mientras está pendiente, la estimación se cambia con la regla de horas de HU-23; la original no cambia
+func TestCambiarEstimacion_TareaPendiente(t *testing.T) {
+	original := tareaGuardada()
+
+	cambiada, err := original.CambiarEstimacion(" 4,5 ")
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if cambiada.HorasEstimadas != 4.5 {
+		t.Errorf("horas = %v, se esperaba 4.5", cambiada.HorasEstimadas)
+	}
+	if original.HorasEstimadas != 3 {
+		t.Error("la tarea original no debería cambiar")
+	}
+}
+
+// RN3 · las horas nuevas también tienen que ser mayores a 0
+func TestCambiarEstimacion_HorasInvalidas(t *testing.T) {
+	for _, horas := range []string{"", "0", "-2", "abc"} {
+		t.Run(horas, func(t *testing.T) {
+			if _, err := tareaGuardada().CambiarEstimacion(horas); !errors.Is(err, effort.ErrHorasInvalidas) {
+				t.Errorf("error = %v, se esperaba %v", err, effort.ErrHorasInvalidas)
+			}
+		})
+	}
+}
+
+// CA-25.3 (RN6) · una tarea completada no cambia su estimación, aunque las horas nuevas sean válidas
+func TestCambiarEstimacion_TareaCompletada_EsUnError(t *testing.T) {
+	completada := tareaGuardada()
+	completada.Completada = true
+
+	if _, err := completada.CambiarEstimacion("5"); !errors.Is(err, effort.ErrTareaCompletada) {
+		t.Errorf("error = %v, se esperaba %v", err, effort.ErrTareaCompletada)
+	}
+}
