@@ -1,6 +1,6 @@
 # SPEC-25 · Descomponer historia en tareas
 
-**Historia:** HU-25 (#3) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-25 (#3) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, la tabla Tarea de
 > `docs/modelo-datos.md` y la regla de horas de HU-23 (`specs/HU-23-horas-estimadas.md`).
@@ -148,3 +148,20 @@ escrito. Un error al cambiar las horas de una tarea se muestra arriba de la list
 ## Trazabilidad
 
 Issue: #3 · Feature: `features/hu-25-descomponer-tareas.feature` · Pasos BDD: `features/hu25_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/effort/tareas.go` (`NuevaTarea`, `Tarea.CambiarEstimacion`, `Tarea.Marcar`) y `FormatearHoras` en `horas.go` | `internal/domain/effort/tareas_test.go`, `horas_test.go` |
+| Repositorio en memoria | `internal/store/memory/tareas.go` | `internal/store/memory/tareas_test.go` |
+| Repositorio PostgreSQL | `internal/store/postgres/tareas.go` | `internal/store/postgres/tareas_test.go` |
+| Caso de uso | `internal/service/tareas.go` (`Ver`, `Agregar`, `CambiarEstimacion`, `Marcar`) | `internal/service/tareas_test.go` |
+| Pantalla | `internal/server/tareas.go`, `web/templates/paginas/tareas.html` y el enlace "Tareas" de `historia.html` | `internal/server/tareas_test.go` |
+| Aplicación | `app/app.go` (elige memoria o PostgreSQL según `DATABASE_URL`) | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-25.1 Título, responsable y horas | Agregar la primera tarea de la historia · Agregar varias tareas · Datos inválidos de una tarea · Largo del título de la tarea · Un integrante dado de baja no puede ser responsable | `TestNuevaTarea_*`, `TestAgregarTarea_*`, `TestVerTareas_TraeLasTareasLaSumaYLosIntegrantes`, `TestPaginaDeTareas_*`, `TestTareas_GuardarAsignaIDsYListarPorHistoriaEnOrden`, `TestTareas_LaBaseRechazaDatosInvalidos` |
+| CA-25.2 Una sola historia | Cada historia tiene sus propias tareas · Una tarea no se cambia desde otra historia | `TestTareas_BuscarPorID`, `TestTareas_Actualizar`, `TestTareas_DeOtraHistoria_DevuelveNoEncontrada`, `TestTareas_ProyectoHistoriaOTareaInexistente_Responde404` |
+| CA-25.3 Una completada no cambia su estimación | Cambiar la estimación de una tarea pendiente · Una tarea completada no cambia su estimación · Completar una tarea y volver a pendiente para corregir las horas | `TestCambiarEstimacion_*`, `TestMarcar_CompletadaOPendienteDeFormaExplicita`, `TestMarcarTarea_*`, `TestCambiarHoras_*` |
+| Horas de la historia (CA-23.2, RN8) | Agregar varias tareas | `TestVerTareas_TraeLasTareasLaSumaYLosIntegrantes`, `TestAgregarTarea_VuelveALaPaginaConLaTareaYLaSuma`, `TestFormatearHoras_*` |
+| Se guarda en la base (TEC-03) | — | `TestTareas_*` de PostgreSQL, `TestNewHandlerConBase_ConURLLasTareasSobrevivenAUnReinicio` |
