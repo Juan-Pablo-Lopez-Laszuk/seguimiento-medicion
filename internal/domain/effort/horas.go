@@ -32,6 +32,11 @@ func ParsearHoras(texto string) (float64, error) {
 	return horas, nil
 }
 
+// FormatearHoras devuelve las horas como se muestran en pantalla: con coma decimal y sin ceros de más ("5,5", "3").
+func FormatearHoras(horas float64) string {
+	return strings.Replace(strconv.FormatFloat(horas, 'f', -1, 64), ".", ",", 1)
+}
+
 // HorasEstimadasDeHistoria devuelve las horas estimadas de una historia (CA-23.2): si tiene tareas, la
 // suma de las horas de sus tareas; si no tiene, las horas cargadas en la historia. Una historia o tarea
 // sin estimar vale 0; horas negativas devuelven ErrHorasInvalidas.
