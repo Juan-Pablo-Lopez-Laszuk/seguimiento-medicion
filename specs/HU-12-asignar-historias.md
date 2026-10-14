@@ -60,7 +60,9 @@ con un aviso si se compromete más de lo que el equipo suele terminar.
   `backlog.Historia` tenga el campo y que el repositorio de historias pueda **actualizar el estado y el sprint**.
   HU-08 también necesita actualizar el estado: **hay que acordar con Mariano un solo `Actualizar`** en
   `internal/store/{memory,postgres}/historias.go` para no hacer dos.
-- La cantidad de criterios de una historia la da el repositorio de criterios de HU-07.
+- Si una historia tiene criterios lo dice `backlog.ProgresoDe(criterios).TieneCriterios()` de HU-07 (ya en `main`), y
+  para la lista de candidatas se usa `service.Criterios.Progresos(ctx, historias)`, que trae el progreso de todas con
+  una sola consulta.
 - No hay migraciones nuevas: `historias.sprint_id` y `historias.estado` ya existen.
 - La velocidad lee los SP completados de los sprints cerrados (`sprints.sp_completados`, la foto que guarda HU-14,
   decisión del #80). Hasta que exista HU-14 no hay sprints cerrados, así que el aviso nunca aparece: es lo esperado.
