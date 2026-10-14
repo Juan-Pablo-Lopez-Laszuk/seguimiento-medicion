@@ -28,6 +28,9 @@ var (
 	ErrResponsableInvalido    = errors.New("el responsable tiene que ser un integrante activo del proyecto")
 )
 
+// ErrTareaCompletada se devuelve al querer cambiar la estimación de una tarea completada (CA-25.3).
+var ErrTareaCompletada = errors.New("la tarea está completada: no se puede cambiar su estimación")
+
 // DatosTarea son los campos que carga el usuario para agregar una tarea a una historia.
 type DatosTarea struct {
 	Titulo        string
@@ -86,4 +89,19 @@ func validarResponsable(id int64, integrantes []member.Integrante) error {
 		}
 	}
 	return ErrResponsableInvalido
+}
+
+// CambiarEstimacion devuelve la tarea con las horas estimadas nuevas, con la regla de HU-23 (RN3); la original no
+// cambia. Una tarea completada no cambia su estimación (CA-25.3): devuelve ErrTareaCompletada, y eso se revisa antes
+// que las horas.
+func (t Tarea) CambiarEstimacion(horas string) (Tarea, error) {
+	if t.Completada {
+		return Tarea{}, ErrTareaCompletada
+	}
+	h, err := ParsearHoras(horas)
+	if err != nil {
+		return Tarea{}, err
+	}
+	t.HorasEstimadas = h
+	return t, nil
 }
