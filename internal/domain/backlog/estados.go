@@ -26,8 +26,15 @@ var transiciones = map[Estado][]Estado{
 	EstadoEnProgreso: {EstadoHecho, EstadoPendiente},
 }
 
-// ErrTransicionInvalida se devuelve al querer pasar a un estado que no está en la tabla de transiciones (RN2 y RN3).
-var ErrTransicionInvalida = errors.New("transición de estado inválida")
+// Errores de un cambio de estado (sección 7 de la spec de HU-08). Todos se devuelven con un mensaje descriptivo (RN6).
+var (
+	// ErrTransicionInvalida se devuelve al querer pasar a un estado que no está en la tabla de transiciones (RN2 y RN3).
+	ErrTransicionInvalida = errors.New("transición de estado inválida")
+	// ErrYaEstaEnEseEstado se devuelve al pedir el estado en el que ya está la historia (RN5).
+	ErrYaEstaEnEseEstado = errors.New("la historia ya está en ese estado")
+	// ErrEstadoDesconocido se devuelve al pedir un estado que no existe (RN1).
+	ErrEstadoDesconocido = errors.New("el estado no existe")
+)
 
 // errorDeEstado es un error con un mensaje descriptivo para el usuario (RN6) que sigue siendo reconocible con
 // errors.Is contra su error base.
@@ -43,6 +50,12 @@ func (e errorDeEstado) Unwrap() error { return e.base }
 // regla de transición: HU-12 la usa para pasar a En sprint, HU-13 para pasar a Hecho y HU-14 para volver a Pendiente.
 // progreso son los criterios de la historia (HU-07), que hacen falta para pasar a Hecho.
 func (h Historia) CambiarEstado(nuevo Estado, progreso Progreso) (Historia, error) {
+	if !slices.Contains(Estados, nuevo) {
+		return Historia{}, errorDeEstado{base: ErrEstadoDesconocido, mensaje: mensajeDeEstadoDesconocido(nuevo)}
+	}
+	if nuevo == h.Estado {
+		return Historia{}, errorDeEstado{base: ErrYaEstaEnEseEstado, mensaje: "la historia ya está " + string(nuevo)}
+	}
 	destinos := transiciones[h.Estado]
 	if !slices.Contains(destinos, nuevo) {
 		return Historia{}, errorDeEstado{base: ErrTransicionInvalida, mensaje: mensajeDeTransicion(h.Estado, nuevo, destinos)}
@@ -61,4 +74,9 @@ func mensajeDeTransicion(desde, hacia Estado, destinos []Estado) string {
 		nombres[i] = string(d)
 	}
 	return fmt.Sprintf("no se puede pasar de %s a %s: desde %s solo se puede pasar a %s", desde, hacia, desde, strings.Join(nombres, " o "))
+}
+
+// mensajeDeEstadoDesconocido dice cuál estado no existe y cuáles sí.
+func mensajeDeEstadoDesconocido(estado Estado) string {
+	return fmt.Sprintf("el estado %s no existe: los estados son Pendiente, En sprint, En progreso y Hecho", estado)
 }
