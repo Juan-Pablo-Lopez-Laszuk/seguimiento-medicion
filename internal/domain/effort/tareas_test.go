@@ -192,3 +192,36 @@ func TestCambiarEstimacion_TareaCompletada_EsUnError(t *testing.T) {
 		t.Errorf("error = %v, se esperaba %v", err, effort.ErrTareaCompletada)
 	}
 }
+
+// RN7 · se marca completada o pendiente de forma explícita: marcar dos veces igual la deja igual, y completarla no
+// cambia sus horas (RN8)
+func TestMarcar_CompletadaOPendienteDeFormaExplicita(t *testing.T) {
+	casos := []struct {
+		nombre     string
+		antes      bool
+		completada bool
+	}{
+		{"completar una pendiente", false, true},
+		{"completar una completada", true, true},
+		{"volver a pendiente una completada", true, false},
+		{"pendiente una pendiente", false, false},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			original := tareaGuardada()
+			original.Completada = c.antes
+
+			marcada := original.Marcar(c.completada)
+
+			if marcada.Completada != c.completada {
+				t.Errorf("completada = %v, se esperaba %v", marcada.Completada, c.completada)
+			}
+			if marcada.HorasEstimadas != 3 {
+				t.Errorf("horas = %v, marcar no debería cambiar la estimación", marcada.HorasEstimadas)
+			}
+			if original.Completada != c.antes {
+				t.Error("la tarea original no debería cambiar")
+			}
+		})
+	}
+}
