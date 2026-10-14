@@ -20,6 +20,7 @@
     <span class="small text-body-secondary">Story points: {{with .Historia.StoryPoints}}{{.}}{{else}}Sin estimar{{end}}</span>
   </div>
   {{with .Historia.Descripcion}}<p class="mb-0">{{.}}</p>{{end}}
+  <a class="btn btn-sm btn-outline-primary mt-2" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/tareas">Tareas</a>
 </div>
 
 <section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-criterios">

@@ -1,0 +1,108 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$proyecto := .Proyecto.ID}}
+{{$numero := .Historia.Numero}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}/backlog">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}/backlog/{{$numero}}">{{.Historia.Identificador}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Tareas</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+{{template "aviso" .Aviso}}
+{{template "error" .Error}}
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Tareas de {{.Historia.Identificador}}</h1>
+  <p class="mb-0 text-body-secondary">{{.Historia.Titulo}}</p>
+</div>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-tareas">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="h5 mb-0" id="titulo-tareas">Tareas</h2>
+    <span>Horas estimadas de la historia: <strong>{{horas .HorasEstimadas}} h</strong></span>
+  </div>
+
+  {{if .Tareas}}
+  <ul class="list-group">
+    {{range .Tareas}}
+    <li class="list-group-item">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <div class="fw-semibold">{{.Titulo}}</div>
+          <div class="small text-body-secondary">{{$.Datos.NombreDe .ResponsableID}} · {{horas .HorasEstimadas}} h</div>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          {{if .Completada}}
+          <span class="badge text-bg-success">Completada</span>
+          {{else}}
+          <span class="badge text-bg-secondary">Pendiente</span>
+          <form class="d-flex gap-1" action="/proyectos/{{$proyecto}}/backlog/{{$numero}}/tareas/{{.ID}}/horas" method="post">
+            <label class="visually-hidden" for="horas-{{.ID}}">Horas estimadas de {{.Titulo}}</label>
+            <input class="form-control form-control-sm" style="width: 5.5rem" id="horas-{{.ID}}" name="horas"
+                   value="{{horas .HorasEstimadas}}" inputmode="decimal" required>
+            <button class="btn btn-sm btn-outline-secondary" type="submit">Cambiar horas</button>
+          </form>
+          {{end}}
+          <form action="/proyectos/{{$proyecto}}/backlog/{{$numero}}/tareas/{{.ID}}/completada" method="post">
+            <input type="hidden" name="completada" value="{{if .Completada}}0{{else}}1{{end}}">
+            <button class="btn btn-sm {{if .Completada}}btn-outline-secondary{{else}}btn-outline-success{{end}}" type="submit">{{if .Completada}}Volver a pendiente{{else}}Completar{{end}}</button>
+          </form>
+        </div>
+      </div>
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin tareas todavía. Cuando la historia tiene tareas, sus horas estimadas son la suma de las horas de sus tareas.</p>
+  {{end}}
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-nueva">
+  <h2 class="h5 mb-3" id="titulo-nueva">Nueva tarea</h2>
+  {{if .Activos}}
+  {{$responsable := .Nueva.ResponsableID}}
+  <form action="/proyectos/{{$proyecto}}/backlog/{{$numero}}/tareas" method="post" novalidate>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="titulo">Título</label>
+        <input class="form-control{{if index .Errores "titulo"}} is-invalid{{end}}" id="titulo" name="titulo"
+               value="{{.Nueva.Titulo}}" maxlength="120" required placeholder="Por ejemplo: Pantalla de login">
+        {{template "errorCampo" (index .Errores "titulo")}}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="responsable">Responsable</label>
+        <select class="form-select{{if index .Errores "responsable"}} is-invalid{{end}}" id="responsable" name="responsable" required>
+          <option value="">Elegí…</option>
+          {{range .Activos}}
+          <option value="{{.ID}}"{{if eq .ID $responsable}} selected{{end}}>{{.Nombre}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "responsable")}}
+      </div>
+      <div class="col-md-3">
+        <label class="form-label" for="horas">Horas estimadas</label>
+        <input class="form-control{{if index .Errores "horas"}} is-invalid{{end}}" id="horas" name="horas"
+               value="{{.Nueva.Horas}}" inputmode="decimal" required placeholder="Por ejemplo: 1,5">
+        {{template "errorCampo" (index .Errores "horas")}}
+      </div>
+    </div>
+    <div class="form-text">Solo se pueden elegir integrantes activos del proyecto. Las horas aceptan coma o punto decimal.</div>
+    <button class="btn btn-primary mt-3" type="submit">Agregar tarea</button>
+  </form>
+  {{else}}
+  <div class="alert alert-info mb-0">
+    Registrá un integrante del proyecto para poder asignarle tareas.
+    <a class="alert-link" href="/proyectos/{{$proyecto}}/integrantes/nuevo">Registrar integrante</a>
+  </div>
+  {{end}}
+</section>
+
+<div class="mt-3">
+  <a class="btn btn-outline-secondary" href="/proyectos/{{$proyecto}}/backlog/{{$numero}}">Volver a la historia</a>
+</div>
+{{end}}
+{{end}}

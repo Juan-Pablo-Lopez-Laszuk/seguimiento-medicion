@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/web"
 )
 
@@ -23,6 +24,7 @@ type Pagina struct {
 var funciones = template.FuncMap{
 	"fechaParaInput": fechaParaInput,
 	"dict":           dict,
+	"horas":          effort.FormatearHoras, // horas con coma decimal, por ejemplo "2,5" (HU-25)
 }
 
 // dict arma un mapa con pares clave, valor para pasarle varios datos a un componente, por ejemplo
