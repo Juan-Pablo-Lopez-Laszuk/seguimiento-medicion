@@ -124,3 +124,63 @@ func TestCambiarEstado_UnEstadoQueNoExiste_EsUnError(t *testing.T) {
 		}
 	}
 }
+
+// CA-08.2 y RN4 · a Hecho solo pasa con criterios y todos cumplidos; sin criterios no pasa
+func TestCambiarEstado_AHecho_ExigeTodosLosCriteriosCumplidos(t *testing.T) {
+	casos := []struct {
+		total, cumplidos int
+		mensaje          string // vacío = vale
+	}{
+		{0, 0, "no se puede pasar a Hecho: la historia no tiene criterios de aceptación"},
+		{3, 0, "no se puede pasar a Hecho: la historia tiene 0 de 3 criterios cumplidos y hacen falta todos"},
+		{3, 2, "no se puede pasar a Hecho: la historia tiene 2 de 3 criterios cumplidos y hacen falta todos"},
+		{1, 1, ""},
+		{3, 3, ""},
+	}
+	for _, c := range casos {
+		progreso := backlog.ProgresoDe(criteriosConCumplidos(c.total, c.cumplidos))
+
+		nueva, err := historiaEn(backlog.EstadoEnProgreso).CambiarEstado(backlog.EstadoHecho, progreso)
+
+		if c.mensaje == "" {
+			if err != nil || nueva.Estado != backlog.EstadoHecho {
+				t.Errorf("%d de %d: se esperaba que pase a Hecho y se obtuvo %q, %v", c.cumplidos, c.total, nueva.Estado, err)
+			}
+			continue
+		}
+		if !errors.Is(err, backlog.ErrCriteriosSinCumplir) {
+			t.Errorf("%d de %d: se esperaba backlog.ErrCriteriosSinCumplir y se obtuvo: %v", c.cumplidos, c.total, err)
+			continue
+		}
+		if err.Error() != c.mensaje {
+			t.Errorf("%d de %d: mensaje = %q, se esperaba %q", c.cumplidos, c.total, err.Error(), c.mensaje)
+		}
+	}
+}
+
+// Los criterios solo importan al pasar a Hecho: los demás cambios valen aunque no haya ninguno cumplido
+func TestCambiarEstado_AOtroEstado_NoMiraLosCriterios(t *testing.T) {
+	sinCumplir := backlog.ProgresoDe(criteriosConCumplidos(3, 0))
+	casos := []struct{ desde, hacia backlog.Estado }{
+		{backlog.EstadoPendiente, backlog.EstadoEnSprint},
+		{backlog.EstadoEnSprint, backlog.EstadoEnProgreso},
+		{backlog.EstadoEnProgreso, backlog.EstadoPendiente},
+	}
+	for _, c := range casos {
+		if _, err := historiaEn(c.desde).CambiarEstado(c.hacia, sinCumplir); err != nil {
+			t.Errorf("%s → %s: no se esperaba error y se obtuvo %v", c.desde, c.hacia, err)
+		}
+	}
+}
+
+// RN6 · una transición inválida se informa antes que los criterios: no tiene sentido pedir que cumpla los criterios
+// una historia que ni siquiera puede pasar a Hecho desde donde está
+func TestCambiarEstado_AHechoDesdeUnEstadoQueNoVale_InformaLaTransicion(t *testing.T) {
+	sinCriterios := backlog.ProgresoDe(nil)
+
+	_, err := historiaEn(backlog.EstadoEnSprint).CambiarEstado(backlog.EstadoHecho, sinCriterios)
+
+	if !errors.Is(err, backlog.ErrTransicionInvalida) {
+		t.Errorf("se esperaba backlog.ErrTransicionInvalida y se obtuvo: %v", err)
+	}
+}
