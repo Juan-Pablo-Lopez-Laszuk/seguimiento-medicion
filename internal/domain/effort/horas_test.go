@@ -118,3 +118,14 @@ func TestFormatearHoras_ConComaDecimal(t *testing.T) {
 		}
 	}
 }
+
+// Una suma de horas con decimales no muestra el error de redondeo de float64 (0,1 + 0,2 se ve "0,3").
+func TestFormatearHoras_RedondeaACentesimos(t *testing.T) {
+	suma, err := effort.HorasEstimadasDeHistoria(0, []effort.Tarea{{HorasEstimadas: 0.1}, {HorasEstimadas: 0.2}})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if got := effort.FormatearHoras(suma); got != "0,3" {
+		t.Errorf("FormatearHoras(0,1 + 0,2) = %q, se esperaba %q", got, "0,3")
+	}
+}
