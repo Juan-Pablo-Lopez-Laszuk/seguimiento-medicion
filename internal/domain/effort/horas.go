@@ -32,9 +32,11 @@ func ParsearHoras(texto string) (float64, error) {
 	return horas, nil
 }
 
-// FormatearHoras devuelve las horas como se muestran en pantalla: con coma decimal y sin ceros de más ("5,5", "3").
+// FormatearHoras devuelve las horas como se muestran en pantalla: con coma decimal, redondeadas a centésimos (así una
+// suma como 0,1 + 0,2 no muestra el error de redondeo de float64) y sin ceros de más ("5,5", "3").
 func FormatearHoras(horas float64) string {
-	return strings.Replace(strconv.FormatFloat(horas, 'f', -1, 64), ".", ",", 1)
+	redondeadas := math.Round(horas*100) / 100
+	return strings.Replace(strconv.FormatFloat(redondeadas, 'f', -1, 64), ".", ",", 1)
 }
 
 // HorasEstimadasDeHistoria devuelve las horas estimadas de una historia (CA-23.2): si tiene tareas, la
