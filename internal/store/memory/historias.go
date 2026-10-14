@@ -63,3 +63,17 @@ func (r *Historias) BuscarPorNumero(_ context.Context, proyectoID int64, numero 
 	}
 	return backlog.Historia{}, backlog.ErrHistoriaNoEncontrada
 }
+
+// ActualizarEstado guarda el estado nuevo de la historia sin tocar los demás datos, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe.
+func (r *Historias) ActualizarEstado(_ context.Context, historiaID int64, estado backlog.Estado) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].Estado = estado
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
