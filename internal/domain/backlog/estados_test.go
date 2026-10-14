@@ -93,3 +93,34 @@ func TestCambiarEstado_TransicionesInvalidas_DanUnErrorDescriptivo(t *testing.T)
 		}
 	}
 }
+
+// RN5 · pedir el estado en el que ya está la historia es un error, no un cambio que no hace nada
+func TestCambiarEstado_ElMismoEstado_EsUnError(t *testing.T) {
+	for _, estado := range backlog.Estados {
+		_, err := historiaEn(estado).CambiarEstado(estado, progresoCompleto())
+
+		if !errors.Is(err, backlog.ErrYaEstaEnEseEstado) {
+			t.Errorf("%s → %s: se esperaba backlog.ErrYaEstaEnEseEstado y se obtuvo: %v", estado, estado, err)
+			continue
+		}
+		if esperado := "la historia ya está " + string(estado); err.Error() != esperado {
+			t.Errorf("mensaje = %q, se esperaba %q", err.Error(), esperado)
+		}
+	}
+}
+
+// RN1 · un estado que no existe es un error que lista los que sí existen
+func TestCambiarEstado_UnEstadoQueNoExiste_EsUnError(t *testing.T) {
+	for _, estado := range []backlog.Estado{"Terminada", "", "en sprint", "Hecha"} {
+		_, err := historiaEn(backlog.EstadoEnSprint).CambiarEstado(estado, progresoCompleto())
+
+		if !errors.Is(err, backlog.ErrEstadoDesconocido) {
+			t.Errorf("estado %q: se esperaba backlog.ErrEstadoDesconocido y se obtuvo: %v", estado, err)
+			continue
+		}
+		esperado := "el estado " + string(estado) + " no existe: los estados son Pendiente, En sprint, En progreso y Hecho"
+		if err.Error() != esperado {
+			t.Errorf("estado %q: mensaje = %q, se esperaba %q", estado, err.Error(), esperado)
+		}
+	}
+}
