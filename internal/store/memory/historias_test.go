@@ -76,3 +76,27 @@ func TestHistorias_BuscarPorNumero(t *testing.T) {
 		t.Errorf("proyecto sin historias: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
+
+// HU-08: el estado de una historia se guarda sin tocar los demás datos
+func TestHistorias_ActualizarEstado(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	puntos := 5
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera", Estado: backlog.EstadoPendiente, StoryPoints: &puntos})
+	otra, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Segunda", Estado: backlog.EstadoPendiente})
+
+	if err := repo.ActualizarEstado(ctx, guardada.ID, backlog.EstadoEnSprint); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.Estado != backlog.EstadoEnSprint || h.Titulo != "Primera" || h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("se esperaba la HU-1 En sprint con el resto de sus datos y se obtuvo %+v", h)
+	}
+	if o, _ := repo.BuscarPorNumero(ctx, 1, 2); o.ID != otra.ID || o.Estado != backlog.EstadoPendiente {
+		t.Errorf("la HU-2 no tenía que cambiar y se obtuvo %+v", o)
+	}
+	if err := repo.ActualizarEstado(ctx, 99, backlog.EstadoEnSprint); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
