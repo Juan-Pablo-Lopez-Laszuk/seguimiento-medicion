@@ -217,8 +217,10 @@ HU-37) deben leer de esta tabla y no del estado actual de las historias.
 
 La escala también existe en el código de Go: hay una sola constante que la define
 (`backlog.EscalaStoryPoints`), y `TestHistorias_LaEscalaDelCodigoCoincideConElCheckDeLaMigracion`
-comprueba que la base acepta exactamente esos valores. Lo mismo hace
-`TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion` con las prioridades.
+comprueba que la base acepta exactamente esos valores. Lo mismo hacen
+`TestHistorias_LasPrioridadesDelCodigoCoincidenConElCheckDeLaMigracion` con las prioridades y
+`TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion` con los estados de la historia
+(`backlog.Estados`).
 
 ## Reglas que valida la aplicación (no la base)
 

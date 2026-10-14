@@ -1,6 +1,6 @@
 # SPEC-08 · Cambiar el estado de una historia
 
-**Historia:** HU-08 (#21) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-08 (#21) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, la columna `historias.estado` de
 > `docs/modelo-datos.md` y las decisiones 5 y 6 de la Planning del Sprint 2.
@@ -134,4 +134,20 @@ Historia de ejemplo: HU-1 "Iniciar sesión con Google".
 
 Issue: #21 · Feature: `features/hu-08-estado-historia.feature` · Pasos BDD: `features/hu08_steps_test.go`
 
-Se completa al terminar la implementación.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/estados.go` (`Estados`, `EstadoEnSprint`, `EstadoEnProgreso`, `Historia.CambiarEstado` y sus errores) | `internal/domain/backlog/estados_test.go` |
+| Repositorio en memoria | `ActualizarEstado` en `internal/store/memory/historias.go` | `internal/store/memory/historias_test.go` |
+| Repositorio PostgreSQL | `ActualizarEstado` en `internal/store/postgres/historias.go` | `internal/store/postgres/historias_test.go` |
+| Caso de uso | `internal/service/estados.go` (`Estados.Cambiar`) | `internal/service/estados_test.go` |
+| Pantalla | `internal/server/estados.go`, el bloque de estado de `web/templates/paginas/historia.html` y el color de cada estado en `historia.html` y `backlog.html` | `internal/server/estados_test.go` |
+| Aplicación | `app/app.go` (elige memoria o PostgreSQL según `DATABASE_URL`) | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-08.1 Transiciones válidas | Una historia En sprint pasa a En progreso · Una historia recorre todos los estados hasta Hecho · Qué transiciones valen | `TestEstados_EnElOrdenDelCamino`, `TestCambiarEstado_TransicionesValidas`, `TestCambiarEstado_Valido_GuardaElEstadoNuevo`, `TestCambiarEstado_ElCaminoCompletoHastaHecho`, `TestPaginaDeLaHistoria_EnSprint_OfreceEmpezarATrabajarla`, `TestCambiarEstado_EnSprintAEnProgreso_VuelveALaPaginaConElEstadoNuevo`, `TestListaDelBacklog_MuestraElEstadoConUnColorPorEstado` |
+| CA-08.2 A Hecho solo con todos los criterios cumplidos | Para pasar a Hecho hacen falta todos los criterios cumplidos · Un cambio inválido deja la historia como estaba | `TestCambiarEstado_AHecho_ExigeTodosLosCriteriosCumplidos`, `TestCambiarEstado_AOtroEstado_NoMiraLosCriterios`, `TestCambiarEstado_AHechoConCriteriosSinCumplir_NoCambiaNada`, `TestCambiarEstado_AHechoSinCriterios_NoPasa`, `TestCambiarEstado_AHecho_UsaSoloLosCriteriosDeLaHistoria` |
+| CA-08.3 Transición inválida con error descriptivo | Qué transiciones valen · Pasar a un estado en el que ya está · Pasar a un estado que no existe | `TestCambiarEstado_TransicionesInvalidas_DanUnErrorDescriptivo`, `TestCambiarEstado_ElMismoEstado_EsUnError`, `TestCambiarEstado_UnEstadoQueNoExiste_EsUnError`, `TestCambiarEstado_AHechoDesdeUnEstadoQueNoVale_InformaLaTransicion`, `TestCambiarEstado_TransicionInvalida_NoCambiaNada`, `TestCambiarEstado_Invalido_MuestraElAvisoYNoCambiaNada` |
+| RN8 La pantalla solo ofrece En sprint → En progreso | — | `TestPaginaDeLaHistoria_DiceQueSigueEnCadaEstado`, `TestCambiarEstado_AUnEstadoQueLaPantallaNoOfrece_Responde400YNoCambiaNada` |
+| Se guarda en la base | — | `TestHistorias_ActualizarEstado`, `TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion`, `TestNewHandlerConBase_ConURLElEstadoDeLaHistoriaSobreviveAUnReinicio` |
+| Proyecto o historia inexistente (sección 7) | — | `TestCambiarEstado_ProyectoOHistoriaInexistente_DevuelveNoEncontrado`, `TestCambiarEstado_ProyectoOHistoriaInexistente_Responde404` |
