@@ -34,6 +34,8 @@ var (
 	ErrYaEstaEnEseEstado = errors.New("la historia ya está en ese estado")
 	// ErrEstadoDesconocido se devuelve al pedir un estado que no existe (RN1).
 	ErrEstadoDesconocido = errors.New("el estado no existe")
+	// ErrCriteriosSinCumplir se devuelve al querer pasar a Hecho sin criterios o con criterios sin cumplir (RN4).
+	ErrCriteriosSinCumplir = errors.New("los criterios de aceptación no están todos cumplidos")
 )
 
 // errorDeEstado es un error con un mensaje descriptivo para el usuario (RN6) que sigue siendo reconocible con
@@ -60,6 +62,9 @@ func (h Historia) CambiarEstado(nuevo Estado, progreso Progreso) (Historia, erro
 	if !slices.Contains(destinos, nuevo) {
 		return Historia{}, errorDeEstado{base: ErrTransicionInvalida, mensaje: mensajeDeTransicion(h.Estado, nuevo, destinos)}
 	}
+	if nuevo == EstadoHecho && !progreso.Completo() {
+		return Historia{}, errorDeEstado{base: ErrCriteriosSinCumplir, mensaje: mensajeDeCriteriosSinCumplir(progreso)}
+	}
 	h.Estado = nuevo
 	return h, nil
 }
@@ -79,4 +84,12 @@ func mensajeDeTransicion(desde, hacia Estado, destinos []Estado) string {
 // mensajeDeEstadoDesconocido dice cuál estado no existe y cuáles sí.
 func mensajeDeEstadoDesconocido(estado Estado) string {
 	return fmt.Sprintf("el estado %s no existe: los estados son Pendiente, En sprint, En progreso y Hecho", estado)
+}
+
+// mensajeDeCriteriosSinCumplir explica por qué no pasa a Hecho: no tiene criterios, o cuántos tiene cumplidos.
+func mensajeDeCriteriosSinCumplir(p Progreso) string {
+	if !p.TieneCriterios() {
+		return "no se puede pasar a Hecho: la historia no tiene criterios de aceptación"
+	}
+	return fmt.Sprintf("no se puede pasar a Hecho: la historia tiene %d de %d criterios cumplidos y hacen falta todos", p.Cumplidos, p.Total)
 }
