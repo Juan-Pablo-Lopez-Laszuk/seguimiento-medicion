@@ -42,7 +42,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		integrantes service.RepositorioIntegrantes
 		historias   interface {
 			service.RepositorioHistorias
-			service.BuscadorHistorias
+			service.RepositorioEstados
 		}
 		criterios service.RepositorioCriterios
 		tareas    service.RepositorioTareas
@@ -61,14 +61,15 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		base = pool
 	}
 	return server.NewRouter(server.Dependencias{
-		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
-		Sprints:     service.NuevoSprints(proyectos, sprints),
-		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
-		Historias:   service.NuevoHistorias(proyectos, historias),
-		Criterios:   service.NuevoCriterios(proyectos, historias, criterios),
-		Tareas:      service.NuevoTareas(proyectos, historias, integrantes, tareas),
-		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
-		Edicion:     service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
-		Base:        base,
+		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
+		Sprints:        service.NuevoSprints(proyectos, sprints),
+		Integrantes:    service.NuevoIntegrantes(proyectos, integrantes),
+		Historias:      service.NuevoHistorias(proyectos, historias),
+		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
+		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
+		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
+		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
+		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
+		Base:           base,
 	}), nil
 }
