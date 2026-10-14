@@ -28,6 +28,9 @@ var (
 	ErrResponsableInvalido    = errors.New("el responsable tiene que ser un integrante activo del proyecto")
 )
 
+// ErrTareaNoEncontrada lo devuelven los repositorios cuando no hay una tarea con ese ID en la historia (CA-25.2).
+var ErrTareaNoEncontrada = errors.New("no existe la tarea")
+
 // ErrTareaCompletada se devuelve al querer cambiar la estimación de una tarea completada (CA-25.3).
 var ErrTareaCompletada = errors.New("la tarea está completada: no se puede cambiar su estimación")
 
