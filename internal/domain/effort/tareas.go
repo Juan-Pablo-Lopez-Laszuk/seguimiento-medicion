@@ -105,3 +105,11 @@ func (t Tarea) CambiarEstimacion(horas string) (Tarea, error) {
 	t.HorasEstimadas = h
 	return t, nil
 }
+
+// Marcar devuelve la tarea completada o pendiente, según completada; la original no cambia. Es explícito y no un
+// "alternar" (RN7): marcarla dos veces igual la deja igual. Volver a pendiente sirve para corregir un error, y recién
+// ahí se le pueden cambiar las horas. Las horas no cambian al completarla.
+func (t Tarea) Marcar(completada bool) Tarea {
+	t.Completada = completada
+	return t
+}
