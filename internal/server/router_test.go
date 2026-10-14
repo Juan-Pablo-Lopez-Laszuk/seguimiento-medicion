@@ -26,11 +26,13 @@ func nuevoRouter() http.Handler {
 // proyecto (HU-04) y para la modificación (HU-02).
 func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
+	criterios := service.NuevoCriterios(proyectos, historias, memory.NuevoCriterios())
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, memory.NuevoIntegrantes()),
 		Historias:   service.NuevoHistorias(proyectos, historias),
+		Criterios:   criterios,
 		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
 		Edicion:     service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 	})

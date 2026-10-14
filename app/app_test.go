@@ -260,3 +260,50 @@ func TestNewHandlerConBase_ConBaseHealthInformaOK(t *testing.T) {
 		t.Errorf("/health = %d y base %q, se esperaba 200 y \"ok\"", codigo, base)
 	}
 }
+
+// HU-07: sin base, los criterios de las historias también se guardan en memoria.
+func TestNewHandlerConBase_SinURLLosCriteriosSeGuardanEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+
+	campos := neturl.Values{"descripcion": {"Criterio en memoria"}}
+	if rec := post(h, "/proyectos/1/backlog/1/criterios", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("agregar criterio: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1"), "Criterio en memoria") {
+		t.Error("el criterio recién agregado debería estar en la página de la historia")
+	}
+}
+
+// HU-07: los criterios y si están cumplidos quedan en la base, y la lista del backlog sigue mostrando el progreso
+// después de reiniciar la aplicación.
+func TestNewHandlerConBase_ConURLLosCriteriosSobrevivenAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con criterios")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia con criterios"}, "prioridad": {"Alta"}})
+	post(primera, "/proyectos/1/backlog/1/criterios", neturl.Values{"descripcion": {"Primer criterio guardado en la base"}})
+	post(primera, "/proyectos/1/backlog/1/criterios", neturl.Values{"descripcion": {"Segundo criterio"}})
+	if rec := post(primera, "/proyectos/1/backlog/1/criterios/1/cumplido", neturl.Values{"cumplido": {"1"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("marcar cumplido: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	reiniciada := nuevaApp(t, url)
+	pagina := get(reiniciada, "/proyectos/1/backlog/1")
+	for _, esperado := range []string{"Primer criterio guardado en la base", "Segundo criterio", "1/2", "Cumplido"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de la historia debería mostrar %q:\n%s", esperado, pagina)
+		}
+	}
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog"), "1/2") {
+		t.Error("después de reiniciar la lista del backlog debería mostrar el progreso 1/2")
+	}
+
+	// marcarlo de nuevo como no cumplido también se guarda
+	post(reiniciada, "/proyectos/1/backlog/1/criterios/1/cumplido", neturl.Values{"cumplido": {"0"}})
+	if !strings.Contains(get(nuevaApp(t, url), "/proyectos/1/backlog/1"), "0/2") {
+		t.Error("desmarcar el criterio debería quedar guardado")
+	}
+}
