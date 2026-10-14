@@ -44,7 +44,7 @@
         <td>
           <span class="badge {{if eq .Prioridad "Alta"}}text-bg-danger{{else if eq .Prioridad "Media"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Prioridad}}</span>
         </td>
-        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+        <td>{{template "estadoHistoria" .Estado}}</td>
         <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
         {{$progreso := index $datos.Progresos .ID}}
         <td class="text-nowrap">{{if $progreso.TieneCriterios}}{{$progreso.Texto}}{{else}}<span class="text-body-secondary">Sin criterios</span>{{end}}</td>
@@ -60,4 +60,9 @@
 </div>
 {{end}}
 {{end}}
+{{end}}
+
+{{/* El mismo badge que en historia.html: cada página se arma por separado con el layout base. */}}
+{{define "estadoHistoria"}}
+<span class="badge {{if eq . "Hecho"}}text-bg-success{{else if eq . "En progreso"}}text-bg-primary{{else if eq . "En sprint"}}text-bg-info{{else}}text-bg-secondary{{end}}">{{.}}</span>
 {{end}}

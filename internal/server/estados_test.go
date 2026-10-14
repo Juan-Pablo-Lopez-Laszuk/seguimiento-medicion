@@ -153,11 +153,7 @@ func TestCambiarEstado_AUnEstadoQueLaPantallaNoOfrece_Responde400YNoCambiaNada(t
 		}
 		verificarContiene(t, rec.Body.String(), avisoDeLaPantalla)
 	}
-	html := get(h, "/proyectos/1/backlog/1").Body.String()
-	verificarContiene(t, html, "En progreso")
-	if strings.Contains(html, "Hecho") && !strings.Contains(html, "desde el sprint activo") {
-		t.Error("la historia no tenía que cambiar de estado")
-	}
+	verificarContiene(t, get(h, "/proyectos/1/backlog/1").Body.String(), `text-bg-primary">En progreso`) // sigue En progreso
 }
 
 // Los parámetros del mensaje de la página solo muestran el texto conocido, nunca lo que venga en la URL

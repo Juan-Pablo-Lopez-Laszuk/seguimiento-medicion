@@ -16,10 +16,26 @@
   <h1 class="h3 mb-2">{{.Historia.Identificador}} · {{.Historia.Titulo}}</h1>
   <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
     <span class="badge {{if eq .Historia.Prioridad "Alta"}}text-bg-danger{{else if eq .Historia.Prioridad "Media"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Historia.Prioridad}}</span>
-    <span class="badge text-bg-secondary">{{.Historia.Estado}}</span>
+    {{template "estadoHistoria" .Historia.Estado}}
     <span class="small text-body-secondary">Story points: {{with .Historia.StoryPoints}}{{.}}{{else}}Sin estimar{{end}}</span>
   </div>
   {{with .Historia.Descripcion}}<p class="mb-0">{{.}}</p>{{end}}
+
+  <div class="mt-3">
+    {{if eq .Historia.Estado "En sprint"}}
+    <form action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/estado" method="post" class="d-flex flex-wrap align-items-center gap-2">
+      <input type="hidden" name="estado" value="En progreso">
+      <button class="btn btn-sm btn-primary" type="submit">Empezar a trabajarla</button>
+      <span class="small text-body-secondary">Pasa a En progreso cuando el equipo empieza con ella.</span>
+    </form>
+    {{else if eq .Historia.Estado "En progreso"}}
+    <p class="small text-body-secondary mb-0">Pasa a Hecho desde el sprint activo, cuando todos sus criterios estén cumplidos.</p>
+    {{else if eq .Historia.Estado "Hecho"}}
+    <p class="small text-body-secondary mb-0">Historia terminada: su estado y sus criterios no se pueden cambiar.</p>
+    {{else}}
+    <p class="small text-body-secondary mb-0">Pasa a En sprint cuando se asigna a un sprint.</p>
+    {{end}}
+  </div>
   <a class="btn btn-sm btn-outline-primary mt-2" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/tareas">Tareas</a>
 </div>
 
@@ -75,4 +91,9 @@
   <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog">Volver al backlog</a>
 </div>
 {{end}}
+{{end}}
+
+{{/* El mismo badge que en backlog.html: cada página se arma por separado con el layout base. */}}
+{{define "estadoHistoria"}}
+<span class="badge {{if eq . "Hecho"}}text-bg-success{{else if eq . "En progreso"}}text-bg-primary{{else if eq . "En sprint"}}text-bg-info{{else}}text-bg-secondary{{end}}">{{.}}</span>
 {{end}}
