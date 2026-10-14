@@ -45,18 +45,19 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			service.BuscadorHistorias
 		}
 		criterios service.RepositorioCriterios
+		tareas    service.RepositorioTareas
 		base      server.VerificadorBase // queda en nil en modo memoria: /health informa "memoria"
 	)
 	if url == "" {
 		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
-		historias, criterios = memory.NuevoHistorias(), memory.NuevoCriterios()
+		historias, criterios, tareas = memory.NuevoHistorias(), memory.NuevoCriterios(), memory.NuevoTareas()
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
 			return nil, err
 		}
 		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
-		historias, criterios = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool)
+		historias, criterios, tareas = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool), postgres.NuevoTareas(pool)
 		base = pool
 	}
 	return server.NewRouter(server.Dependencias{
@@ -65,6 +66,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:   service.NuevoHistorias(proyectos, historias),
 		Criterios:   service.NuevoCriterios(proyectos, historias, criterios),
+		Tareas:      service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:     service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Base:        base,

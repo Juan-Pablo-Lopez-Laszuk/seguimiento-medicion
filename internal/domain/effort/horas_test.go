@@ -102,3 +102,30 @@ func TestHorasEstimadasDeHistoria_HorasNegativasSonError(t *testing.T) {
 		})
 	}
 }
+
+// HU-25 · las horas se muestran como las escribe el usuario: con coma decimal y sin ceros de más
+func TestFormatearHoras_ConComaDecimal(t *testing.T) {
+	casos := map[float64]string{
+		3:    "3",
+		5.5:  "5,5",
+		0.25: "0,25",
+		10:   "10",
+		0:    "0",
+	}
+	for horas, esperado := range casos {
+		if got := effort.FormatearHoras(horas); got != esperado {
+			t.Errorf("FormatearHoras(%v) = %q, se esperaba %q", horas, got, esperado)
+		}
+	}
+}
+
+// Una suma de horas con decimales no muestra el error de redondeo de float64 (0,1 + 0,2 se ve "0,3").
+func TestFormatearHoras_RedondeaACentesimos(t *testing.T) {
+	suma, err := effort.HorasEstimadasDeHistoria(0, []effort.Tarea{{HorasEstimadas: 0.1}, {HorasEstimadas: 0.2}})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if got := effort.FormatearHoras(suma); got != "0,3" {
+		t.Errorf("FormatearHoras(0,1 + 0,2) = %q, se esperaba %q", got, "0,3")
+	}
+}

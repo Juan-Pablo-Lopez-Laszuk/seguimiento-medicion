@@ -307,3 +307,47 @@ func TestNewHandlerConBase_ConURLLosCriteriosSobrevivenAUnReinicio(t *testing.T)
 		t.Error("desmarcar el criterio debería quedar guardado")
 	}
 }
+
+// tareaDeLaApp registra una integrante y le agrega una tarea de 2,5 horas a la HU-1 del proyecto 1.
+func tareaDeLaApp(t *testing.T, h http.Handler) {
+	t.Helper()
+	post(h, "/proyectos/1/integrantes", neturl.Values{"nombre": {"Carolina"}, "email": {"caro@mail.com"}, "rol": {"ProductBuilder"}})
+	campos := neturl.Values{"titulo": {"Tarea guardada"}, "responsable": {"1"}, "horas": {"2,5"}}
+	if rec := post(h, "/proyectos/1/backlog/1/tareas", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("agregar tarea: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+}
+
+func TestNewHandlerConBase_SinURLLasTareasSeGuardanEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+
+	tareaDeLaApp(t, h)
+
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1/tareas"), "Tarea guardada") {
+		t.Error("la tarea recién agregada debería estar en la página de tareas")
+	}
+}
+
+// HU-25: las tareas, sus horas y si están completadas quedan en la base y sobreviven a un reinicio.
+func TestNewHandlerConBase_ConURLLasTareasSobrevivenAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con tareas")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia con tareas"}, "prioridad": {"Alta"}})
+	tareaDeLaApp(t, primera)
+	if rec := post(primera, "/proyectos/1/backlog/1/tareas/1/horas", neturl.Values{"horas": {"4"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("cambiar horas: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec := post(primera, "/proyectos/1/backlog/1/tareas/1/completada", neturl.Values{"completada": {"1"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("completar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/backlog/1/tareas")
+	for _, esperado := range []string{"Tarea guardada", "Carolina", "4 h", "Completada"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de tareas debería mostrar %q:\n%s", esperado, pagina)
+		}
+	}
+}
