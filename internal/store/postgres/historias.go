@@ -79,3 +79,16 @@ func (r *Historias) BuscarPorNumero(ctx context.Context, proyectoID int64, numer
 	h.Prioridad, h.Estado = backlog.Prioridad(prioridad), backlog.Estado(estado)
 	return h, nil
 }
+
+// ActualizarEstado guarda el estado de la historia sin tocar los demás datos, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza un estado que no sea uno de los cuatro (CHECK).
+func (r *Historias) ActualizarEstado(ctx context.Context, historiaID int64, estado backlog.Estado) error {
+	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET estado = $1 WHERE id = $2`, string(estado), historiaID)
+	if err != nil {
+		return fmt.Errorf("actualizar el estado de la historia %d: %w", historiaID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}

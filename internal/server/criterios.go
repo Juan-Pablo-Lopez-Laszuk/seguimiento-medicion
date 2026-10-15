@@ -50,6 +50,8 @@ func mensajeDeExito(consulta url.Values) string {
 		return "Criterio marcado como cumplido."
 	case consulta.Get("marcado") == "no-cumplido":
 		return "Criterio marcado como no cumplido."
+	case consulta.Get("estado") == "en-progreso":
+		return "La historia pasó a En progreso."
 	}
 	return ""
 }
@@ -61,7 +63,7 @@ func (h criterios) ver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	vista, err := h.casos.Ver(r.Context(), proyectoID, numero)
-	if h.respondeError(w, err, "ver la historia") {
+	if respondeError(w, err, "ver la historia") {
 		return
 	}
 	pagina := nuevaPagina(vista)
@@ -97,7 +99,7 @@ func (h criterios) agregar(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, backlog.ErrHistoriaHecha):
 		h.avisoDeHistoriaHecha(w, r, proyectoID, numero, err)
 	default:
-		h.respondeError(w, err, "agregar un criterio")
+		respondeError(w, err, "agregar un criterio")
 	}
 }
 
@@ -130,7 +132,7 @@ func (h criterios) marcar(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, backlog.ErrHistoriaHecha):
 		h.avisoDeHistoriaHecha(w, r, proyectoID, numero, err)
 	default:
-		h.respondeError(w, err, "marcar un criterio")
+		respondeError(w, err, "marcar un criterio")
 	}
 }
 
@@ -147,7 +149,7 @@ func (h criterios) avisoDeHistoriaHecha(w http.ResponseWriter, r *http.Request, 
 // paginaDespuesDeUnError vuelve a buscar la historia para mostrarla junto al error. Si no puede, ya respondió.
 func (h criterios) paginaDespuesDeUnError(w http.ResponseWriter, r *http.Request, proyectoID int64, numero int) (paginaHistoria, bool) {
 	vista, err := h.casos.Ver(r.Context(), proyectoID, numero)
-	if h.respondeError(w, err, "volver a mostrar la historia") {
+	if respondeError(w, err, "volver a mostrar la historia") {
 		return paginaHistoria{}, false
 	}
 	return nuevaPagina(vista), true
@@ -155,7 +157,7 @@ func (h criterios) paginaDespuesDeUnError(w http.ResponseWriter, r *http.Request
 
 // respondeError responde 404 (proyecto, historia o criterio que no existen) o 500 si err no es nil, y dice si ya
 // respondió. Con err nil no hace nada y devuelve false.
-func (h criterios) respondeError(w http.ResponseWriter, err error, accion string) bool {
+func respondeError(w http.ResponseWriter, err error, accion string) bool {
 	switch {
 	case err == nil:
 		return false

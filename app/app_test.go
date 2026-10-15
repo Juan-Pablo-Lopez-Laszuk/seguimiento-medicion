@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/app"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/postgres"
 )
 
@@ -349,5 +350,48 @@ func TestNewHandlerConBase_ConURLLasTareasSobrevivenAUnReinicio(t *testing.T) {
 		if !strings.Contains(pagina, esperado) {
 			t.Errorf("después de reiniciar la página de tareas debería mostrar %q:\n%s", esperado, pagina)
 		}
+	}
+}
+
+// HU-08: sin base, el cambio de estado también funciona en memoria. Hasta que exista HU-12 no hay forma de dejar una
+// historia En sprint desde la aplicación, así que se comprueba la regla con una historia Pendiente.
+func TestNewHandlerConBase_SinURLElCambioDeEstadoAplicaLaRegla(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+
+	rec := post(h, "/proyectos/1/backlog/1/estado", neturl.Values{"estado": {"En progreso"}})
+
+	if rec.Code != http.StatusConflict || !strings.Contains(rec.Body.String(), "no se puede pasar de Pendiente a En progreso") {
+		t.Errorf("se esperaba el 409 con el motivo de la transición y se obtuvo %d:\n%s", rec.Code, rec.Body.String())
+	}
+}
+
+// HU-08: el estado queda en la base y sobrevive a un reinicio de la aplicación.
+func TestNewHandlerConBase_ConURLElEstadoDeLaHistoriaSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con estados")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia con estado"}, "prioridad": {"Alta"}})
+	// Pasar a En sprint es de HU-12: se deja la historia así directo en la base, como lo hará esa historia.
+	pool, err := postgres.Conectar(context.Background(), url)
+	if err != nil {
+		t.Fatalf("conectar a la base de pruebas: %v", err)
+	}
+	defer pool.Close()
+	if err := postgres.NuevoHistorias(pool).ActualizarEstado(context.Background(), 1, backlog.EstadoEnSprint); err != nil {
+		t.Fatalf("no se pudo dejar la historia En sprint: %v", err)
+	}
+
+	if rec := post(primera, "/proyectos/1/backlog/1/estado", neturl.Values{"estado": {"En progreso"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("cambiar el estado: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	reiniciada := nuevaApp(t, url)
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog/1"), "En progreso") {
+		t.Error("después de reiniciar la página de la historia tendría que mostrar En progreso")
+	}
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog"), `text-bg-primary">En progreso`) {
+		t.Error("después de reiniciar la lista del backlog tendría que mostrar la historia En progreso")
 	}
 }

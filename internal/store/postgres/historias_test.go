@@ -218,3 +218,55 @@ func TestHistorias_BuscarPorNumero(t *testing.T) {
 		t.Errorf("proyecto que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
+
+// HU-08: el estado de una historia se guarda sin tocar los demás datos
+func TestHistorias_ActualizarEstado(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	puntos := 8
+	primera := historiaDeEjemplo(proyectoA, 1, "Primera")
+	primera.StoryPoints = &puntos
+	guardada, err := repo.Guardar(ctx, primera)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	otra, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Segunda"))
+
+	if err := repo.ActualizarEstado(ctx, guardada.ID, backlog.EstadoEnSprint); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.Estado != backlog.EstadoEnSprint || h.Titulo != "Primera" || h.StoryPoints == nil || *h.StoryPoints != 8 {
+		t.Errorf("se esperaba la HU-1 En sprint con el resto de sus datos y se obtuvo %+v, %v", h, err)
+	}
+	if o, _ := repo.BuscarPorNumero(ctx, proyectoA, 2); o.ID != otra.ID || o.Estado != backlog.EstadoPendiente {
+		t.Errorf("la HU-2 no tenía que cambiar y se obtuvo %+v", o)
+	}
+	if err := repo.ActualizarEstado(ctx, 99999, backlog.EstadoEnSprint); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
+
+// Lo mismo que con la escala y las prioridades: los estados del código son exactamente los que acepta el CHECK de la
+// migración (historias_estado_ck).
+func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+
+	for i, e := range backlog.Estados {
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad, estado) VALUES ($1, $2, 'x', 'Alta', $3)`, proyectoA, i+1, string(e)); err != nil {
+			t.Errorf("la base rechazó el estado %q del código: %v", e, err)
+		}
+	}
+	for _, malo := range []string{"Terminada", "en sprint", "Hecha", ""} {
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad, estado) VALUES ($1, 99, 'x', 'Alta', $2)`, proyectoA, malo); err == nil {
+			t.Errorf("la base aceptó el estado %q, que no está en el código", malo)
+		}
+	}
+}
