@@ -47,6 +47,8 @@ var (
 	ErrFueraDelProyecto = errors.New("la fecha tiene que estar dentro del proyecto")
 	// ErrSuperpuesto se informa con el último sprint: "... (el Sprint 1 termina el 11/10/2026)".
 	ErrSuperpuesto = errors.New("el sprint tiene que empezar después del último")
+	// ErrNoEncontrado se devuelve cuando el proyecto no tiene un sprint con ese número (HU-12).
+	ErrNoEncontrado = errors.New("no existe el sprint")
 )
 
 // formatoFecha es como se muestran las fechas en los mensajes: 05/10/2026.
