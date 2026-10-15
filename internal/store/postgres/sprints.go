@@ -23,9 +23,9 @@ func NuevoSprints(pool *pgxpool.Pool) *Sprints {
 // dentro del proyecto (restricción única) y un proyecto que no existe (clave foránea).
 func (r *Sprints) Guardar(ctx context.Context, s sprint.Sprint) (sprint.Sprint, error) {
 	err := r.pool.QueryRow(ctx,
-		`INSERT INTO sprints (proyecto_id, numero, objetivo, fecha_inicio, fecha_fin, estado)
-		 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-		s.ProyectoID, s.Numero, s.Objetivo, s.FechaInicio, s.FechaFin, string(s.Estado),
+		`INSERT INTO sprints (proyecto_id, numero, objetivo, fecha_inicio, fecha_fin, estado, sp_completados)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+		s.ProyectoID, s.Numero, s.Objetivo, s.FechaInicio, s.FechaFin, string(s.Estado), s.SPCompletados,
 	).Scan(&s.ID)
 	if err != nil {
 		return sprint.Sprint{}, fmt.Errorf("guardar el sprint: %w", err)
@@ -36,7 +36,7 @@ func (r *Sprints) Guardar(ctx context.Context, s sprint.Sprint) (sprint.Sprint, 
 // ListarPorProyecto devuelve los sprints del proyecto en el orden en que se crearon.
 func (r *Sprints) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]sprint.Sprint, error) {
 	filas, err := r.pool.Query(ctx,
-		`SELECT id, proyecto_id, numero, objetivo, fecha_inicio, fecha_fin, estado
+		`SELECT id, proyecto_id, numero, objetivo, fecha_inicio, fecha_fin, estado, sp_completados
 		 FROM sprints WHERE proyecto_id = $1 ORDER BY id`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar los sprints del proyecto: %w", err)
@@ -47,7 +47,7 @@ func (r *Sprints) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]sp
 	for filas.Next() {
 		var s sprint.Sprint
 		var estado string
-		if err := filas.Scan(&s.ID, &s.ProyectoID, &s.Numero, &s.Objetivo, &s.FechaInicio, &s.FechaFin, &estado); err != nil {
+		if err := filas.Scan(&s.ID, &s.ProyectoID, &s.Numero, &s.Objetivo, &s.FechaInicio, &s.FechaFin, &estado, &s.SPCompletados); err != nil {
 			return nil, fmt.Errorf("leer un sprint: %w", err)
 		}
 		s.Estado = sprint.Estado(estado)
