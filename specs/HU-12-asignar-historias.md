@@ -1,11 +1,11 @@
 # SPEC-12 · Asignar historias a un sprint
 
-**Historia:** HU-12 (#44) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
+**Historia:** HU-12 (#44) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las tablas Historia, CriterioAceptacion y Sprint de
 > `docs/modelo-datos.md`, el sprint activo de `specs/HU-04-estado-proyecto.md` (RN2) y la velocidad de
-> `specs/HU-31-velocidad.md`. Depende de HU-07 (criterios), HU-08 (estados) y HU-16 (estimar), de Mariano: las reglas
-> que vienen de esas historias están marcadas y hay que acordarlas con él antes de programar.
+> `specs/HU-31-velocidad.md`. Usa HU-07 (criterios) y HU-08 (estados), de Mariano: las reglas
+> que vienen de esas historias están marcadas.
 
 ## 1. Objetivo
 
@@ -51,22 +51,24 @@ con un aviso si se compromete más de lo que el equipo suele terminar.
   HU-31 (`metrics.CalcularVelocidad`, últimos 3 sprints cerrados, con su foto del cierre). Con un solo sprint cerrado,
   es la de ese sprint; **sin sprints cerrados no hay aviso** (decisión 8 de la Planning, confirmada por Juan Pablo y Carolina en el #96).
 - RN6: El cambio de estado (Pendiente → En sprint, y la vuelta al quitar) usa las **transiciones de HU-08**, no las
-  repite (decisión 5 de la Planning: la aprobó Juan Pablo el 13/10; falta la conformidad de Mariano).
+  repite (decisión 5 de la Planning, confirmada por Mariano en el #95): `AsignarA` y `QuitarDelSprint` llaman a
+  `Historia.CambiarEstado`.
 
 ## 5. Restricciones
 
 - RN1, RN3 y RN4 son funciones puras en el dominio que reciben la historia, la cantidad de criterios y el sprint.
 - La historia guarda en qué sprint abierto está (`historias.sprint_id`, ya en la migración 0001). Hace falta que
   `backlog.Historia` tenga el campo y que el repositorio de historias pueda **actualizar el estado y el sprint**.
-  HU-08 también necesita actualizar el estado: **hay que acordar con Mariano un solo `Actualizar`** en
-  `internal/store/{memory,postgres}/historias.go` para no hacer dos.
+  HU-08 guarda solo el estado (`ActualizarEstado`); HU-12 suma **`ActualizarSprint`**, que guarda el estado y el
+  sprint **en una sola sentencia**, así una historia nunca queda En sprint sin sprint si algo falla a mitad de camino.
 - Si una historia tiene criterios lo dice `backlog.ProgresoDe(criterios).TieneCriterios()` de HU-07 (ya en `main`), y
   para la lista de candidatas se usa `service.Criterios.Progresos(ctx, historias)`, que trae el progreso de todas con
   una sola consulta.
 - No hay migraciones nuevas: `historias.sprint_id` y `historias.estado` ya existen.
 - La velocidad lee los SP completados de los sprints cerrados (`sprints.sp_completados`, la foto que guarda HU-14,
   decisión del #80). Hasta que exista HU-14 no hay sprints cerrados, así que el aviso nunca aparece: es lo esperado.
-- HU-12 se programa cuando HU-07, HU-08 y HU-16 estén en `main` (Planning del Sprint 2: para el miércoles 14/10).
+- HU-12 se programó con HU-07 y HU-08 ya en `main`. No necesita HU-16: los story points se cargan al crear la
+  historia (HU-05); HU-16 suma cambiarlos después.
 
 ## 6. Casos límite
 
@@ -121,8 +123,15 @@ botón Asignar.
 
 Issue: #44 · Feature: `features/hu-12-asignar-historias.feature` · Pasos BDD: `features/hu12_steps_test.go`
 
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/asignar.go` (`AsignarA`, `QuitarDelSprint`, `DatosSprint`), `Historia.SprintID`, `sprint.Sprint.SPCompletados` y `sprint.ErrNoEncontrado` | `backlog/asignar_test.go` |
+| Repositorios | `ActualizarSprint` en `internal/store/{memory,postgres}/historias.go`; `sprint_id` al leer historias y `sp_completados` en `postgres/sprints.go` | `memory/historias_test.go`, `postgres/historias_test.go`, `postgres/sprints_test.go` |
+| Caso de uso | `internal/service/asignaciones.go` (`Asignaciones.Ver`, `Asignar` y `Quitar`, aviso por velocidad) | `internal/service/asignaciones_test.go` |
+| Pantalla | `internal/server/planificacion.go`, `web/templates/paginas/sprint.html`, enlace en `sprints.html` | `internal/server/planificacion_test.go` |
+
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-12.1 Estimadas, con CA y no Hechas | Asignar una historia lista · Historias que no se pueden asignar | se completa con el código |
-| CA-12.2 Sprint abierto y un solo sprint | Sprint cerrado · Ya está en otro sprint · Planificar el sprint siguiente · Quitar del sprint | se completa con el código |
-| CA-12.3 Aviso por velocidad | Aviso por velocidad | se completa con el código |
+| CA-12.1 Estimadas, con CA y no Hechas | Asignar una historia lista · Una historia de 0 SP se puede asignar · Historias que no se pueden asignar | `TestAsignarA_HistoriaLista`, `TestAsignarA_CeroStoryPointsYSprintFuturo`, `TestAsignarA_Errores`, `TestAsignar_HistoriaLista_QuedaGuardadaEnElSprint`, `TestAsignar_Rechazos_NoGuardanNada`, `TestPaginaDelSprint_MuestraElSprintYLasCandidatas`, `TestAsignar_HistoriaNoLista_MuestraElMotivo` |
+| CA-12.2 Sprint abierto y un solo sprint | No se asigna a un sprint cerrado · La historia ya está en otro sprint · Planificar el sprint siguiente · Quitar una historia del sprint | `TestAsignarA_Errores` (sprint cerrado y otro sprint), `TestAsignar_YaEnOtroSprint`, `TestQuitarDelSprint_*`, `TestQuitar_*`, `TestVerSprint_CerradoYAviso` |
+| CA-12.3 Aviso por velocidad | Aviso por velocidad · Sin sprints cerrados no hay aviso | `TestAsignar_AvisoPorVelocidad`, `TestAsignar_SinSprintsCerrados_NoAvisa`, `TestVerSprint_CerradoYAviso` |
