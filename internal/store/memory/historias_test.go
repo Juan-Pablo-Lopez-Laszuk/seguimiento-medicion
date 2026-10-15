@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
@@ -129,6 +130,31 @@ func TestHistorias_ActualizarSprint(t *testing.T) {
 		t.Errorf("se esperaba la HU-1 Pendiente y sin sprint y se obtuvo %+v", h)
 	}
 	if err := repo.ActualizarSprint(ctx, 99, backlog.EstadoEnSprint, &sprintID); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
+
+// HU-13: al completar, el estado y la fecha de completado se guardan juntos, sin tocar los demás datos (ni el sprint)
+func TestHistorias_ActualizarCompletada(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	sprintID := int64(7)
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera", Estado: backlog.EstadoEnProgreso, SprintID: &sprintID})
+	fecha := time.Date(2026, 10, 15, 0, 0, 0, 0, time.UTC)
+
+	if err := repo.ActualizarCompletada(ctx, guardada.ID, backlog.EstadoHecho, &fecha); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	fecha = fecha.AddDate(0, 0, 1) // el repositorio no comparte el valor con quien lo llamó
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.Estado != backlog.EstadoHecho || h.CompletadaEn == nil || h.CompletadaEn.Day() != 15 || h.SprintID == nil || *h.SprintID != 7 {
+		t.Errorf("se esperaba la HU-1 Hecha el 15/10 en el sprint 7 y se obtuvo %+v", h)
+	}
+	*h.CompletadaEn = h.CompletadaEn.AddDate(0, 0, 3)
+	if lista, _ := repo.ListarPorProyecto(ctx, 1); lista[0].CompletadaEn.Day() != 15 {
+		t.Errorf("la fecha guardada cambió a %v desde afuera del repositorio", lista[0].CompletadaEn)
+	}
+	if err := repo.ActualizarCompletada(ctx, 99, backlog.EstadoHecho, &fecha); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
 		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
