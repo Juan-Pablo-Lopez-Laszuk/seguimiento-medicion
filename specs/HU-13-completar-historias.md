@@ -1,10 +1,10 @@
 # SPEC-13 · Registrar historias completadas
 
-**Historia:** HU-13 (#45) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Revisada
+**Historia:** HU-13 (#45) · **Responsable:** López, Juan Pablo · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la página del sprint de `specs/HU-12-asignar-historias.md`, el
 > sprint activo de `specs/HU-04-estado-proyecto.md` (RN2) y la regla de estados de HU-08 (Mariano). Lo que viene de HU-08
-> está marcado y hay que acordarlo con él antes de programar (decisión 6 de la Planning).
+> está marcado (decisión 6 de la Planning, confirmada por Mariano en el #95).
 
 ## 1. Objetivo
 
@@ -36,8 +36,7 @@ en que se terminó (la usan las métricas y el burndown).
 - RN1: **Solo historias del sprint activo** (CA-13.1). El sprint activo es el de HU-04 RN2. En un sprint futuro o
   cerrado no se completa nada.
 - RN2: **Hay que pasar por En progreso** (CA-08.1: Pendiente → En sprint → En progreso → Hecho). Una historia En sprint
-  primero se empieza y después se completa. Aprobada por Juan Pablo el 13/10; falta la conformidad de Mariano
-  (decisión 6).
+  primero se empieza y después se completa. Decisión 6 de la Planning, confirmada por Mariano en el #95.
 - RN3: **Todos los criterios cumplidos** (CA-13.3 y CA-08.2). La regla es la de HU-08, que se apoya en
   `backlog.ProgresoDe(criterios).Completo()` de HU-07 (ya en `main`; con 0/0 no está completa). HU-13 la usa, no la repite.
 - RN4: **Fecha de completado** (CA-13.2): se guarda hoy, en la hora de Argentina. No la elige el usuario.
@@ -49,8 +48,11 @@ en que se terminó (la usan las métricas y el burndown).
 
 - La transición y la regla de criterios son de HU-08 (`internal/domain/backlog`). HU-13 agrega la condición del sprint
   activo y la fecha.
-- `backlog.Historia` necesita el campo de la fecha de completado, y el `Actualizar` del repositorio de historias (el
-  mismo que se acuerda para HU-08 y HU-12) tiene que guardarla. `historias.completada_en` ya está en la migración 0001.
+- `backlog.Historia` suma `CompletadaEn`, y el repositorio de historias suma `ActualizarCompletada`, que guarda el
+  estado y la fecha **en una sola sentencia** (igual que `ActualizarSprint` de HU-12). `historias.completada_en` ya está
+  en la migración 0001: no hay migración nueva.
+- `backlog.Historia.Completar` llama a `CambiarEstado` de HU-08 y solo le pone a cada error un mensaje que nombra la
+  historia; el error sigue siendo el de HU-08 para `errors.Is`. Empezar desde el sprint también usa `CambiarEstado`.
 - HU-13 se programa después de HU-12 y HU-08.
 
 ## 6. Casos límite
@@ -79,8 +81,8 @@ Sprint 2 activo, del 12/10 al 18/10. Hoy es el 15/10.
 | Ya está Hecha | la de HU-08 | "HU-1 ya está Hecha" |
 | La historia no está en ese sprint, o no existe | — | Página 404 |
 
-Los errores se muestran como aviso en la página del sprint (409). Los textos exactos de los errores de HU-08 los define
-Mariano; los de esta tabla son la propuesta.
+Los errores se muestran como aviso en la página del sprint (409). Si a la historia no le queda ningún criterio, el
+mensaje es "HU-2 no se puede completar: no tiene criterios de aceptación".
 
 ## 8. Criterios de aceptación
 
@@ -92,8 +94,15 @@ Mariano; los de esta tabla son la propuesta.
 
 Issue: #45 · Feature: `features/hu-13-completar-historias.feature` · Pasos BDD: `features/hu13_steps_test.go`
 
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/completar.go` (`Completar`, `ErrNoEsElSprintActivo`) y `Historia.CompletadaEn` | `backlog/completar_test.go` |
+| Repositorios | `ActualizarCompletada` y `completada_en` al leer en `internal/store/{memory,postgres}/historias.go` | `memory/historias_test.go`, `postgres/historias_test.go` |
+| Caso de uso | `internal/service/asignaciones.go` (`Asignaciones.Empezar`, `Completar` y en `Ver` el sprint activo, el avance y el progreso de cada historia) | `internal/service/completadas_test.go` |
+| Pantalla | `internal/server/planificacion.go` (`accion`), botones en `web/templates/paginas/sprint.html` | `internal/server/completar_test.go` |
+
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-13.1 Solo el sprint activo | Completar una historia del sprint activo · No se completa fuera del sprint activo · Sprint vencido sin cerrar | se completa con el código |
-| CA-13.2 Fecha de completado | Completar una historia del sprint activo · La fecha es la de Argentina | se completa con el código |
-| CA-13.3 Criterios cumplidos | Faltan criterios · Hay que empezarla antes | se completa con el código |
+| CA-13.1 Solo el sprint activo | Completar una historia del sprint activo · No se completa fuera del sprint activo · Sprint vencido sin cerrar | `TestCompletar_Errores` (no es del sprint activo), `TestCompletar_HistoriaDelSprintActivo`, `TestCompletar_SprintVencidoSinCerrar`, `TestCompletar_Rechazos_NoGuardanNada`, `TestVerSprint_AvanceYProgresoDeCriterios`, `TestCompletar_SprintQueNoEsElActivo` |
+| CA-13.2 Fecha de completado | Completar una historia del sprint activo · La fecha es la de Argentina | `TestCompletar_HistoriaLista`, `TestCompletar_LaFechaEsLaDeArgentina`, `TestHistorias_ActualizarCompletada`, `TestCompletar_HistoriaLista_VuelveALaPaginaDelSprint` |
+| CA-13.3 Criterios cumplidos | Faltan criterios · Hay que empezarla antes | `TestCompletar_Errores`, `TestEmpezar_HistoriaEnSprint`, `TestEmpezar_DesdeLaPaginaDelSprint`, `TestCompletar_FaltanCriterios_MuestraCuantos`, `TestCompletar_SinEmpezar_MuestraElMotivo` |
