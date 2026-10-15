@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
@@ -20,31 +22,50 @@ type RepositorioAsignaciones interface {
 	// ActualizarSprint guarda juntos el estado y el sprint de la historia (nil = sin sprint), o devuelve
 	// backlog.ErrHistoriaNoEncontrada si no existe.
 	ActualizarSprint(ctx context.Context, historiaID int64, estado backlog.Estado, sprintID *int64) error
+	// ActualizarCompletada guarda juntos el estado y la fecha de completado de la historia (HU-13), o devuelve
+	// backlog.ErrHistoriaNoEncontrada si no existe.
+	ActualizarCompletada(ctx context.Context, historiaID int64, estado backlog.Estado, completadaEn *time.Time) error
 }
 
-// Asignaciones agrupa los casos de uso del Sprint Backlog (HU-12): ver un sprint con sus historias, asignarle una
-// historia y quitársela. Las reglas están en backlog.Historia.AsignarA y QuitarDelSprint.
+// Asignaciones agrupa los casos de uso de la página de un sprint: ver el sprint con sus historias, asignarle una
+// historia y quitársela (HU-12), y empezar y completar sus historias (HU-13). Las reglas están en backlog.Historia
+// (AsignarA, QuitarDelSprint, CambiarEstado y Completar).
 type Asignaciones struct {
 	proyectos BuscadorProyectos
 	sprints   ListadorSprints
 	historias RepositorioAsignaciones
 	criterios *Criterios
+	ahora     func() time.Time
 }
 
-// NuevoAsignaciones arma el caso de uso. criterios trae el progreso de las historias (HU-07) con una sola consulta.
-func NuevoAsignaciones(proyectos BuscadorProyectos, sprints ListadorSprints, historias RepositorioAsignaciones, criterios *Criterios) *Asignaciones {
-	return &Asignaciones{proyectos: proyectos, sprints: sprints, historias: historias, criterios: criterios}
+// NuevoAsignaciones arma el caso de uso. criterios trae el progreso de las historias (HU-07) con una sola consulta;
+// ahora devuelve la fecha y hora actual (en los tests, una fija), para el sprint activo y la fecha de completado.
+func NuevoAsignaciones(proyectos BuscadorProyectos, sprints ListadorSprints, historias RepositorioAsignaciones, criterios *Criterios, ahora func() time.Time) *Asignaciones {
+	return &Asignaciones{proyectos: proyectos, sprints: sprints, historias: historias, criterios: criterios, ahora: ahora}
 }
 
 // VistaSprint es lo que muestra la página de un sprint (sección 3 de la spec de HU-12).
 type VistaSprint struct {
 	Proyecto      project.Proyecto
 	Sprint        sprint.Sprint
-	Abierto       bool               // false si el sprint está cerrado: no se le asignan historias (RN2)
-	Asignadas     []backlog.Historia // las del sprint, en el orden del backlog
-	Comprometidos int                // SP de las asignadas
-	Candidatas    []Candidata        // las del backlog en Pendiente y sin sprint
-	Aviso         string             // aviso por velocidad (RN5), vacío si no supera
+	Abierto       bool        // false si el sprint está cerrado: no se le asignan historias (HU-12 RN2)
+	Activo        bool        // true si es el sprint activo: solo ahí se completan historias (HU-13 RN1)
+	Asignadas     []Asignada  // las del sprint, en el orden del backlog
+	Comprometidos int         // SP de las asignadas
+	Completados   int         // SP de las asignadas Hechas (HU-13)
+	Candidatas    []Candidata // las del backlog en Pendiente y sin sprint
+	Aviso         string      // aviso por velocidad (HU-12 RN5), vacío si no supera
+}
+
+// Asignada es una historia del sprint con el progreso de sus criterios, que dice si ya se puede completar (HU-13).
+type Asignada struct {
+	backlog.Historia
+	Progreso backlog.Progreso
+}
+
+// Faltan es la cantidad de criterios que le faltan cumplir.
+func (a Asignada) Faltan() int {
+	return a.Progreso.Total - a.Progreso.Cumplidos
 }
 
 // Candidata es una historia del backlog que se podría asignar. Motivo dice por qué todavía no se puede, por ejemplo
@@ -74,19 +95,25 @@ func (s *Asignaciones) Ver(ctx context.Context, proyectoID int64, numeroSprint i
 	if err != nil {
 		return VistaSprint{}, fmt.Errorf("listar las historias del proyecto %d: %w", proyectoID, err)
 	}
-	v := VistaSprint{Proyecto: p, Sprint: destino, Abierto: destino.Estado != sprint.EstadoCerrado}
-	var candidatas []backlog.Historia
+	v := VistaSprint{Proyecto: p, Sprint: destino, Abierto: destino.Estado != sprint.EstadoCerrado, Activo: s.esElActivo(destino, sprints)}
+	var asignadas, candidatas []backlog.Historia
 	for _, h := range historias {
 		switch {
 		case h.SprintID != nil && *h.SprintID == destino.ID:
-			v.Asignadas = append(v.Asignadas, h)
+			asignadas = append(asignadas, h)
 		case h.SprintID == nil && h.Estado == backlog.EstadoPendiente:
 			candidatas = append(candidatas, h)
 		}
 	}
-	progresos, err := s.criterios.Progresos(ctx, candidatas)
+	progresos, err := s.criterios.Progresos(ctx, append(append([]backlog.Historia{}, asignadas...), candidatas...))
 	if err != nil {
 		return VistaSprint{}, err
+	}
+	for _, h := range asignadas {
+		v.Asignadas = append(v.Asignadas, Asignada{Historia: h, Progreso: progresos[h.ID]})
+		if h.Estado == backlog.EstadoHecho && h.StoryPoints != nil {
+			v.Completados += *h.StoryPoints
+		}
 	}
 	abierto := datosDe(destino)
 	abierto.Cerrado = false // el motivo es el de la historia, aunque el sprint esté cerrado
@@ -159,6 +186,69 @@ func (s *Asignaciones) Quitar(ctx context.Context, proyectoID int64, numeroSprin
 		return backlog.Historia{}, fmt.Errorf("quitar la historia %d del sprint %d: %w", h.ID, destino.ID, err)
 	}
 	return quitada, nil
+}
+
+// Empezar pasa la historia HU-N del Sprint M a En progreso, con la transición de HU-08, y sigue en su sprint
+// (HU-13 RN2). Si no está en ese sprint, el error es backlog.ErrHistoriaNoEncontrada.
+func (s *Asignaciones) Empezar(ctx context.Context, proyectoID int64, numeroSprint, numero int) (backlog.Historia, error) {
+	_, h, _, progreso, err := s.historiaDelSprint(ctx, proyectoID, numeroSprint, numero)
+	if err != nil {
+		return backlog.Historia{}, err
+	}
+	empezada, err := h.CambiarEstado(backlog.EstadoEnProgreso, progreso)
+	if err != nil {
+		return backlog.Historia{}, err
+	}
+	if err := s.historias.ActualizarSprint(ctx, h.ID, empezada.Estado, empezada.SprintID); err != nil {
+		return backlog.Historia{}, fmt.Errorf("guardar el estado de la historia %d: %w", h.ID, err)
+	}
+	return empezada, nil
+}
+
+// Completar pasa la historia HU-N del Sprint M a Hecho con la fecha de hoy en Argentina (HU-13). Si no se puede,
+// devuelve el error de la regla (backlog.ErrNoEsElSprintActivo o los de HU-08) y no guarda nada; si la historia no
+// está en ese sprint, backlog.ErrHistoriaNoEncontrada.
+func (s *Asignaciones) Completar(ctx context.Context, proyectoID int64, numeroSprint, numero int) (backlog.Historia, error) {
+	destino, h, sprints, progreso, err := s.historiaDelSprint(ctx, proyectoID, numeroSprint, numero)
+	if err != nil {
+		return backlog.Historia{}, err
+	}
+	hecha, err := h.Completar(s.esElActivo(destino, sprints), progreso, domain.HoyEnArgentina(s.ahora()))
+	if err != nil {
+		return backlog.Historia{}, err
+	}
+	if err := s.historias.ActualizarCompletada(ctx, h.ID, hecha.Estado, hecha.CompletadaEn); err != nil {
+		return backlog.Historia{}, fmt.Errorf("guardar la historia %d completada: %w", h.ID, err)
+	}
+	return hecha, nil
+}
+
+// historiaDelSprint trae el Sprint M, la historia HU-N (que tiene que estar en ese sprint), los sprints del proyecto
+// y el progreso de los criterios de la historia.
+func (s *Asignaciones) historiaDelSprint(ctx context.Context, proyectoID int64, numeroSprint, numero int) (sprint.Sprint, backlog.Historia, []sprint.Sprint, backlog.Progreso, error) {
+	_, destino, sprints, err := s.buscarSprint(ctx, proyectoID, numeroSprint)
+	if err != nil {
+		return sprint.Sprint{}, backlog.Historia{}, nil, backlog.Progreso{}, err
+	}
+	h, err := s.buscarHistoria(ctx, proyectoID, numero)
+	if err != nil {
+		return sprint.Sprint{}, backlog.Historia{}, nil, backlog.Progreso{}, err
+	}
+	if h.SprintID == nil || *h.SprintID != destino.ID {
+		return sprint.Sprint{}, backlog.Historia{}, nil, backlog.Progreso{},
+			fmt.Errorf("la historia HU-%d no está en el Sprint %d: %w", numero, numeroSprint, backlog.ErrHistoriaNoEncontrada)
+	}
+	progresos, err := s.criterios.Progresos(ctx, []backlog.Historia{h})
+	if err != nil {
+		return sprint.Sprint{}, backlog.Historia{}, nil, backlog.Progreso{}, err
+	}
+	return destino, h, sprints, progresos[h.ID], nil
+}
+
+// esElActivo dice si el sprint es el activo hoy, en la fecha de Argentina (HU-04 RN2 y RN6).
+func (s *Asignaciones) esElActivo(destino sprint.Sprint, sprints []sprint.Sprint) bool {
+	activo, ok := sprint.Activo(sprints, domain.HoyEnArgentina(s.ahora()))
+	return ok && activo.ID == destino.ID
 }
 
 // buscarSprint trae el proyecto, el Sprint N y todos los sprints del proyecto, o el error de "no encontrado".
