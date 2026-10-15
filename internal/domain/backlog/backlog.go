@@ -78,7 +78,8 @@ type Datos struct {
 	StoryPoints string // vacío = sin estimar; si no, un número de la escala
 }
 
-// Historia es una historia ya validada. StoryPoints es nil mientras no esté estimada.
+// Historia es una historia ya validada. StoryPoints es nil mientras no esté estimada y SprintID, mientras no esté
+// asignada a un sprint (HU-12).
 type Historia struct {
 	ID          int64
 	ProyectoID  int64
@@ -88,6 +89,7 @@ type Historia struct {
 	Prioridad   Prioridad
 	Estado      Estado
 	StoryPoints *int
+	SprintID    *int64
 }
 
 // Identificador devuelve el número como se muestra en pantalla: "HU-3".
