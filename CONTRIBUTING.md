@@ -38,6 +38,7 @@ y por último la mejora sin romper los tests (**REFACTOR**). Los profesores eval
 1. `git push -u origin <rama>` y `gh pr create` (o desde la web).
 2. Completar la plantilla del PR, incluida la trazabilidad.
 3. Revisión cruzada obligatoria: **Juan Pablo revisa a Mariano, Mariano revisa a Carolina, Carolina revisa a Juan Pablo**.
+   El workflow `.github/workflows/revisor.yml` pide la revisión solo cuando se abre el PR; si no aparece, pedirla a mano.
 4. Mergear con **"Create a merge commit"** o **"Rebase and merge"**. *Squash* está deshabilitado porque borraría los commits RED/GREEN/REFACTOR.
 5. Mover la tarjeta a **Hecho** en el tablero.
 
