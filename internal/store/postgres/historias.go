@@ -92,3 +92,17 @@ func (r *Historias) ActualizarEstado(ctx context.Context, historiaID int64, esta
 	}
 	return nil
 }
+
+// ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza un valor fuera de la escala (CHECK). Es el único lugar
+// donde se escribe la estimación (HU-16): HU-16b lo va a extender para anotar también el historial.
+func (r *Historias) ActualizarStoryPoints(ctx context.Context, historiaID int64, puntos int) error {
+	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET story_points = $1 WHERE id = $2`, puntos, historiaID)
+	if err != nil {
+		return fmt.Errorf("actualizar los story points de la historia %d: %w", historiaID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}
