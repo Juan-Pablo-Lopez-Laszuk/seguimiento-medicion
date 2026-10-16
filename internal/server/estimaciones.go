@@ -33,7 +33,7 @@ func (h estimaciones) estimar(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog/%d?estimada=1", proyectoID, numero), http.StatusSeeOther)
 	case errors.As(err, &errs):
-		pagina, ok := h.paginaDespuesDeUnError(w, r, proyectoID, numero)
+		pagina, ok := paginaDespuesDeUnError(w, r, h.vista, proyectoID, numero)
 		if !ok {
 			return
 		}
@@ -43,7 +43,7 @@ func (h estimaciones) estimar(w http.ResponseWriter, r *http.Request) {
 		}
 		renderHistoria(w, http.StatusUnprocessableEntity, pagina)
 	case errors.Is(err, backlog.ErrEstimacionDeHistoriaHecha):
-		pagina, ok := h.paginaDespuesDeUnError(w, r, proyectoID, numero)
+		pagina, ok := paginaDespuesDeUnError(w, r, h.vista, proyectoID, numero)
 		if !ok {
 			return
 		}
@@ -57,13 +57,4 @@ func (h estimaciones) estimar(w http.ResponseWriter, r *http.Request) {
 		log.Printf("estimar la historia HU-%d del proyecto %d: %v", numero, proyectoID, err)
 		http.Error(w, "No se pudo guardar la estimación. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
 	}
-}
-
-// paginaDespuesDeUnError vuelve a buscar la historia para mostrarla junto al error. Si no puede, ya respondió.
-func (h estimaciones) paginaDespuesDeUnError(w http.ResponseWriter, r *http.Request, proyectoID int64, numero int) (paginaHistoria, bool) {
-	vista, err := h.vista.Ver(r.Context(), proyectoID, numero)
-	if respondeError(w, err, "volver a mostrar la historia") {
-		return paginaHistoria{}, false
-	}
-	return nuevaPagina(vista), true
 }

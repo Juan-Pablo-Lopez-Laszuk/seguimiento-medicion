@@ -94,7 +94,7 @@ func (h criterios) agregar(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog/%d?agregado=1", proyectoID, numero), http.StatusSeeOther)
 	case errors.As(err, &errs):
-		pagina, ok := h.paginaDespuesDeUnError(w, r, proyectoID, numero)
+		pagina, ok := paginaDespuesDeUnError(w, r, h.casos, proyectoID, numero)
 		if !ok {
 			return
 		}
@@ -146,7 +146,7 @@ func (h criterios) marcar(w http.ResponseWriter, r *http.Request) {
 
 // avisoDeHistoriaHecha muestra la página con el aviso de que la historia está Hecha (409).
 func (h criterios) avisoDeHistoriaHecha(w http.ResponseWriter, r *http.Request, proyectoID int64, numero int, err error) {
-	pagina, ok := h.paginaDespuesDeUnError(w, r, proyectoID, numero)
+	pagina, ok := paginaDespuesDeUnError(w, r, h.casos, proyectoID, numero)
 	if !ok {
 		return
 	}
@@ -154,9 +154,10 @@ func (h criterios) avisoDeHistoriaHecha(w http.ResponseWriter, r *http.Request, 
 	renderHistoria(w, http.StatusConflict, pagina)
 }
 
-// paginaDespuesDeUnError vuelve a buscar la historia para mostrarla junto al error. Si no puede, ya respondió.
-func (h criterios) paginaDespuesDeUnError(w http.ResponseWriter, r *http.Request, proyectoID int64, numero int) (paginaHistoria, bool) {
-	vista, err := h.casos.Ver(r.Context(), proyectoID, numero)
+// paginaDespuesDeUnError vuelve a buscar la historia con sus criterios para mostrar su página junto al error (los
+// handlers de criterios, estado y estimación la comparten). Si no puede, ya respondió.
+func paginaDespuesDeUnError(w http.ResponseWriter, r *http.Request, casos *service.Criterios, proyectoID int64, numero int) (paginaHistoria, bool) {
+	vista, err := casos.Ver(r.Context(), proyectoID, numero)
 	if respondeError(w, err, "volver a mostrar la historia") {
 		return paginaHistoria{}, false
 	}
