@@ -43,7 +43,8 @@ Pendiente (RN6).
   (0, 1, 2, 3, 5, 8, 13, 21), la misma que valida la base y que HU-16 usa para estimar. Vacío significa "sin
   estimar", y **no es lo mismo que 0**.
 - RN5: El número es **correlativo dentro del proyecto**: la primera historia es la HU-1 y cada nueva es el número
-  más alto más uno (CA-05.1). Cada proyecto tiene su propia numeración, y un número nunca se reutiliza.
+  más alto más uno (CA-05.1). Cada proyecto tiene su propia numeración. Un número que falta en el medio no se
+  reutiliza; si se elimina la última historia (HU-06), su número queda libre para la próxima (HU-06, RN11).
 - RN6: Toda historia nueva nace en estado **Pendiente** (CA-05.3). Los otros estados llegan con HU-08.
 - RN7: Si hay varios datos inválidos, se informan **todos juntos**, cada uno con su campo (como en HU-01).
 

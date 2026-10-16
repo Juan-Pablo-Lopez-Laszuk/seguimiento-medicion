@@ -118,7 +118,8 @@ func Nueva(d Datos, proyectoID int64, existentes []Historia) (Historia, error) {
 }
 
 // siguienteNumero devuelve el número más alto de las historias del proyecto más uno (RN5). Con el más alto y no
-// con la cantidad, un número que falte no se reutiliza.
+// con la cantidad, un número que falte en el medio no se reutiliza; si se elimina la última historia (HU-06), su
+// número queda libre.
 func siguienteNumero(existentes []Historia) int {
 	mayor := 0
 	for _, h := range existentes {
