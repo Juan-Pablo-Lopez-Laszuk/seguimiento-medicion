@@ -6,9 +6,11 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
 )
 
 // Historias guarda las historias de todos los proyectos en la tabla historias.
@@ -91,4 +93,75 @@ func (r *Historias) ActualizarEstado(ctx context.Context, historiaID int64, esta
 		return backlog.ErrHistoriaNoEncontrada
 	}
 	return nil
+}
+
+// ActualizarDatos guarda el título, la descripción y la prioridad de la historia (HU-06) sin tocar el número, el
+// estado ni los story points, o devuelve backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza una prioridad
+// fuera de las tres (CHECK).
+func (r *Historias) ActualizarDatos(ctx context.Context, h backlog.Historia) error {
+	etiqueta, err := r.pool.Exec(ctx,
+		`UPDATE historias SET titulo = $1, descripcion = $2, prioridad = $3 WHERE id = $4`,
+		h.Titulo, h.Descripcion, string(h.Prioridad), h.ID)
+	if err != nil {
+		return fmt.Errorf("actualizar los datos de la historia %d: %w", h.ID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}
+
+// codigoClaveForanea es el código de PostgreSQL de una violación de clave foránea (foreign_key_violation).
+const codigoClaveForanea = "23503"
+
+// Eliminar borra la historia junto con sus criterios y sus tareas (HU-06, RN9), todo en una transacción: o se borra
+// todo o no se borra nada. Devuelve backlog.ErrHistoriaNoEncontrada si no existe, y backlog.ErrHistoriaConRegistros si
+// la base la rechaza porque tiene otros registros asociados (sesiones de Planning Poker, esfuerzo, defectos o la foto
+// de un sprint cerrado), que no se borran (RN10).
+func (r *Historias) Eliminar(ctx context.Context, historiaID int64) error {
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, `DELETE FROM criterios_aceptacion WHERE historia_id = $1`, historiaID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM tareas WHERE historia_id = $1`, historiaID); err != nil {
+			return err
+		}
+		etiqueta, err := tx.Exec(ctx, `DELETE FROM historias WHERE id = $1`, historiaID)
+		if err != nil {
+			return err
+		}
+		if etiqueta.RowsAffected() == 0 {
+			return backlog.ErrHistoriaNoEncontrada
+		}
+		return nil
+	})
+
+	var errBase *pgconn.PgError
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, backlog.ErrHistoriaNoEncontrada):
+		return backlog.ErrHistoriaNoEncontrada
+	case errors.As(err, &errBase) && errBase.Code == codigoClaveForanea:
+		return backlog.ErrHistoriaConRegistros
+	default:
+		return fmt.Errorf("eliminar la historia %d: %w", historiaID, err)
+	}
+}
+
+// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6): si ese es su sprint actual
+// (historias.sprint_id) o si aparece en la foto de cierre de ese sprint (sprint_historias), aunque no se haya terminado.
+func (r *Historias) EnSprintCerrado(ctx context.Context, historiaID int64) (bool, error) {
+	var cerrado bool
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM historias h JOIN sprints s ON s.id = h.sprint_id
+		                WHERE h.id = $1 AND s.estado = $2)
+		     OR EXISTS (SELECT 1 FROM sprint_historias sh JOIN sprints s ON s.id = sh.sprint_id
+		                WHERE sh.historia_id = $1 AND s.estado = $2)`,
+		historiaID, string(sprint.EstadoCerrado),
+	).Scan(&cerrado)
+	if err != nil {
+		return false, fmt.Errorf("ver si la historia %d es de un sprint cerrado: %w", historiaID, err)
+	}
+	return cerrado, nil
 }

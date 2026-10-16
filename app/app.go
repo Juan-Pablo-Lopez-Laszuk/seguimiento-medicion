@@ -43,6 +43,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		historias   interface {
 			service.RepositorioHistorias
 			service.RepositorioEstados
+			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
 		tareas    service.RepositorioTareas
@@ -50,7 +51,10 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	)
 	if url == "" {
 		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
-		historias, criterios, tareas = memory.NuevoHistorias(), memory.NuevoCriterios(), memory.NuevoTareas()
+		// Eliminar una historia borra también sus criterios y sus tareas (HU-06): en memoria, el repositorio de
+		// historias conoce a los otros dos.
+		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
+		historias, criterios, tareas = memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), criteriosEnMemoria, tareasEnMemoria
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
@@ -71,5 +75,8 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Base:           base,
+
+		// Editar y eliminar una historia (HU-06).
+		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
 	}), nil
 }

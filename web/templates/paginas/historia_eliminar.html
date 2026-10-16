@@ -1,0 +1,34 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog">{{.Proyecto.Nombre}}</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">{{.Historia.Identificador}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-3">¿Eliminar {{.Historia.Identificador}} · {{.Historia.Titulo}}?</h1>
+
+    <div class="p-4 bg-body rounded-3 shadow-sm">
+      {{if .Impedimento}}
+      {{template "aviso" .Impedimento}}
+      <p class="mb-3">La historia queda como está.</p>
+      <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">Volver a la historia</a>
+      {{else}}
+      <p>
+        Se eliminan también sus <strong>{{.Criterios}}</strong> y sus <strong>{{.Tareas}}</strong>.
+        Esta acción no se puede deshacer.
+      </p>
+      <form class="d-flex gap-2" action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/eliminar" method="post">
+        <button class="btn btn-danger" type="submit">Eliminar historia</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">Cancelar</a>
+      </form>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

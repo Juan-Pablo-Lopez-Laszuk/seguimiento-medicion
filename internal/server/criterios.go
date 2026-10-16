@@ -52,6 +52,8 @@ func mensajeDeExito(consulta url.Values) string {
 		return "Criterio marcado como no cumplido."
 	case consulta.Get("estado") == "en-progreso":
 		return "La historia pasó a En progreso."
+	case consulta.Get("editada") == "1":
+		return "Historia actualizada."
 	}
 	return ""
 }

@@ -5,7 +5,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/member"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/postgres"
 )
 
@@ -267,6 +271,237 @@ func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testin
 		if _, err := pool.Exec(ctx,
 			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad, estado) VALUES ($1, 99, 'x', 'Alta', $2)`, proyectoA, malo); err == nil {
 			t.Errorf("la base aceptó el estado %q, que no está en el código", malo)
+		}
+	}
+}
+
+// HU-06 · ActualizarDatos cambia título, descripción y prioridad de esa historia, y deja el número, el estado y los
+// story points
+func TestHistorias_ActualizarDatos(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	puntos := 5
+	original := historiaDeEjemplo(proyectoA, 1, "Login")
+	original.Descripcion, original.Prioridad = "Vieja", backlog.PrioridadAlta
+	original.Estado, original.StoryPoints = backlog.EstadoEnProgreso, &puntos
+	guardada, err := repo.Guardar(ctx, original)
+	if err != nil {
+		t.Fatalf("guardar la historia: %v", err)
+	}
+	otra, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Otra"))
+	if err != nil {
+		t.Fatalf("guardar la otra historia: %v", err)
+	}
+
+	err = repo.ActualizarDatos(ctx, backlog.Historia{
+		ID: guardada.ID, Titulo: "Login con Google", Descripcion: "Nueva", Prioridad: backlog.PrioridadBaja,
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil {
+		t.Fatalf("buscar la historia: %v", err)
+	}
+	if h.Titulo != "Login con Google" || h.Descripcion != "Nueva" || h.Prioridad != backlog.PrioridadBaja {
+		t.Errorf("la historia quedó con %q / %q / %q", h.Titulo, h.Descripcion, h.Prioridad)
+	}
+	if h.Numero != 1 || h.Estado != backlog.EstadoEnProgreso || h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("cambió lo que no se editaba: HU-%d, estado %q, story points %v", h.Numero, h.Estado, h.StoryPoints)
+	}
+	o, _ := repo.BuscarPorNumero(ctx, proyectoA, 2)
+	if o.ID != otra.ID || o.Titulo != "Otra" || o.Prioridad != backlog.PrioridadMedia {
+		t.Errorf("la otra historia cambió: %+v", o)
+	}
+}
+
+func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
+	pool := baseMigrada(t)
+
+	err := postgres.NuevoHistorias(pool).ActualizarDatos(context.Background(), backlog.Historia{
+		ID: 99, Titulo: "X", Prioridad: backlog.PrioridadAlta,
+	})
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// criteriosYTareasDe guarda 2 criterios y 1 tarea en la historia, para probar qué pasa con ellos al eliminarla.
+func criteriosYTareasDe(t *testing.T, pool *pgxpool.Pool, proyectoID, historiaID int64) {
+	t.Helper()
+	ctx := context.Background()
+	for _, descripcion := range []string{"Primer criterio", "Segundo criterio"} {
+		if _, err := postgres.NuevoCriterios(pool).Guardar(ctx, backlog.Criterio{HistoriaID: historiaID, Descripcion: descripcion}); err != nil {
+			t.Fatalf("guardar un criterio: %v", err)
+		}
+	}
+	responsable, err := postgres.NuevoIntegrantes(pool).Guardar(ctx, integranteDeEjemplo(proyectoID, "Carolina", "caro@mail.com", member.RolProductBuilder))
+	if err != nil {
+		t.Fatalf("guardar la integrante: %v", err)
+	}
+	if _, err := postgres.NuevoTareas(pool).Guardar(ctx, effort.Tarea{HistoriaID: historiaID, Titulo: "Una tarea", ResponsableID: responsable.ID, HorasEstimadas: 2}); err != nil {
+		t.Fatalf("guardar una tarea: %v", err)
+	}
+}
+
+// cuantos cuenta las filas de la tabla que cumplen la condición.
+func cuantos(t *testing.T, pool *pgxpool.Pool, tabla, condicion string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM "+tabla+" WHERE "+condicion, args...).Scan(&n); err != nil {
+		t.Fatalf("contar en %s: %v", tabla, err)
+	}
+	return n
+}
+
+// HU-06 · Eliminar borra la historia, sus criterios y sus tareas, y las demás historias conservan su número (RN9, RN11)
+func TestHistorias_Eliminar_BorraLaHistoriaConSusCriteriosYSusTareas(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	a, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Primera"))
+	b, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Segunda"))
+	c, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 3, "Tercera"))
+	criteriosYTareasDe(t, pool, proyectoA, b.ID)
+
+	if err := repo.Eliminar(ctx, b.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	lista, _ := repo.ListarPorProyecto(ctx, proyectoA)
+	if len(lista) != 2 || lista[0].ID != a.ID || lista[0].Numero != 1 || lista[1].ID != c.ID || lista[1].Numero != 3 {
+		t.Errorf("se esperaban HU-1 y HU-3, y se obtuvo %+v", lista)
+	}
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", b.ID); n != 0 {
+		t.Errorf("quedaron %d criterios de la historia eliminada", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", b.ID); n != 0 {
+		t.Errorf("quedaron %d tareas de la historia eliminada", n)
+	}
+}
+
+func TestHistorias_Eliminar_NoTocaLosCriteriosNiLasTareasDeLasDemas(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	a, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "A eliminar"))
+	b, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Se queda"))
+	criteriosYTareasDe(t, pool, proyectoA, b.ID)
+
+	if err := repo.Eliminar(ctx, a.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", b.ID); n != 2 {
+		t.Errorf("la otra historia tenía que conservar sus 2 criterios y tiene %d", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", b.ID); n != 1 {
+		t.Errorf("la otra historia tenía que conservar su tarea y tiene %d", n)
+	}
+}
+
+func TestHistorias_Eliminar_HistoriaInexistente(t *testing.T) {
+	pool := baseMigrada(t)
+
+	err := postgres.NuevoHistorias(pool).Eliminar(context.Background(), 99)
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// HU-06 (RN10) · si la base rechaza el borrado por otros registros asociados (acá, una sesión de Planning Poker), no se
+// borra nada: ni la historia ni sus criterios ni sus tareas
+func TestHistorias_Eliminar_ConRegistrosAsociados_NoBorraNada(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	h, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Con una sesión de poker"))
+	criteriosYTareasDe(t, pool, proyectoA, h.ID)
+	if _, err := pool.Exec(ctx, `INSERT INTO sesiones_poker (historia_id, estado) VALUES ($1, 'Abierta')`, h.ID); err != nil {
+		t.Fatalf("guardar la sesión de poker: %v", err)
+	}
+
+	err := repo.Eliminar(ctx, h.ID)
+
+	if !errors.Is(err, backlog.ErrHistoriaConRegistros) {
+		t.Fatalf("se esperaba ErrHistoriaConRegistros y se obtuvo: %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, proyectoA, 1); err != nil {
+		t.Errorf("la historia tenía que seguir: %v", err)
+	}
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", h.ID); n != 2 {
+		t.Errorf("los criterios tenían que seguir (2) y hay %d", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", h.ID); n != 1 {
+		t.Errorf("la tarea tenía que seguir (1) y hay %d", n)
+	}
+}
+
+// cerrarSprint deja el sprint en estado Cerrado, como lo va a hacer HU-14.
+func cerrarSprint(t *testing.T, pool *pgxpool.Pool, sprintID int64) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(), `UPDATE sprints SET estado = 'Cerrado' WHERE id = $1`, sprintID); err != nil {
+		t.Fatalf("cerrar el sprint: %v", err)
+	}
+}
+
+// HU-06 (RN6) · una historia es de un sprint cerrado si ese es su sprint actual o aparece en la foto de cierre
+func TestHistorias_EnSprintCerrado(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	sprints := postgres.NuevoSprints(pool)
+	abierto, _ := sprints.Guardar(ctx, sprintDeEjemplo(proyectoA, 2, "Abierto"))
+	cerrado, _ := sprints.Guardar(ctx, sprintDeEjemplo(proyectoA, 1, "Cerrado"))
+	cerrarSprint(t, pool, cerrado.ID)
+
+	sinSprint, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Sin sprint"))
+	enAbierto, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "En el sprint abierto"))
+	enCerrado, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 3, "En el sprint cerrado"))
+	enLaFoto, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 4, "Solo en la foto del cierre"))
+	enLaFotoAbierta, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 5, "En la foto de un sprint abierto"))
+	for _, q := range []struct {
+		sql  string
+		args []any
+	}{
+		{`UPDATE historias SET sprint_id = $1 WHERE id = $2`, []any{abierto.ID, enAbierto.ID}},
+		{`UPDATE historias SET sprint_id = $1 WHERE id = $2`, []any{cerrado.ID, enCerrado.ID}},
+		{`INSERT INTO sprint_historias (sprint_id, historia_id) VALUES ($1, $2)`, []any{cerrado.ID, enLaFoto.ID}},
+		{`INSERT INTO sprint_historias (sprint_id, historia_id) VALUES ($1, $2)`, []any{abierto.ID, enLaFotoAbierta.ID}},
+	} {
+		if _, err := pool.Exec(ctx, q.sql, q.args...); err != nil {
+			t.Fatalf("armar el caso: %v", err)
+		}
+	}
+
+	casos := []struct {
+		nombre   string
+		historia int64
+		esperado bool
+	}{
+		{"sin sprint", sinSprint.ID, false},
+		{"en un sprint abierto", enAbierto.ID, false},
+		{"en un sprint cerrado", enCerrado.ID, true},
+		{"en la foto de un sprint cerrado", enLaFoto.ID, true},
+		{"en la foto de un sprint abierto", enLaFotoAbierta.ID, false},
+	}
+	for _, c := range casos {
+		obtenido, err := repo.EnSprintCerrado(ctx, c.historia)
+		if err != nil {
+			t.Errorf("%s: no se esperaba error: %v", c.nombre, err)
+			continue
+		}
+		if obtenido != c.esperado {
+			t.Errorf("%s: EnSprintCerrado = %v, se esperaba %v", c.nombre, obtenido, c.esperado)
 		}
 	}
 }

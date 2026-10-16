@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
@@ -98,5 +99,123 @@ func TestHistorias_ActualizarEstado(t *testing.T) {
 	}
 	if err := repo.ActualizarEstado(ctx, 99, backlog.EstadoEnSprint); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
 		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
+
+// HU-06 · ActualizarDatos cambia título, descripción y prioridad de esa historia, y deja el estado y los story points
+func TestHistorias_ActualizarDatos(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	puntos := 5
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{
+		ProyectoID: 1, Numero: 1, Titulo: "Login", Descripcion: "Vieja", Prioridad: backlog.PrioridadAlta,
+		Estado: backlog.EstadoEnProgreso, StoryPoints: &puntos,
+	})
+	otra, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Otra", Prioridad: backlog.PrioridadMedia})
+
+	err := repo.ActualizarDatos(ctx, backlog.Historia{
+		ID: guardada.ID, Titulo: "Login con Google", Descripcion: "Nueva", Prioridad: backlog.PrioridadBaja,
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.Titulo != "Login con Google" || h.Descripcion != "Nueva" || h.Prioridad != backlog.PrioridadBaja {
+		t.Errorf("la historia quedó con %q / %q / %q", h.Titulo, h.Descripcion, h.Prioridad)
+	}
+	if h.Numero != 1 || h.Estado != backlog.EstadoEnProgreso || h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("cambió lo que no se editaba: HU-%d, estado %q, story points %v", h.Numero, h.Estado, h.StoryPoints)
+	}
+	o, _ := repo.BuscarPorNumero(ctx, 1, 2)
+	if o.Titulo != otra.Titulo || o.Prioridad != backlog.PrioridadMedia {
+		t.Errorf("la otra historia cambió: %+v", o)
+	}
+}
+
+func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
+	err := memory.NuevoHistorias().ActualizarDatos(context.Background(), backlog.Historia{ID: 99, Titulo: "X"})
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// HU-06 · Eliminar borra esa historia y las demás conservan su número (RN11)
+func TestHistorias_Eliminar_BorraLaHistoriaYLasDemasConservanSuNumero(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	a, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera"})
+	b, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Segunda"})
+	c, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 3, Titulo: "Tercera"})
+	deOtroProyecto, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 2, Numero: 2, Titulo: "De otro proyecto"})
+
+	if err := repo.Eliminar(ctx, b.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	lista, _ := repo.ListarPorProyecto(ctx, 1)
+	if len(lista) != 2 || lista[0].ID != a.ID || lista[0].Numero != 1 || lista[1].ID != c.ID || lista[1].Numero != 3 {
+		t.Errorf("se esperaban HU-1 y HU-3, y se obtuvo %+v", lista)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 1, 2); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("HU-2 tenía que no existir más y se obtuvo: %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 2, 2); err != nil {
+		t.Errorf("la HU-2 del otro proyecto (ID %d) tenía que seguir: %v", deOtroProyecto.ID, err)
+	}
+}
+
+func TestHistorias_Eliminar_HistoriaInexistente(t *testing.T) {
+	err := memory.NuevoHistorias().Eliminar(context.Background(), 99)
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// HU-06 · en memoria no hay forma de asignar una historia a un sprint (HU-12), así que nunca es de un sprint cerrado
+func TestHistorias_EnSprintCerrado_EnMemoriaEsFalso(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	h, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera"})
+
+	cerrado, err := repo.EnSprintCerrado(ctx, h.ID)
+
+	if err != nil || cerrado {
+		t.Errorf("EnSprintCerrado = %v, %v; se esperaba false sin error", cerrado, err)
+	}
+}
+
+// HU-06 (RN9) · si el repositorio conoce a los que dependen de la historia, eliminarla borra también sus criterios y
+// sus tareas, y deja los de las demás historias
+func TestHistorias_Eliminar_BorraTambienLosCriteriosYLasTareas(t *testing.T) {
+	ctx := context.Background()
+	criterios, tareas := memory.NuevoCriterios(), memory.NuevoTareas()
+	repo := memory.NuevoHistorias(criterios, tareas)
+	a, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "A eliminar"})
+	b, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Se queda"})
+	for _, id := range []int64{a.ID, a.ID, b.ID} {
+		_, _ = criterios.Guardar(ctx, backlog.Criterio{HistoriaID: id, Descripcion: "Un criterio"})
+	}
+	for _, id := range []int64{a.ID, b.ID} {
+		_, _ = tareas.Guardar(ctx, effort.Tarea{HistoriaID: id, Titulo: "Una tarea"})
+	}
+
+	if err := repo.Eliminar(ctx, a.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if cs, _ := criterios.ListarPorHistoria(ctx, a.ID); len(cs) != 0 {
+		t.Errorf("quedaron %d criterios de la historia eliminada", len(cs))
+	}
+	if ts, _ := tareas.ListarPorHistoria(ctx, a.ID); len(ts) != 0 {
+		t.Errorf("quedaron %d tareas de la historia eliminada", len(ts))
+	}
+	if cs, _ := criterios.ListarPorHistoria(ctx, b.ID); len(cs) != 1 {
+		t.Errorf("la otra historia tenía que conservar su criterio y tiene %d", len(cs))
+	}
+	if ts, _ := tareas.ListarPorHistoria(ctx, b.ID); len(ts) != 1 {
+		t.Errorf("la otra historia tenía que conservar su tarea y tiene %d", len(ts))
 	}
 }
