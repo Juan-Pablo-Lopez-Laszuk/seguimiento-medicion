@@ -1,10 +1,6 @@
 package backlog
 
-import (
-	"strings"
-
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
-)
+import "strings"
 
 // Cambios son los datos que se corrigen de una historia que ya existe (HU-06): los mismos que se cargan al crearla,
 // menos los story points (HU-16) y el estado (HU-08), que tienen su propia pantalla.
@@ -20,11 +16,7 @@ type Cambios struct {
 func (h Historia) Editar(c Cambios) (Historia, error) {
 	titulo, descripcion := strings.TrimSpace(c.Titulo), strings.TrimSpace(c.Descripcion)
 
-	errs := domain.ErroresValidacion{}
-	errs.Agregar(CampoTitulo, validarTitulo(titulo))
-	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
-	errs.Agregar(CampoPrioridad, validarPrioridad(c.Prioridad))
-	if len(errs) > 0 {
+	if errs := validarDatos(titulo, descripcion, c.Prioridad); len(errs) > 0 {
 		return Historia{}, errs
 	}
 	h.Titulo, h.Descripcion, h.Prioridad = titulo, descripcion, c.Prioridad

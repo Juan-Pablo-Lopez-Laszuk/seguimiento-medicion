@@ -100,10 +100,7 @@ func (h Historia) Identificador() string {
 func Nueva(d Datos, proyectoID int64, existentes []Historia) (Historia, error) {
 	titulo, descripcion := strings.TrimSpace(d.Titulo), strings.TrimSpace(d.Descripcion)
 
-	errs := domain.ErroresValidacion{}
-	errs.Agregar(CampoTitulo, validarTitulo(titulo))
-	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
-	errs.Agregar(CampoPrioridad, validarPrioridad(d.Prioridad))
+	errs := validarDatos(titulo, descripcion, d.Prioridad)
 	puntos, errPuntos := parsearStoryPoints(d.StoryPoints)
 	errs.Agregar(CampoStoryPoints, errPuntos)
 	if len(errs) > 0 {
@@ -143,6 +140,17 @@ func parsearStoryPoints(texto string) (*int, error) {
 		return nil, ErrStoryPointsInvalidos
 	}
 	return &n, nil
+}
+
+// validarDatos valida los datos que se cargan al crear una historia (HU-05) y se corrigen al editarla (HU-06): el título
+// y la descripción, ya sin los espacios de los extremos, y la prioridad. Devuelve los errores de todos los campos que
+// fallaron, o un conjunto vacío.
+func validarDatos(titulo, descripcion string, prioridad Prioridad) domain.ErroresValidacion {
+	errs := domain.ErroresValidacion{}
+	errs.Agregar(CampoTitulo, validarTitulo(titulo))
+	errs.Agregar(CampoDescripcion, validarDescripcion(descripcion))
+	errs.Agregar(CampoPrioridad, validarPrioridad(prioridad))
+	return errs
 }
 
 func validarPrioridad(p Prioridad) error {
