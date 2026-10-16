@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
@@ -183,5 +184,38 @@ func TestHistorias_EnSprintCerrado_EnMemoriaEsFalso(t *testing.T) {
 
 	if err != nil || cerrado {
 		t.Errorf("EnSprintCerrado = %v, %v; se esperaba false sin error", cerrado, err)
+	}
+}
+
+// HU-06 (RN9) · si el repositorio conoce a los que dependen de la historia, eliminarla borra también sus criterios y
+// sus tareas, y deja los de las demás historias
+func TestHistorias_Eliminar_BorraTambienLosCriteriosYLasTareas(t *testing.T) {
+	ctx := context.Background()
+	criterios, tareas := memory.NuevoCriterios(), memory.NuevoTareas()
+	repo := memory.NuevoHistorias(criterios, tareas)
+	a, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "A eliminar"})
+	b, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Se queda"})
+	for _, id := range []int64{a.ID, a.ID, b.ID} {
+		_, _ = criterios.Guardar(ctx, backlog.Criterio{HistoriaID: id, Descripcion: "Un criterio"})
+	}
+	for _, id := range []int64{a.ID, b.ID} {
+		_, _ = tareas.Guardar(ctx, effort.Tarea{HistoriaID: id, Titulo: "Una tarea"})
+	}
+
+	if err := repo.Eliminar(ctx, a.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if cs, _ := criterios.ListarPorHistoria(ctx, a.ID); len(cs) != 0 {
+		t.Errorf("quedaron %d criterios de la historia eliminada", len(cs))
+	}
+	if ts, _ := tareas.ListarPorHistoria(ctx, a.ID); len(ts) != 0 {
+		t.Errorf("quedaron %d tareas de la historia eliminada", len(ts))
+	}
+	if cs, _ := criterios.ListarPorHistoria(ctx, b.ID); len(cs) != 1 {
+		t.Errorf("la otra historia tenía que conservar su criterio y tiene %d", len(cs))
+	}
+	if ts, _ := tareas.ListarPorHistoria(ctx, b.ID); len(ts) != 1 {
+		t.Errorf("la otra historia tenía que conservar su tarea y tiene %d", len(ts))
 	}
 }
