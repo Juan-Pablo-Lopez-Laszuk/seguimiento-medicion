@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
 )
 
 // Historias guarda las historias de todos los proyectos en la tabla historias.
@@ -146,4 +147,21 @@ func (r *Historias) Eliminar(ctx context.Context, historiaID int64) error {
 	default:
 		return fmt.Errorf("eliminar la historia %d: %w", historiaID, err)
 	}
+}
+
+// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6): si ese es su sprint actual
+// (historias.sprint_id) o si aparece en la foto de cierre de ese sprint (sprint_historias), aunque no se haya terminado.
+func (r *Historias) EnSprintCerrado(ctx context.Context, historiaID int64) (bool, error) {
+	var cerrado bool
+	err := r.pool.QueryRow(ctx,
+		`SELECT EXISTS (SELECT 1 FROM historias h JOIN sprints s ON s.id = h.sprint_id
+		                WHERE h.id = $1 AND s.estado = $2)
+		     OR EXISTS (SELECT 1 FROM sprint_historias sh JOIN sprints s ON s.id = sh.sprint_id
+		                WHERE sh.historia_id = $1 AND s.estado = $2)`,
+		historiaID, string(sprint.EstadoCerrado),
+	).Scan(&cerrado)
+	if err != nil {
+		return false, fmt.Errorf("ver si la historia %d es de un sprint cerrado: %w", historiaID, err)
+	}
+	return cerrado, nil
 }
