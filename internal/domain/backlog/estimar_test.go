@@ -96,3 +96,34 @@ func TestEstimar_ConEspaciosAlrededor(t *testing.T) {
 		t.Errorf("se esperaban 8 story points y se obtuvo %v, %v", nueva.StoryPoints, err)
 	}
 }
+
+// CA-16.2 y RN2 · un valor fuera de la escala, o que no es un número entero, es un error del campo story_points
+func TestEstimar_ValorInvalido_EsUnErrorDelCampo(t *testing.T) {
+	for _, texto := range []string{"4", "22", "-1", "3,5", "3.5", "abc", "5 puntos", "99999999999999999999"} {
+		_, err := historiaPendiente().Estimar(texto)
+
+		verificarErrorDeCampo(t, err, backlog.CampoStoryPoints, backlog.ErrStoryPointsInvalidos)
+	}
+}
+
+// RN3 · el valor es obligatorio: vacío no deja la historia "sin estimar" otra vez
+func TestEstimar_Vacio_EsUnError(t *testing.T) {
+	for _, texto := range []string{"", "   "} {
+		_, err := historiaEstimadaEn(5).Estimar(texto)
+
+		verificarErrorDeCampo(t, err, backlog.CampoStoryPoints, backlog.ErrStoryPointsInvalidos)
+	}
+}
+
+// RN7 · si el valor no vale, la historia original conserva su estimación
+func TestEstimar_ValorInvalido_ConservaLaEstimacionAnterior(t *testing.T) {
+	original := historiaEstimadaEn(5)
+
+	if _, err := original.Estimar("4"); err == nil {
+		t.Fatal("se esperaba un error")
+	}
+
+	if original.StoryPoints == nil || *original.StoryPoints != 5 {
+		t.Errorf("la historia tenía que seguir con 5 story points y quedó con %v", original.StoryPoints)
+	}
+}
