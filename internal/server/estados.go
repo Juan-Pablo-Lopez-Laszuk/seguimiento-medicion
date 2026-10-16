@@ -39,11 +39,10 @@ func (h estados) cambiar(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog/%d?estado=en-progreso", proyectoID, numero), http.StatusSeeOther)
 	case errors.Is(err, backlog.ErrTransicionInvalida), errors.Is(err, backlog.ErrYaEstaEnEseEstado),
 		errors.Is(err, backlog.ErrEstadoDesconocido), errors.Is(err, backlog.ErrCriteriosSinCumplir):
-		vista, errVista := h.vista.Ver(r.Context(), proyectoID, numero)
-		if respondeError(w, errVista, "volver a mostrar la historia") {
+		pagina, ok := paginaDespuesDeUnError(w, r, h.vista, proyectoID, numero)
+		if !ok {
 			return
 		}
-		pagina := nuevaPagina(vista)
 		pagina.Aviso = err.Error()
 		renderHistoria(w, http.StatusConflict, pagina)
 	case errors.Is(err, project.ErrNoEncontrado):
