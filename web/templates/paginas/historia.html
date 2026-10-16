@@ -36,7 +36,11 @@
     <p class="small text-body-secondary mb-0">Pasa a En sprint cuando se asigna a un sprint.</p>
     {{end}}
   </div>
-  <a class="btn btn-sm btn-outline-primary mt-2" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/tareas">Tareas</a>
+  <div class="d-flex flex-wrap gap-2 mt-2">
+    <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/tareas">Tareas</a>
+    <a class="btn btn-sm btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/editar">Editar</a>
+    <a class="btn btn-sm btn-outline-danger" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/eliminar">Eliminar</a>
+  </div>
 </div>
 
 <section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-criterios">
