@@ -1,6 +1,7 @@
 package backlog_test
 
 import (
+	"errors"
 	"strconv"
 	"testing"
 
@@ -125,5 +126,42 @@ func TestEstimar_ValorInvalido_ConservaLaEstimacionAnterior(t *testing.T) {
 
 	if original.StoryPoints == nil || *original.StoryPoints != 5 {
 		t.Errorf("la historia tenía que seguir con 5 story points y quedó con %v", original.StoryPoints)
+	}
+}
+
+// RN6 · una historia Hecha no se re-estima: los story points completados de su sprint cambiarían después de terminada
+func TestEstimar_HistoriaHecha_NoSeReestima(t *testing.T) {
+	hecha := historiaEn(backlog.EstadoHecho)
+	puntos := 5
+	hecha.StoryPoints = &puntos
+
+	nueva, err := hecha.Estimar("8")
+
+	if !errors.Is(err, backlog.ErrEstimacionDeHistoriaHecha) {
+		t.Fatalf("se esperaba backlog.ErrEstimacionDeHistoriaHecha y se obtuvo: %v", err)
+	}
+	if err.Error() != "la historia está Hecha: no se puede cambiar su estimación" {
+		t.Errorf("mensaje = %q", err.Error())
+	}
+	if nueva.StoryPoints != nil || *hecha.StoryPoints != 5 {
+		t.Errorf("la historia Hecha no tenía que cambiar: %+v", nueva)
+	}
+}
+
+// RN6 · el estado se revisa antes que el valor: no tiene sentido corregir un valor que igual no se va a poder guardar
+func TestEstimar_HistoriaHechaConValorInvalido_InformaQueEstaHecha(t *testing.T) {
+	_, err := historiaEn(backlog.EstadoHecho).Estimar("4")
+
+	if !errors.Is(err, backlog.ErrEstimacionDeHistoriaHecha) {
+		t.Errorf("se esperaba backlog.ErrEstimacionDeHistoriaHecha y se obtuvo: %v", err)
+	}
+}
+
+// RN6 · en cualquier otro estado se puede estimar
+func TestEstimar_PendienteEnSprintOEnProgreso_Admiten(t *testing.T) {
+	for _, estado := range []backlog.Estado{backlog.EstadoPendiente, backlog.EstadoEnSprint, backlog.EstadoEnProgreso} {
+		if _, err := historiaEn(estado).Estimar("8"); err != nil {
+			t.Errorf("estado %q: no se esperaba error y se obtuvo %v", estado, err)
+		}
 	}
 }
