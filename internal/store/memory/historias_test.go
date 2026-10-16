@@ -139,3 +139,49 @@ func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
 		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
 	}
 }
+
+// HU-06 · Eliminar borra esa historia y las demás conservan su número (RN11)
+func TestHistorias_Eliminar_BorraLaHistoriaYLasDemasConservanSuNumero(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	a, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera"})
+	b, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Segunda"})
+	c, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 3, Titulo: "Tercera"})
+	deOtroProyecto, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 2, Numero: 2, Titulo: "De otro proyecto"})
+
+	if err := repo.Eliminar(ctx, b.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	lista, _ := repo.ListarPorProyecto(ctx, 1)
+	if len(lista) != 2 || lista[0].ID != a.ID || lista[0].Numero != 1 || lista[1].ID != c.ID || lista[1].Numero != 3 {
+		t.Errorf("se esperaban HU-1 y HU-3, y se obtuvo %+v", lista)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 1, 2); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("HU-2 tenía que no existir más y se obtuvo: %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, 2, 2); err != nil {
+		t.Errorf("la HU-2 del otro proyecto (ID %d) tenía que seguir: %v", deOtroProyecto.ID, err)
+	}
+}
+
+func TestHistorias_Eliminar_HistoriaInexistente(t *testing.T) {
+	err := memory.NuevoHistorias().Eliminar(context.Background(), 99)
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// HU-06 · en memoria no hay forma de asignar una historia a un sprint (HU-12), así que nunca es de un sprint cerrado
+func TestHistorias_EnSprintCerrado_EnMemoriaEsFalso(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	h, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera"})
+
+	cerrado, err := repo.EnSprintCerrado(ctx, h.ID)
+
+	if err != nil || cerrado {
+		t.Errorf("EnSprintCerrado = %v, %v; se esperaba false sin error", cerrado, err)
+	}
+}
