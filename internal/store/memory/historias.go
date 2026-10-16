@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
@@ -90,4 +91,24 @@ func (r *Historias) ActualizarDatos(_ context.Context, h backlog.Historia) error
 		}
 	}
 	return backlog.ErrHistoriaNoEncontrada
+}
+
+// Eliminar borra la historia (HU-06) o devuelve backlog.ErrHistoriaNoEncontrada si no existe. Las demás historias
+// conservan su número.
+func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista = slices.Delete(r.lista, i, i+1)
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6). En memoria todavía no se puede asignar una
+// historia a un sprint (HU-12), así que nunca lo es.
+func (r *Historias) EnSprintCerrado(_ context.Context, _ int64) (bool, error) {
+	return false, nil
 }
