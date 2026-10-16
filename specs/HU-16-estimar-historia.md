@@ -1,6 +1,6 @@
 # SPEC-16 · Estimar historia con story points
 
-**Historia:** HU-16 (#24) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-16 (#24) · **Responsable:** Piastrellini, Mariano · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la columna `historias.story_points` de `docs/modelo-datos.md`, la escala
 > de story points de HU-05 (RN4) y la decisión de Juan Pablo del 15/10 de dividir esta historia: el historial de
@@ -101,4 +101,20 @@ En la pantalla, el error del valor aparece debajo del campo.
 
 Issue: #24 · Feature: `features/hu-16-estimar-historia.feature` · Pasos BDD: `features/hu16_steps_test.go`
 
-Se completa al terminar la implementación.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/estimar.go` (`Historia.Estimar`, `ErrEstimacionDeHistoriaHecha`) | `internal/domain/backlog/estimar_test.go` |
+| Repositorio en memoria | `ActualizarStoryPoints` en `internal/store/memory/historias.go` | `internal/store/memory/historias_test.go` |
+| Repositorio PostgreSQL | `ActualizarStoryPoints` en `internal/store/postgres/historias.go` | `internal/store/postgres/historias_test.go` |
+| Caso de uso | `internal/service/estimaciones.go` (`Estimaciones.Estimar`) | `internal/service/estimaciones_test.go` |
+| Pantalla | `internal/server/estimaciones.go` y el formulario de estimar de `web/templates/paginas/historia.html` | `internal/server/estimaciones_test.go` |
+| Aplicación | `app/app.go` (elige memoria o PostgreSQL según `DATABASE_URL`) | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-16.1 Solo valores de la escala | Estimar una historia sin estimar · Re-estimar reemplaza el valor anterior · Estimar con el mismo valor que ya tiene · Valores de la escala · Cero cuenta como estimada · Estimar según el estado de la historia | `TestEstimar_ValoresDeLaEscala`, `TestEstimar_Cero_CuentaComoEstimada`, `TestEstimar_ReemplazaLaEstimacionAnterior`, `TestEstimar_ElMismoValor_NoEsUnError`, `TestEstimar_NoCambiaLosDemasDatos`, `TestEstimar_Valido_GuardaLosStoryPoints`, `TestEstimar_ReestimarReemplazaElValorAnterior`, `TestPaginaDeLaHistoria_OfreceEstimarConLaEscala`, `TestEstimarHistoria_Valido_VuelveALaPaginaConLaEstimacion`, `TestEstimarHistoria_Reestimar_ReemplazaElValorAnterior`, `TestHistorias_ActualizarStoryPoints` |
+| CA-16.2 Un valor fuera de la escala devuelve error | Valores de la escala · Un valor fuera de la escala conserva la estimación anterior | `TestEstimar_ValorInvalido_EsUnErrorDelCampo`, `TestEstimar_Vacio_EsUnError`, `TestEstimar_ValorInvalido_ConservaLaEstimacionAnterior`, `TestEstimar_ValorInvalido_NoCambiaNada`, `TestEstimarHistoria_ValorInvalido_MuestraElErrorYConservaLaEstimacion` |
+| RN6 Una historia Hecha no se re-estima | Estimar según el estado de la historia | `TestEstimar_HistoriaHecha_NoSeReestima`, `TestEstimar_HistoriaHechaConValorInvalido_InformaQueEstaHecha`, `TestEstimar_PendienteEnSprintOEnProgreso_Admiten`, `TestEstimarHistoria_HistoriaHecha_NoSeReestima`, `TestEstimarHistoria_PendienteEnSprintOEnProgreso_Admiten` |
+| Se guarda en la base | — | `TestHistorias_ActualizarStoryPoints`, `TestNewHandlerConBase_ConURLLaEstimacionSobreviveAUnReinicio` |
+| Proyecto o historia inexistente (sección 7) | — | `TestEstimar_ProyectoOHistoriaInexistente_DevuelveNoEncontrado`, `TestEstimarHistoria_ProyectoOHistoriaInexistente_Responde404` |
+| CA-16.3 Historial | — (pasó a HU-16b, #106) | — |
