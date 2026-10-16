@@ -270,3 +270,58 @@ func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testin
 		}
 	}
 }
+
+// HU-06 · ActualizarDatos cambia título, descripción y prioridad de esa historia, y deja el número, el estado y los
+// story points
+func TestHistorias_ActualizarDatos(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	puntos := 5
+	original := historiaDeEjemplo(proyectoA, 1, "Login")
+	original.Descripcion, original.Prioridad = "Vieja", backlog.PrioridadAlta
+	original.Estado, original.StoryPoints = backlog.EstadoEnProgreso, &puntos
+	guardada, err := repo.Guardar(ctx, original)
+	if err != nil {
+		t.Fatalf("guardar la historia: %v", err)
+	}
+	otra, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Otra"))
+	if err != nil {
+		t.Fatalf("guardar la otra historia: %v", err)
+	}
+
+	err = repo.ActualizarDatos(ctx, backlog.Historia{
+		ID: guardada.ID, Titulo: "Login con Google", Descripcion: "Nueva", Prioridad: backlog.PrioridadBaja,
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil {
+		t.Fatalf("buscar la historia: %v", err)
+	}
+	if h.Titulo != "Login con Google" || h.Descripcion != "Nueva" || h.Prioridad != backlog.PrioridadBaja {
+		t.Errorf("la historia quedó con %q / %q / %q", h.Titulo, h.Descripcion, h.Prioridad)
+	}
+	if h.Numero != 1 || h.Estado != backlog.EstadoEnProgreso || h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("cambió lo que no se editaba: HU-%d, estado %q, story points %v", h.Numero, h.Estado, h.StoryPoints)
+	}
+	o, _ := repo.BuscarPorNumero(ctx, proyectoA, 2)
+	if o.ID != otra.ID || o.Titulo != "Otra" || o.Prioridad != backlog.PrioridadMedia {
+		t.Errorf("la otra historia cambió: %+v", o)
+	}
+}
+
+func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
+	pool := baseMigrada(t)
+
+	err := postgres.NuevoHistorias(pool).ActualizarDatos(context.Background(), backlog.Historia{
+		ID: 99, Titulo: "X", Prioridad: backlog.PrioridadAlta,
+	})
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
