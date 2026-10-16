@@ -1,8 +1,11 @@
 package backlog_test
 
 import (
+	"errors"
+	"strings"
 	"testing"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 )
 
@@ -122,5 +125,117 @@ func TestEditar_EnCualquierEstado_Vale(t *testing.T) {
 		if editada.Estado != estado {
 			t.Errorf("estado %q: el estado cambió a %q", estado, editada.Estado)
 		}
+	}
+}
+
+// RN1 · el título es obligatorio, también si son solo espacios
+func TestEditar_TituloVacio_EsUnErrorDelCampo(t *testing.T) {
+	for _, titulo := range []string{"", "   ", "\t\n"} {
+		c := cambiosValidos()
+		c.Titulo = titulo
+
+		_, err := historiaCompleta().Editar(c)
+
+		verificarErrorDeCampo(t, err, backlog.CampoTitulo, backlog.ErrTituloObligatorio)
+	}
+}
+
+// RN1 · el título llega a 120 caracteres (se cuentan caracteres, no bytes); con uno más es un error
+func TestEditar_LargoDelTitulo(t *testing.T) {
+	casos := []struct {
+		nombre   string
+		titulo   string
+		esperado error
+	}{
+		{"120 caracteres", strings.Repeat("a", 120), nil},
+		{"121 caracteres", strings.Repeat("a", 121), backlog.ErrTituloLargo},
+		{"120 caracteres con tildes", strings.Repeat("ñ", 120), nil},
+		{"121 caracteres con tildes", strings.Repeat("ñ", 121), backlog.ErrTituloLargo},
+	}
+	for _, c := range casos {
+		cambios := cambiosValidos()
+		cambios.Titulo = c.titulo
+
+		_, err := historiaCompleta().Editar(cambios)
+
+		if c.esperado == nil {
+			if err != nil {
+				t.Errorf("%s: no se esperaba error: %v", c.nombre, err)
+			}
+			continue
+		}
+		verificarErrorDeCampo(t, err, backlog.CampoTitulo, c.esperado)
+	}
+}
+
+// RN1 · la descripción llega a 2000 caracteres; con uno más es un error
+func TestEditar_LargoDeLaDescripcion(t *testing.T) {
+	casos := []struct {
+		nombre      string
+		descripcion string
+		esperado    error
+	}{
+		{"2000 caracteres", strings.Repeat("a", 2000), nil},
+		{"2001 caracteres", strings.Repeat("a", 2001), backlog.ErrDescripcionLarga},
+	}
+	for _, c := range casos {
+		cambios := cambiosValidos()
+		cambios.Descripcion = c.descripcion
+
+		_, err := historiaCompleta().Editar(cambios)
+
+		if c.esperado == nil {
+			if err != nil {
+				t.Errorf("%s: no se esperaba error: %v", c.nombre, err)
+			}
+			continue
+		}
+		verificarErrorDeCampo(t, err, backlog.CampoDescripcion, c.esperado)
+	}
+}
+
+// RN1 · la prioridad tiene que ser Alta, Media o Baja
+func TestEditar_PrioridadInvalida_EsUnErrorDelCampo(t *testing.T) {
+	for _, prioridad := range []backlog.Prioridad{"", "Urgente", "alta"} {
+		c := cambiosValidos()
+		c.Prioridad = prioridad
+
+		_, err := historiaCompleta().Editar(c)
+
+		verificarErrorDeCampo(t, err, backlog.CampoPrioridad, backlog.ErrPrioridadInvalida)
+	}
+}
+
+// RN1 · si hay varios datos inválidos se informan todos juntos
+func TestEditar_VariosErrores_SeInformanJuntos(t *testing.T) {
+	c := backlog.Cambios{Titulo: "", Descripcion: strings.Repeat("a", 2001), Prioridad: "Urgente"}
+
+	_, err := historiaCompleta().Editar(c)
+
+	verificarErrorDeCampo(t, err, backlog.CampoTitulo, backlog.ErrTituloObligatorio)
+	verificarErrorDeCampo(t, err, backlog.CampoDescripcion, backlog.ErrDescripcionLarga)
+	verificarErrorDeCampo(t, err, backlog.CampoPrioridad, backlog.ErrPrioridadInvalida)
+	var errs domain.ErroresValidacion
+	if errors.As(err, &errs) && len(errs) != 3 {
+		t.Errorf("se esperaban 3 errores y hay %d: %v", len(errs), errs)
+	}
+}
+
+// RN1 · con datos inválidos no se devuelve ninguna historia, y la original queda como estaba
+func TestEditar_DatosInvalidos_NoCambianNada(t *testing.T) {
+	original := historiaCompleta()
+	c := cambiosValidos()
+	c.Titulo = ""
+
+	editada, err := original.Editar(c)
+
+	if err == nil {
+		t.Fatal("se esperaba un error")
+	}
+	if editada.Numero != 0 || editada.Titulo != "" {
+		t.Errorf("con un error se esperaba la historia vacía y se obtuvo %+v", editada)
+	}
+	if original.Titulo != "Iniciar sesión con Google" || original.Prioridad != backlog.PrioridadAlta {
+		t.Errorf("la historia original cambió: %q / %q", original.Titulo, original.Prioridad)
 	}
 }
