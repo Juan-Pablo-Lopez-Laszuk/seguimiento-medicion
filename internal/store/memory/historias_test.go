@@ -100,3 +100,42 @@ func TestHistorias_ActualizarEstado(t *testing.T) {
 		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
+
+// HU-06 · ActualizarDatos cambia título, descripción y prioridad de esa historia, y deja el estado y los story points
+func TestHistorias_ActualizarDatos(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	puntos := 5
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{
+		ProyectoID: 1, Numero: 1, Titulo: "Login", Descripcion: "Vieja", Prioridad: backlog.PrioridadAlta,
+		Estado: backlog.EstadoEnProgreso, StoryPoints: &puntos,
+	})
+	otra, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Otra", Prioridad: backlog.PrioridadMedia})
+
+	err := repo.ActualizarDatos(ctx, backlog.Historia{
+		ID: guardada.ID, Titulo: "Login con Google", Descripcion: "Nueva", Prioridad: backlog.PrioridadBaja,
+	})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.Titulo != "Login con Google" || h.Descripcion != "Nueva" || h.Prioridad != backlog.PrioridadBaja {
+		t.Errorf("la historia quedó con %q / %q / %q", h.Titulo, h.Descripcion, h.Prioridad)
+	}
+	if h.Numero != 1 || h.Estado != backlog.EstadoEnProgreso || h.StoryPoints == nil || *h.StoryPoints != 5 {
+		t.Errorf("cambió lo que no se editaba: HU-%d, estado %q, story points %v", h.Numero, h.Estado, h.StoryPoints)
+	}
+	o, _ := repo.BuscarPorNumero(ctx, 1, 2)
+	if o.Titulo != otra.Titulo || o.Prioridad != backlog.PrioridadMedia {
+		t.Errorf("la otra historia cambió: %+v", o)
+	}
+}
+
+func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
+	err := memory.NuevoHistorias().ActualizarDatos(context.Background(), backlog.Historia{ID: 99, Titulo: "X"})
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
