@@ -77,3 +77,17 @@ func (r *Historias) ActualizarEstado(_ context.Context, historiaID int64, estado
 	}
 	return backlog.ErrHistoriaNoEncontrada
 }
+
+// ActualizarDatos guarda el título, la descripción y la prioridad de la historia (HU-06) sin tocar el número, el estado
+// ni los story points, o devuelve backlog.ErrHistoriaNoEncontrada si no existe.
+func (r *Historias) ActualizarDatos(_ context.Context, h backlog.Historia) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, existente := range r.lista {
+		if existente.ID == h.ID {
+			r.lista[i].Titulo, r.lista[i].Descripcion, r.lista[i].Prioridad = h.Titulo, h.Descripcion, h.Prioridad
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
