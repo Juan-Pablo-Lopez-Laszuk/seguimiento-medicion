@@ -72,6 +72,8 @@ func NewRouter(dep Dependencias) http.Handler {
 	eh := edicionHistorias{casos: dep.EdicionHistorias}
 	r.Get("/proyectos/{id}/backlog/{numero}/editar", eh.formulario)
 	r.Post("/proyectos/{id}/backlog/{numero}/editar", eh.editar)
+	r.Get("/proyectos/{id}/backlog/{numero}/eliminar", eh.confirmar)
+	r.Post("/proyectos/{id}/backlog/{numero}/eliminar", eh.eliminar)
 
 	ta := tareas{casos: dep.Tareas}
 	r.Get("/proyectos/{id}/backlog/{numero}/tareas", ta.ver)

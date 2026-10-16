@@ -87,3 +87,79 @@ func (h edicionHistorias) editar(w http.ResponseWriter, r *http.Request) {
 		respondeError(w, err, "editar la historia")
 	}
 }
+
+// pantallaEliminar son los datos de la página historia_eliminar.html: la historia, lo que se elimina con ella (ya dicho
+// en singular o plural) y, si no se puede eliminar, el motivo.
+type pantallaEliminar struct {
+	Proyecto    project.Proyecto
+	Historia    backlog.Historia
+	Criterios   string // por ejemplo "2 criterios de aceptación"
+	Tareas      string // por ejemplo "1 tarea"
+	Impedimento string // vacío si se puede eliminar
+}
+
+func nuevaPantallaEliminar(v service.VistaEliminacion) pantallaEliminar {
+	p := pantallaEliminar{
+		Proyecto:  v.Proyecto,
+		Historia:  v.Historia,
+		Criterios: cantidad(v.Criterios, "criterio de aceptación", "criterios de aceptación"),
+		Tareas:    cantidad(v.Tareas, "tarea", "tareas"),
+	}
+	if v.Impedimento != nil {
+		p.Impedimento = v.Impedimento.Error()
+	}
+	return p
+}
+
+// cantidad dice "1 tarea", "2 tareas" o "0 tareas".
+func cantidad(n int, singular, plural string) string {
+	if n == 1 {
+		return fmt.Sprintf("1 %s", singular)
+	}
+	return fmt.Sprintf("%d %s", n, plural)
+}
+
+func renderEliminar(w http.ResponseWriter, codigo int, pantalla pantallaEliminar) {
+	render(w, codigo, "historia_eliminar.html", Pagina{Titulo: "Eliminar " + pantalla.Historia.Identificador(), Datos: pantalla})
+}
+
+// confirmar muestra la pantalla que pide confirmar la eliminación (CA-06.3): qué se elimina con la historia y, si no se
+// puede eliminar, por qué. Mostrarla no elimina nada.
+func (h edicionHistorias) confirmar(w http.ResponseWriter, r *http.Request) {
+	proyectoID, numero, ok := idsDeHistoria(w, r)
+	if !ok {
+		return
+	}
+	vista, err := h.casos.PedirEliminacion(r.Context(), proyectoID, numero)
+	if respondeError(w, err, "mostrar la confirmación de eliminar") {
+		return
+	}
+	renderEliminar(w, http.StatusOK, nuevaPantallaEliminar(vista))
+}
+
+// eliminar recibe la confirmación. Si se puede, elimina la historia con sus criterios y sus tareas y vuelve al backlog
+// (redirección 303); si no, muestra la pantalla con el motivo (409) y no borra nada.
+func (h edicionHistorias) eliminar(w http.ResponseWriter, r *http.Request) {
+	proyectoID, numero, ok := idsDeHistoria(w, r)
+	if !ok {
+		return
+	}
+	eliminada, err := h.casos.Eliminar(r.Context(), proyectoID, numero)
+
+	switch {
+	case err == nil:
+		http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog?eliminada=%d", proyectoID, eliminada.Numero), http.StatusSeeOther)
+	case errors.Is(err, backlog.ErrEliminarHistoriaHecha),
+		errors.Is(err, backlog.ErrEliminarEnSprintCerrado),
+		errors.Is(err, backlog.ErrHistoriaConRegistros):
+		vista, errVista := h.casos.PedirEliminacion(r.Context(), proyectoID, numero)
+		if respondeError(w, errVista, "volver a mostrar la confirmación de eliminar") {
+			return
+		}
+		pantalla := nuevaPantallaEliminar(vista)
+		pantalla.Impedimento = err.Error()
+		renderEliminar(w, http.StatusConflict, pantalla)
+	default:
+		respondeError(w, err, "eliminar la historia")
+	}
+}
