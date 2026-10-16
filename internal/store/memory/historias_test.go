@@ -100,3 +100,37 @@ func TestHistorias_ActualizarEstado(t *testing.T) {
 		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
+
+// HU-16: los story points de una historia se guardan sin tocar los demás datos
+func TestHistorias_ActualizarStoryPoints(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera", Estado: backlog.EstadoEnSprint})
+	otra, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 2, Titulo: "Segunda", Estado: backlog.EstadoPendiente})
+
+	if err := repo.ActualizarStoryPoints(ctx, guardada.ID, 8); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if err := repo.ActualizarStoryPoints(ctx, guardada.ID, 0); err != nil {
+		t.Fatalf("no se esperaba error al estimar en 0: %v", err)
+	}
+	if err := repo.ActualizarStoryPoints(ctx, guardada.ID, 13); err != nil {
+		t.Fatalf("no se esperaba error al re-estimar: %v", err)
+	}
+
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.StoryPoints == nil || *h.StoryPoints != 13 || h.Titulo != "Primera" || h.Estado != backlog.EstadoEnSprint {
+		t.Errorf("se esperaba la HU-1 con 13 story points y el resto de sus datos, y se obtuvo %+v", h)
+	}
+	if o, _ := repo.BuscarPorNumero(ctx, 1, 2); o.ID != otra.ID || o.StoryPoints != nil {
+		t.Errorf("la HU-2 no tenía que cambiar y se obtuvo %+v", o)
+	}
+	// lo que devuelve el repositorio no se comparte con lo guardado
+	*h.StoryPoints = 21
+	if otraVez, _ := repo.BuscarPorNumero(ctx, 1, 1); *otraVez.StoryPoints != 13 {
+		t.Errorf("modificar lo devuelto no tenía que cambiar lo guardado: %d", *otraVez.StoryPoints)
+	}
+	if err := repo.ActualizarStoryPoints(ctx, 99, 5); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
