@@ -5,7 +5,11 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/member"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/postgres"
 )
 
@@ -323,5 +327,120 @@ func TestHistorias_ActualizarDatos_HistoriaInexistente(t *testing.T) {
 
 	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
 		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// criteriosYTareasDe guarda 2 criterios y 1 tarea en la historia, para probar qué pasa con ellos al eliminarla.
+func criteriosYTareasDe(t *testing.T, pool *pgxpool.Pool, proyectoID, historiaID int64) {
+	t.Helper()
+	ctx := context.Background()
+	for _, descripcion := range []string{"Primer criterio", "Segundo criterio"} {
+		if _, err := postgres.NuevoCriterios(pool).Guardar(ctx, backlog.Criterio{HistoriaID: historiaID, Descripcion: descripcion}); err != nil {
+			t.Fatalf("guardar un criterio: %v", err)
+		}
+	}
+	responsable, err := postgres.NuevoIntegrantes(pool).Guardar(ctx, integranteDeEjemplo(proyectoID, "Carolina", "caro@mail.com", member.RolProductBuilder))
+	if err != nil {
+		t.Fatalf("guardar la integrante: %v", err)
+	}
+	if _, err := postgres.NuevoTareas(pool).Guardar(ctx, effort.Tarea{HistoriaID: historiaID, Titulo: "Una tarea", ResponsableID: responsable.ID, HorasEstimadas: 2}); err != nil {
+		t.Fatalf("guardar una tarea: %v", err)
+	}
+}
+
+// cuantos cuenta las filas de la tabla que cumplen la condición.
+func cuantos(t *testing.T, pool *pgxpool.Pool, tabla, condicion string, args ...any) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), "SELECT count(*) FROM "+tabla+" WHERE "+condicion, args...).Scan(&n); err != nil {
+		t.Fatalf("contar en %s: %v", tabla, err)
+	}
+	return n
+}
+
+// HU-06 · Eliminar borra la historia, sus criterios y sus tareas, y las demás historias conservan su número (RN9, RN11)
+func TestHistorias_Eliminar_BorraLaHistoriaConSusCriteriosYSusTareas(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	a, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Primera"))
+	b, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Segunda"))
+	c, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 3, "Tercera"))
+	criteriosYTareasDe(t, pool, proyectoA, b.ID)
+
+	if err := repo.Eliminar(ctx, b.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	lista, _ := repo.ListarPorProyecto(ctx, proyectoA)
+	if len(lista) != 2 || lista[0].ID != a.ID || lista[0].Numero != 1 || lista[1].ID != c.ID || lista[1].Numero != 3 {
+		t.Errorf("se esperaban HU-1 y HU-3, y se obtuvo %+v", lista)
+	}
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", b.ID); n != 0 {
+		t.Errorf("quedaron %d criterios de la historia eliminada", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", b.ID); n != 0 {
+		t.Errorf("quedaron %d tareas de la historia eliminada", n)
+	}
+}
+
+func TestHistorias_Eliminar_NoTocaLosCriteriosNiLasTareasDeLasDemas(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	a, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "A eliminar"))
+	b, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Se queda"))
+	criteriosYTareasDe(t, pool, proyectoA, b.ID)
+
+	if err := repo.Eliminar(ctx, a.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", b.ID); n != 2 {
+		t.Errorf("la otra historia tenía que conservar sus 2 criterios y tiene %d", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", b.ID); n != 1 {
+		t.Errorf("la otra historia tenía que conservar su tarea y tiene %d", n)
+	}
+}
+
+func TestHistorias_Eliminar_HistoriaInexistente(t *testing.T) {
+	pool := baseMigrada(t)
+
+	err := postgres.NuevoHistorias(pool).Eliminar(context.Background(), 99)
+
+	if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("se esperaba ErrHistoriaNoEncontrada y se obtuvo: %v", err)
+	}
+}
+
+// HU-06 (RN10) · si la base rechaza el borrado por otros registros asociados (acá, una sesión de Planning Poker), no se
+// borra nada: ni la historia ni sus criterios ni sus tareas
+func TestHistorias_Eliminar_ConRegistrosAsociados_NoBorraNada(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	h, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Con una sesión de poker"))
+	criteriosYTareasDe(t, pool, proyectoA, h.ID)
+	if _, err := pool.Exec(ctx, `INSERT INTO sesiones_poker (historia_id, estado) VALUES ($1, 'Abierta')`, h.ID); err != nil {
+		t.Fatalf("guardar la sesión de poker: %v", err)
+	}
+
+	err := repo.Eliminar(ctx, h.ID)
+
+	if !errors.Is(err, backlog.ErrHistoriaConRegistros) {
+		t.Fatalf("se esperaba ErrHistoriaConRegistros y se obtuvo: %v", err)
+	}
+	if _, err := repo.BuscarPorNumero(ctx, proyectoA, 1); err != nil {
+		t.Errorf("la historia tenía que seguir: %v", err)
+	}
+	if n := cuantos(t, pool, "criterios_aceptacion", "historia_id = $1", h.ID); n != 2 {
+		t.Errorf("los criterios tenían que seguir (2) y hay %d", n)
+	}
+	if n := cuantos(t, pool, "tareas", "historia_id = $1", h.ID); n != 1 {
+		t.Errorf("la tarea tenía que seguir (1) y hay %d", n)
 	}
 }
