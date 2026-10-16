@@ -444,3 +444,64 @@ func TestHistorias_Eliminar_ConRegistrosAsociados_NoBorraNada(t *testing.T) {
 		t.Errorf("la tarea tenía que seguir (1) y hay %d", n)
 	}
 }
+
+// cerrarSprint deja el sprint en estado Cerrado, como lo va a hacer HU-14.
+func cerrarSprint(t *testing.T, pool *pgxpool.Pool, sprintID int64) {
+	t.Helper()
+	if _, err := pool.Exec(context.Background(), `UPDATE sprints SET estado = 'Cerrado' WHERE id = $1`, sprintID); err != nil {
+		t.Fatalf("cerrar el sprint: %v", err)
+	}
+}
+
+// HU-06 (RN6) · una historia es de un sprint cerrado si ese es su sprint actual o aparece en la foto de cierre
+func TestHistorias_EnSprintCerrado(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	sprints := postgres.NuevoSprints(pool)
+	abierto, _ := sprints.Guardar(ctx, sprintDeEjemplo(proyectoA, 2, "Abierto"))
+	cerrado, _ := sprints.Guardar(ctx, sprintDeEjemplo(proyectoA, 1, "Cerrado"))
+	cerrarSprint(t, pool, cerrado.ID)
+
+	sinSprint, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Sin sprint"))
+	enAbierto, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "En el sprint abierto"))
+	enCerrado, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 3, "En el sprint cerrado"))
+	enLaFoto, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 4, "Solo en la foto del cierre"))
+	enLaFotoAbierta, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 5, "En la foto de un sprint abierto"))
+	for _, q := range []struct {
+		sql  string
+		args []any
+	}{
+		{`UPDATE historias SET sprint_id = $1 WHERE id = $2`, []any{abierto.ID, enAbierto.ID}},
+		{`UPDATE historias SET sprint_id = $1 WHERE id = $2`, []any{cerrado.ID, enCerrado.ID}},
+		{`INSERT INTO sprint_historias (sprint_id, historia_id) VALUES ($1, $2)`, []any{cerrado.ID, enLaFoto.ID}},
+		{`INSERT INTO sprint_historias (sprint_id, historia_id) VALUES ($1, $2)`, []any{abierto.ID, enLaFotoAbierta.ID}},
+	} {
+		if _, err := pool.Exec(ctx, q.sql, q.args...); err != nil {
+			t.Fatalf("armar el caso: %v", err)
+		}
+	}
+
+	casos := []struct {
+		nombre   string
+		historia int64
+		esperado bool
+	}{
+		{"sin sprint", sinSprint.ID, false},
+		{"en un sprint abierto", enAbierto.ID, false},
+		{"en un sprint cerrado", enCerrado.ID, true},
+		{"en la foto de un sprint cerrado", enLaFoto.ID, true},
+		{"en la foto de un sprint abierto", enLaFotoAbierta.ID, false},
+	}
+	for _, c := range casos {
+		obtenido, err := repo.EnSprintCerrado(ctx, c.historia)
+		if err != nil {
+			t.Errorf("%s: no se esperaba error: %v", c.nombre, err)
+			continue
+		}
+		if obtenido != c.esperado {
+			t.Errorf("%s: EnSprintCerrado = %v, se esperaba %v", c.nombre, obtenido, c.esperado)
+		}
+	}
+}
