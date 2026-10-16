@@ -77,3 +77,18 @@ func (r *Historias) ActualizarEstado(_ context.Context, historiaID int64, estado
 	}
 	return backlog.ErrHistoriaNoEncontrada
 }
+
+// ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe. Es el único lugar donde se escribe la estimación (HU-16): HU-16b lo
+// va a extender para anotar también el historial.
+func (r *Historias) ActualizarStoryPoints(_ context.Context, historiaID int64, puntos int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].StoryPoints = &puntos
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
