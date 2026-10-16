@@ -67,7 +67,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Integrantes:    service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:      service.NuevoHistorias(proyectos, historias),
 		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
-		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios)),
+		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios), time.Now),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),

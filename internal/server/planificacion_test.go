@@ -150,7 +150,7 @@ func TestPaginaDelSprint_ErrorDeLaBase(t *testing.T) {
 	proyectos, historias := memory.NuevoProyectos(), memory.NuevoHistorias()
 	criterios := service.NuevoCriterios(proyectos, historias, memory.NuevoCriterios())
 	h := server.NewRouter(server.Dependencias{
-		Asignaciones: service.NuevoAsignaciones(sprintsCaidos{}, sprintsCaidos{}, historias, criterios),
+		Asignaciones: service.NuevoAsignaciones(sprintsCaidos{}, sprintsCaidos{}, historias, criterios, relojDeLaVista),
 	})
 
 	rec := get(h, "/proyectos/1/sprints/1")

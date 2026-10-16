@@ -38,7 +38,9 @@ func registrarPasosHU12(sc *godog.ScenarioContext) {
 		repoHistorias: memory.NuevoHistorias(), repoCriterios: memory.NuevoCriterios(),
 	}
 	criterios := service.NuevoCriterios(e.repoProyectos, e.repoHistorias, e.repoCriterios)
-	e.asignaciones = service.NuevoAsignaciones(e.repoProyectos, e.repoSprints, e.repoHistorias, criterios)
+	e.asignaciones = service.NuevoAsignaciones(e.repoProyectos, e.repoSprints, e.repoHistorias, criterios, func() time.Time {
+		return time.Date(2026, 10, 15, 18, 0, 0, 0, time.UTC)
+	})
 
 	sc.Step(`^el proyecto "([^"]*)" para planificar sprints$`, e.elProyecto)
 	sc.Step(`^que el Sprint (\d+) está cerrado con (\d+) SP completados$`, e.queElSprintEstaCerrado)

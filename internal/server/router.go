@@ -53,7 +53,9 @@ func NewRouter(dep Dependencias) http.Handler {
 	pl := planificacion{casos: dep.Asignaciones}
 	r.Get("/proyectos/{id}/sprints/{sprint}", pl.ver)
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias", pl.asignar)
-	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.quitar)
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.accion((*service.Asignaciones).Quitar, "quitada"))
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/empezar", pl.accion((*service.Asignaciones).Empezar, "empezada"))
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
 
 	in := integrantes{casos: dep.Integrantes}
 	r.Get("/proyectos/{id}/integrantes", in.listar)

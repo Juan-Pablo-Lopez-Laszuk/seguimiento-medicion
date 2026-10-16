@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
@@ -24,7 +25,11 @@ type escenarioAsignacion struct {
 	criterios  *memory.Criterios
 	ids        map[int]int64 // ID de cada sprint, por número
 	proyectoID int64
+	ahora      func() time.Time // "hoy" para el sprint activo y la fecha de completado (HU-13)
 }
+
+// relojDelSprint fija "hoy" en el 15/10/2026 a las 15:00 de Argentina: el Sprint 2 es el activo.
+func relojDelSprint() time.Time { return time.Date(2026, 10, 15, 18, 0, 0, 0, time.UTC) }
 
 // nuevoEscenarioAsignacion arma el escenario. Con primeroCerrado en false el Sprint 1 está abierto: no hay velocidad.
 func nuevoEscenarioAsignacion(t *testing.T, primeroCerrado bool) *escenarioAsignacion {
@@ -33,6 +38,7 @@ func nuevoEscenarioAsignacion(t *testing.T, primeroCerrado bool) *escenarioAsign
 	e := &escenarioAsignacion{
 		proyectos: memory.NuevoProyectos(), sprints: memory.NuevoSprints(),
 		historias: memory.NuevoHistorias(), criterios: memory.NuevoCriterios(), ids: map[int]int64{},
+		ahora: relojDelSprint,
 	}
 	p, err := e.proyectos.Guardar(ctx, project.Proyecto{Nombre: "Software Metrics", FechaInicio: fechaISO(t, "2026-10-05"), FechaFin: fechaISO(t, "2026-11-01")})
 	if err != nil {
@@ -62,7 +68,7 @@ func nuevoEscenarioAsignacion(t *testing.T, primeroCerrado bool) *escenarioAsign
 
 // armar arma el caso de uso con los repositorios del escenario y el de historias que se le pasa.
 func (e *escenarioAsignacion) armar(historias service.RepositorioAsignaciones) *service.Asignaciones {
-	return service.NuevoAsignaciones(e.proyectos, e.sprints, historias, service.NuevoCriterios(e.proyectos, e.historias, e.criterios))
+	return service.NuevoAsignaciones(e.proyectos, e.sprints, historias, service.NuevoCriterios(e.proyectos, e.historias, e.criterios), e.ahora)
 }
 
 // historia guarda la siguiente historia del backlog con sus criterios (ninguno cumplido) y devuelve su número.

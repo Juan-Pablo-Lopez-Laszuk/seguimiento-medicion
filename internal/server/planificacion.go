@@ -1,11 +1,13 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -15,7 +17,7 @@ import (
 )
 
 // planificacion agrupa los handlers de la página de un sprint: ver su Sprint Backlog, asignarle historias y
-// quitárselas (HU-12).
+// quitárselas (HU-12), y empezar y completar sus historias (HU-13).
 type planificacion struct {
 	casos *service.Asignaciones
 }
@@ -57,19 +59,25 @@ func (h planificacion) asignar(w http.ResponseWriter, r *http.Request) {
 	h.responder(w, r, err, proyectoID, numeroSprint, fmt.Sprintf("asignada=%d", numero))
 }
 
-// quitar recibe el botón Quitar de una historia del sprint.
-func (h planificacion) quitar(w http.ResponseWriter, r *http.Request) {
-	proyectoID, numeroSprint, ok := idsDeSprint(w, r)
-	if !ok {
-		return
+// accionSobreHistoria es un caso de uso sobre una historia del sprint: Quitar (HU-12), Empezar o Completar (HU-13).
+type accionSobreHistoria func(casos *service.Asignaciones, ctx context.Context, proyectoID int64, numeroSprint, numero int) (backlog.Historia, error)
+
+// accion devuelve el handler del botón de una historia del sprint. Si la acción vale vuelve a la página del sprint
+// con el parámetro de éxito (por ejemplo ?quitada=1); si no, la muestra con el motivo.
+func (h planificacion) accion(hacer accionSobreHistoria, exito string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		proyectoID, numeroSprint, ok := idsDeSprint(w, r)
+		if !ok {
+			return
+		}
+		numero, err := strconv.Atoi(chi.URLParam(r, "historia"))
+		if err != nil {
+			historiaNoEncontrada(w)
+			return
+		}
+		_, err = hacer(h.casos, r.Context(), proyectoID, numeroSprint, numero)
+		h.responder(w, r, err, proyectoID, numeroSprint, fmt.Sprintf("%s=%d", exito, numero))
 	}
-	numero, err := strconv.Atoi(chi.URLParam(r, "historia"))
-	if err != nil {
-		historiaNoEncontrada(w)
-		return
-	}
-	_, err = h.casos.Quitar(r.Context(), proyectoID, numeroSprint, numero)
-	h.responder(w, r, err, proyectoID, numeroSprint, fmt.Sprintf("quitada=%d", numero))
 }
 
 // responder vuelve a la página del sprint con el aviso de éxito, o la muestra con el motivo de la regla (409).
@@ -94,8 +102,8 @@ func (h planificacion) responder(w http.ResponseWriter, r *http.Request, err err
 func esErrorDeLaRegla(err error) bool {
 	for _, regla := range []error{
 		backlog.ErrSinEstimar, backlog.ErrSinCriterios, backlog.ErrYaHecha, backlog.ErrEnOtroSprint,
-		backlog.ErrSprintCerrado, backlog.ErrYaEmpezada, backlog.ErrNoEstaEnUnSprint,
-		backlog.ErrTransicionInvalida, backlog.ErrYaEstaEnEseEstado,
+		backlog.ErrSprintCerrado, backlog.ErrYaEmpezada, backlog.ErrNoEstaEnUnSprint, backlog.ErrNoEsElSprintActivo,
+		backlog.ErrTransicionInvalida, backlog.ErrYaEstaEnEseEstado, backlog.ErrCriteriosSinCumplir,
 	} {
 		if errors.Is(err, regla) {
 			return true
@@ -107,9 +115,17 @@ func esErrorDeLaRegla(err error) bool {
 // mensajeDelSprint arma el aviso de éxito con los parámetros de la redirección. Solo acepta un número de historia:
 // cualquier otro valor se ignora, así la página nunca muestra lo que venga en la URL.
 func mensajeDelSprint(consulta url.Values, numeroSprint int) string {
-	for _, p := range []struct{ parametro, accion string }{{"asignada", "asignada al"}, {"quitada", "quitada del"}} {
-		if numero, err := strconv.Atoi(consulta.Get(p.parametro)); err == nil && numero > 0 {
-			return fmt.Sprintf("HU-%d %s Sprint %d", numero, p.accion, numeroSprint)
+	for _, m := range []struct{ parametro, formato string }{
+		{"asignada", "HU-%d asignada al Sprint %d"},
+		{"quitada", "HU-%d quitada del Sprint %d"},
+		{"empezada", "HU-%d pasó a En progreso"},
+		{"completada", "HU-%d completada"},
+	} {
+		if numero, err := strconv.Atoi(consulta.Get(m.parametro)); err == nil && numero > 0 {
+			if strings.Count(m.formato, "%d") == 1 {
+				return fmt.Sprintf(m.formato, numero)
+			}
+			return fmt.Sprintf(m.formato, numero, numeroSprint)
 		}
 	}
 	return ""

@@ -26,7 +26,7 @@
 <section class="mb-4" aria-labelledby="titulo-asignadas">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h2 class="h5 mb-0" id="titulo-asignadas">Sprint Backlog</h2>
-    <span class="fw-semibold">{{.Comprometidos}} SP comprometidos</span>
+    <span class="fw-semibold">{{.Comprometidos}} SP comprometidos · {{.Completados}} de {{.Comprometidos}} SP completados</span>
   </div>
   {{if .Asignadas}}
   <div class="table-responsive bg-body rounded-3 shadow-sm">
@@ -44,15 +44,35 @@
         {{range .Asignadas}}
         <tr>
           <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
-          <td>{{.Titulo}}</td>
+          <td>
+            {{.Titulo}}
+            {{with .CompletadaEn}}<div class="small text-body-secondary">Completada el {{.Format "02/01/2006"}}</div>{{end}}
+          </td>
           <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{end}}</td>
           <td>{{template "estadoHistoria" .Estado}}</td>
           <td class="text-end">
-            {{if eq .Estado "En sprint"}}
-            <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/quitar" method="post">
-              <button class="btn btn-sm btn-outline-secondary" type="submit">Quitar</button>
-            </form>
-            {{end}}
+            <div class="d-flex flex-wrap justify-content-end align-items-center gap-2">
+              {{if and $datos.Activo (eq .Estado "En sprint")}}
+              <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/empezar" method="post">
+                <button class="btn btn-sm btn-primary" type="submit">Empezar</button>
+              </form>
+              {{else if and $datos.Activo (eq .Estado "En progreso")}}
+              {{if .Progreso.Completo}}
+              <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/completar" method="post">
+                <button class="btn btn-sm btn-success" type="submit">Completar</button>
+              </form>
+              {{else if .Progreso.TieneCriterios}}
+              <span class="small text-body-secondary">faltan {{.Faltan}} de {{.Progreso.Total}} criterios</span>
+              {{else}}
+              <span class="small text-body-secondary">sin criterios de aceptación</span>
+              {{end}}
+              {{end}}
+              {{if eq .Estado "En sprint"}}
+              <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/quitar" method="post">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Quitar</button>
+              </form>
+              {{end}}
+            </div>
           </td>
         </tr>
         {{end}}

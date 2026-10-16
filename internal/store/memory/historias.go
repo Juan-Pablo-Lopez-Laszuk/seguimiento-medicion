@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 )
@@ -42,7 +43,7 @@ func (r *Historias) ListarPorProyecto(_ context.Context, proyectoID int64) ([]ba
 	return lista, nil
 }
 
-// copiarHistoria copia también los story points y el sprint, que son punteros, para que el repositorio y quien lo usa
+// copiarHistoria copia también los story points, el sprint y la fecha de completado, que son punteros, para que el repositorio y quien lo usa
 // no compartan el mismo valor.
 func copiarHistoria(h backlog.Historia) backlog.Historia {
 	if h.StoryPoints != nil {
@@ -50,7 +51,16 @@ func copiarHistoria(h backlog.Historia) backlog.Historia {
 		h.StoryPoints = &puntos
 	}
 	h.SprintID = copiarID(h.SprintID)
+	h.CompletadaEn = copiarFecha(h.CompletadaEn)
 	return h
+}
+
+func copiarFecha(f *time.Time) *time.Time {
+	if f == nil {
+		return nil
+	}
+	copia := *f
+	return &copia
 }
 
 func copiarID(id *int64) *int64 {
@@ -95,6 +105,20 @@ func (r *Historias) ActualizarSprint(_ context.Context, historiaID int64, estado
 	for i, h := range r.lista {
 		if h.ID == historiaID {
 			r.lista[i].Estado, r.lista[i].SprintID = estado, copiarID(sprintID)
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ActualizarCompletada guarda juntos el estado y la fecha de completado de la historia sin tocar los demás datos, o
+// devuelve backlog.ErrHistoriaNoEncontrada si no existe. Lo usa HU-13 al completar.
+func (r *Historias) ActualizarCompletada(_ context.Context, historiaID int64, estado backlog.Estado, completadaEn *time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].Estado, r.lista[i].CompletadaEn = estado, copiarFecha(completadaEn)
 			return nil
 		}
 	}
