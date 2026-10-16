@@ -8,16 +8,25 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 )
 
-// Historias guarda las historias de todos los proyectos en una lista en memoria.
-type Historias struct {
-	mu       sync.Mutex
-	lista    []backlog.Historia
-	ultimoID int64
+// Dependiente es un repositorio con datos que cuelgan de una historia (sus criterios, sus tareas). Al eliminar la
+// historia se le pide que borre lo suyo (HU-06, RN9): en PostgreSQL lo hace la misma transacción.
+type Dependiente interface {
+	// EliminarDeHistoria borra todo lo que el repositorio tiene de esa historia.
+	EliminarDeHistoria(historiaID int64)
 }
 
-// NuevoHistorias crea un repositorio vacío.
-func NuevoHistorias() *Historias {
-	return &Historias{}
+// Historias guarda las historias de todos los proyectos en una lista en memoria.
+type Historias struct {
+	mu           sync.Mutex
+	lista        []backlog.Historia
+	ultimoID     int64
+	dependientes []Dependiente
+}
+
+// NuevoHistorias crea un repositorio vacío. Los dependientes, si hay, son los repositorios de lo que cuelga de una
+// historia: eliminarla borra también lo suyo en cada uno.
+func NuevoHistorias(dependientes ...Dependiente) *Historias {
+	return &Historias{dependientes: dependientes}
 }
 
 // Guardar le asigna el próximo ID a la historia, la guarda y la devuelve con el ID.
@@ -93,14 +102,17 @@ func (r *Historias) ActualizarDatos(_ context.Context, h backlog.Historia) error
 	return backlog.ErrHistoriaNoEncontrada
 }
 
-// Eliminar borra la historia (HU-06) o devuelve backlog.ErrHistoriaNoEncontrada si no existe. Las demás historias
-// conservan su número.
+// Eliminar borra la historia (HU-06) y lo que cuelga de ella en los dependientes, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe. Las demás historias conservan su número.
 func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i, h := range r.lista {
 		if h.ID == historiaID {
 			r.lista = slices.Delete(r.lista, i, i+1)
+			for _, d := range r.dependientes {
+				d.EliminarDeHistoria(historiaID)
+			}
 			return nil
 		}
 	}
