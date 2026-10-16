@@ -157,3 +157,187 @@ func TestEdicionDeHistorias_ProyectoOHistoriaInexistente_DevuelveNoEncontrado(t 
 		t.Errorf("historia inexistente: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", errHistoria)
 	}
 }
+
+// RN8 · pedir la eliminación muestra qué se pierde (cuántos criterios y tareas) y no elimina nada
+func TestPedirEliminacion_CuentaLosCriteriosYLasTareas_YNoEliminaNada(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	e.conCriteriosYTareas(t, e.historia.ID, 2, 1)
+
+	vista, err := e.casos.PedirEliminacion(context.Background(), e.proyectoID, e.historia.Numero)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if vista.Proyecto.ID != e.proyectoID || vista.Historia.ID != e.historia.ID {
+		t.Errorf("se esperaba el proyecto %d y la historia %d, y se obtuvo %d y %d", e.proyectoID, e.historia.ID, vista.Proyecto.ID, vista.Historia.ID)
+	}
+	if vista.Criterios != 2 || vista.Tareas != 1 {
+		t.Errorf("se esperaban 2 criterios y 1 tarea y se obtuvo %d y %d", vista.Criterios, vista.Tareas)
+	}
+	if vista.Impedimento != nil {
+		t.Errorf("no se esperaba impedimento y se obtuvo: %v", vista.Impedimento)
+	}
+	if _, err := e.historias.BuscarPorNumero(context.Background(), e.proyectoID, e.historia.Numero); err != nil {
+		t.Errorf("pedir la eliminación no tenía que eliminar la historia: %v", err)
+	}
+}
+
+// CA-06.2 · la pantalla de confirmación sabe por qué no se puede eliminar
+func TestPedirEliminacion_HistoriaHecha_InformaElImpedimento(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	if err := e.historias.ActualizarEstado(context.Background(), e.historia.ID, backlog.EstadoHecho); err != nil {
+		t.Fatalf("no se pudo dejar la historia Hecha: %v", err)
+	}
+
+	vista, err := e.casos.PedirEliminacion(context.Background(), e.proyectoID, e.historia.Numero)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if !errors.Is(vista.Impedimento, backlog.ErrEliminarHistoriaHecha) {
+		t.Errorf("se esperaba ErrEliminarHistoriaHecha y se obtuvo: %v", vista.Impedimento)
+	}
+}
+
+func TestPedirEliminacion_DeUnSprintCerrado_InformaElImpedimento(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	e.cerradas[e.historia.ID] = true
+
+	vista, err := e.casos.PedirEliminacion(context.Background(), e.proyectoID, e.historia.Numero)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if !errors.Is(vista.Impedimento, backlog.ErrEliminarEnSprintCerrado) {
+		t.Errorf("se esperaba ErrEliminarEnSprintCerrado y se obtuvo: %v", vista.Impedimento)
+	}
+}
+
+// CA-06.3 y RN9 · confirmar elimina la historia con sus criterios y sus tareas, y devuelve la historia eliminada
+func TestEliminarHistoria_Valido_EliminaLaHistoriaConSusCriteriosYTareas(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	e.conCriteriosYTareas(t, e.historia.ID, 2, 1)
+
+	eliminada, err := e.casos.Eliminar(context.Background(), e.proyectoID, e.historia.Numero)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+
+	if eliminada.ID != e.historia.ID || eliminada.Numero != e.historia.Numero || eliminada.Titulo != e.historia.Titulo {
+		t.Errorf("se esperaba la historia eliminada y se obtuvo %+v", eliminada)
+	}
+	if _, err := e.historias.BuscarPorNumero(context.Background(), e.proyectoID, e.historia.Numero); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("la historia tenía que no existir más y se obtuvo: %v", err)
+	}
+	if cs, _ := e.criterios.ListarPorHistoria(context.Background(), e.historia.ID); len(cs) != 0 {
+		t.Errorf("quedaron %d criterios", len(cs))
+	}
+	if ts, _ := e.tareas.ListarPorHistoria(context.Background(), e.historia.ID); len(ts) != 0 {
+		t.Errorf("quedaron %d tareas", len(ts))
+	}
+}
+
+// RN7 · se elimina en Pendiente, En sprint y En progreso
+func TestEliminarHistoria_PendienteEnSprintOEnProgreso_Vale(t *testing.T) {
+	for _, estado := range []backlog.Estado{backlog.EstadoPendiente, backlog.EstadoEnSprint, backlog.EstadoEnProgreso} {
+		e := nuevoEscenarioEdicionDeHistoria(t)
+		if err := e.historias.ActualizarEstado(context.Background(), e.historia.ID, estado); err != nil {
+			t.Fatalf("no se pudo dejar la historia en %q: %v", estado, err)
+		}
+
+		if _, err := e.casos.Eliminar(context.Background(), e.proyectoID, e.historia.Numero); err != nil {
+			t.Errorf("estado %q: no se esperaba error: %v", estado, err)
+		}
+	}
+}
+
+// verificarQueNoSeBorroNada comprueba que la historia de ejemplo sigue con sus 2 criterios y su tarea.
+func (e *escenarioEdicionDeHistoria) verificarQueNoSeBorroNada(t *testing.T) {
+	t.Helper()
+	if _, err := e.historias.BuscarPorNumero(context.Background(), e.proyectoID, e.historia.Numero); err != nil {
+		t.Errorf("la historia tenía que seguir: %v", err)
+	}
+	if cs, _ := e.criterios.ListarPorHistoria(context.Background(), e.historia.ID); len(cs) != 2 {
+		t.Errorf("los criterios tenían que seguir (2) y hay %d", len(cs))
+	}
+	if ts, _ := e.tareas.ListarPorHistoria(context.Background(), e.historia.ID); len(ts) != 1 {
+		t.Errorf("la tarea tenía que seguir (1) y hay %d", len(ts))
+	}
+}
+
+// CA-06.2 y RN5 · una historia Hecha no se elimina, y no se borra nada
+func TestEliminarHistoria_HistoriaHecha_NoSeElimina(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	e.conCriteriosYTareas(t, e.historia.ID, 2, 1)
+	if err := e.historias.ActualizarEstado(context.Background(), e.historia.ID, backlog.EstadoHecho); err != nil {
+		t.Fatalf("no se pudo dejar la historia Hecha: %v", err)
+	}
+
+	_, err := e.casos.Eliminar(context.Background(), e.proyectoID, e.historia.Numero)
+
+	if !errors.Is(err, backlog.ErrEliminarHistoriaHecha) {
+		t.Fatalf("se esperaba ErrEliminarHistoriaHecha y se obtuvo: %v", err)
+	}
+	e.verificarQueNoSeBorroNada(t)
+}
+
+// CA-06.2 y RN6 · una historia de un sprint cerrado no se elimina, y no se borra nada
+func TestEliminarHistoria_DeUnSprintCerrado_NoSeElimina(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	e.conCriteriosYTareas(t, e.historia.ID, 2, 1)
+	e.cerradas[e.historia.ID] = true
+
+	_, err := e.casos.Eliminar(context.Background(), e.proyectoID, e.historia.Numero)
+
+	if !errors.Is(err, backlog.ErrEliminarEnSprintCerrado) {
+		t.Fatalf("se esperaba ErrEliminarEnSprintCerrado y se obtuvo: %v", err)
+	}
+	e.verificarQueNoSeBorroNada(t)
+}
+
+// historiasQueNoSeBorran simula que la base rechaza el borrado por otros registros asociados (RN10).
+type historiasQueNoSeBorran struct{ *memory.Historias }
+
+func (historiasQueNoSeBorran) EnSprintCerrado(context.Context, int64) (bool, error) {
+	return false, nil
+}
+func (historiasQueNoSeBorran) Eliminar(context.Context, int64) error {
+	return backlog.ErrHistoriaConRegistros
+}
+
+// RN10 · si el repositorio informa que la historia tiene registros asociados, el error llega tal cual
+func TestEliminarHistoria_ConRegistrosAsociados_DevuelveElError(t *testing.T) {
+	proyectos := memory.NuevoProyectos()
+	p, _ := service.NuevoProyectos(proyectos, relojFijo).Crear(context.Background(), datosValidos())
+	historias := memory.NuevoHistorias()
+	h, _ := service.NuevoHistorias(proyectos, historias).Crear(context.Background(), p.ID, datosDeHistoria("Con registros"))
+	casos := service.NuevoEdicionHistorias(proyectos, historiasQueNoSeBorran{historias}, memory.NuevoCriterios(), memory.NuevoTareas())
+
+	_, err := casos.Eliminar(context.Background(), p.ID, h.Numero)
+
+	if !errors.Is(err, backlog.ErrHistoriaConRegistros) {
+		t.Errorf("se esperaba ErrHistoriaConRegistros y se obtuvo: %v", err)
+	}
+}
+
+// Sección 7 · proyecto o historia que no existen
+func TestEliminarHistoria_ProyectoOHistoriaInexistente_DevuelveNoEncontrado(t *testing.T) {
+	e := nuevoEscenarioEdicionDeHistoria(t)
+	ctx := context.Background()
+
+	_, errProyecto := e.casos.Eliminar(ctx, 999, e.historia.Numero)
+	_, errHistoria := e.casos.Eliminar(ctx, e.proyectoID, 999)
+	_, errPedirProyecto := e.casos.PedirEliminacion(ctx, 999, e.historia.Numero)
+	_, errPedirHistoria := e.casos.PedirEliminacion(ctx, e.proyectoID, 999)
+
+	for _, err := range []error{errProyecto, errPedirProyecto} {
+		if !errors.Is(err, project.ErrNoEncontrado) {
+			t.Errorf("proyecto inexistente: se esperaba project.ErrNoEncontrado y se obtuvo %v", err)
+		}
+	}
+	for _, err := range []error{errHistoria, errPedirHistoria} {
+		if !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+			t.Errorf("historia inexistente: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+		}
+	}
+}
