@@ -92,3 +92,19 @@ func (r *Historias) ActualizarEstado(ctx context.Context, historiaID int64, esta
 	}
 	return nil
 }
+
+// ActualizarDatos guarda el título, la descripción y la prioridad de la historia (HU-06) sin tocar el número, el
+// estado ni los story points, o devuelve backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza una prioridad
+// fuera de las tres (CHECK).
+func (r *Historias) ActualizarDatos(ctx context.Context, h backlog.Historia) error {
+	etiqueta, err := r.pool.Exec(ctx,
+		`UPDATE historias SET titulo = $1, descripcion = $2, prioridad = $3 WHERE id = $4`,
+		h.Titulo, h.Descripcion, string(h.Prioridad), h.ID)
+	if err != nil {
+		return fmt.Errorf("actualizar los datos de la historia %d: %w", h.ID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}
