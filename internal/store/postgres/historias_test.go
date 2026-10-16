@@ -270,3 +270,39 @@ func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testin
 		}
 	}
 }
+
+// HU-16: los story points de una historia se guardan sin tocar los demás datos
+func TestHistorias_ActualizarStoryPoints(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	primera := historiaDeEjemplo(proyectoA, 1, "Primera")
+	primera.Estado = backlog.EstadoEnSprint
+	guardada, err := repo.Guardar(ctx, primera)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	otra, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Segunda"))
+
+	for _, puntos := range []int{8, 0, 13} { // estimar, estimar en 0 y re-estimar
+		if err := repo.ActualizarStoryPoints(ctx, guardada.ID, puntos); err != nil {
+			t.Fatalf("%d story points: no se esperaba error: %v", puntos, err)
+		}
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.StoryPoints == nil || *h.StoryPoints != 13 || h.Titulo != "Primera" || h.Estado != backlog.EstadoEnSprint {
+		t.Errorf("se esperaba la HU-1 con 13 story points y el resto de sus datos, y se obtuvo %+v, %v", h, err)
+	}
+	if o, _ := repo.BuscarPorNumero(ctx, proyectoA, 2); o.ID != otra.ID || o.StoryPoints != nil {
+		t.Errorf("la HU-2 no tenía que cambiar y se obtuvo %+v", o)
+	}
+	if err := repo.ActualizarStoryPoints(ctx, 99999, 5); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+	// la base es la última defensa: un valor fuera de la escala no se guarda (CHECK historias_story_points_ck)
+	if err := repo.ActualizarStoryPoints(ctx, guardada.ID, 4); err == nil {
+		t.Error("la base aceptó 4 story points, que no están en la escala")
+	}
+}
