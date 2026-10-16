@@ -6,7 +6,7 @@ Característica: Editar y eliminar ítem del Product Backlog
   Para mantener el backlog ordenado
 
   Antecedentes:
-    Dado el proyecto "Software Metrics" con la historia "Iniciar sesión con Google" para editar o eliminar
+    Dado el proyecto "Software Metrics" con la historia "Iniciar sesión con Google" de 5 story points para editar o eliminar
 
   # Caso NORMAL (CA-06.1): editar cambia los datos y no el identificador
   @CA-06.1
@@ -18,9 +18,9 @@ Característica: Editar y eliminar ítem del Product Backlog
   # Caso ALTERNATIVO (RN2): editar no toca el estado, los story points, los criterios ni las tareas
   @CA-06.1
   Escenario: Editar no cambia el estado, los story points, los criterios ni las tareas
-    Dado que la historia a editar tiene "5" story points, 2 criterios, 1 tarea y está "En progreso"
+    Dado que la historia a editar tiene 2 criterios, 1 tarea y está "En progreso"
     Cuando edito la historia con título "Otro título", descripción "" y prioridad "Media"
-    Entonces la historia conserva "5" story points, 2 criterios, 1 tarea y el estado "En progreso"
+    Entonces la historia conserva 5 story points, 2 criterios, 1 tarea y el estado "En progreso"
 
   # Caso LÍMITE (RN4): guardar sin haber cambiado nada vale
   @CA-06.1
@@ -86,7 +86,7 @@ Característica: Editar y eliminar ítem del Product Backlog
   # Caso NORMAL (CA-06.3, RN8): eliminar primero pide confirmación y no borra nada
   @CA-06.3
   Escenario: Eliminar pide confirmación
-    Dado que la historia a editar tiene "3" story points, 2 criterios, 1 tarea y está "Pendiente"
+    Dado que la historia a editar tiene 2 criterios, 1 tarea y está "Pendiente"
     Cuando pido eliminar la historia
     Entonces el sistema pide confirmar la eliminación de 2 criterios y 1 tarea
     Y la historia sigue en el backlog
@@ -94,7 +94,7 @@ Característica: Editar y eliminar ítem del Product Backlog
   # Caso NORMAL (CA-06.3, RN9): al confirmar se elimina la historia con sus criterios y sus tareas
   @CA-06.3
   Escenario: Confirmar elimina la historia con sus criterios y sus tareas
-    Dado que la historia a editar tiene "3" story points, 2 criterios, 1 tarea y está "Pendiente"
+    Dado que la historia a editar tiene 2 criterios, 1 tarea y está "Pendiente"
     Cuando confirmo la eliminación de la historia
     Entonces la eliminación da como resultado "ok"
     Y la historia ya no está en el backlog
