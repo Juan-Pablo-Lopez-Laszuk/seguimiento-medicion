@@ -42,14 +42,23 @@ func (r *Historias) ListarPorProyecto(_ context.Context, proyectoID int64) ([]ba
 	return lista, nil
 }
 
-// copiarHistoria copia también los story points, que son un puntero, para que el repositorio y quien lo usa no
-// compartan el mismo valor.
+// copiarHistoria copia también los story points y el sprint, que son punteros, para que el repositorio y quien lo usa
+// no compartan el mismo valor.
 func copiarHistoria(h backlog.Historia) backlog.Historia {
 	if h.StoryPoints != nil {
 		puntos := *h.StoryPoints
 		h.StoryPoints = &puntos
 	}
+	h.SprintID = copiarID(h.SprintID)
 	return h
+}
+
+func copiarID(id *int64) *int64 {
+	if id == nil {
+		return nil
+	}
+	copia := *id
+	return &copia
 }
 
 // BuscarPorNumero devuelve la historia con ese número (HU-N) dentro del proyecto, o backlog.ErrHistoriaNoEncontrada.
@@ -72,6 +81,20 @@ func (r *Historias) ActualizarEstado(_ context.Context, historiaID int64, estado
 	for i, h := range r.lista {
 		if h.ID == historiaID {
 			r.lista[i].Estado = estado
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ActualizarSprint guarda juntos el estado y el sprint de la historia (nil = sin sprint) sin tocar los demás datos, o
+// devuelve backlog.ErrHistoriaNoEncontrada si no existe. Lo usa HU-12 al asignar y al quitar.
+func (r *Historias) ActualizarSprint(_ context.Context, historiaID int64, estado backlog.Estado, sprintID *int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].Estado, r.lista[i].SprintID = estado, copiarID(sprintID)
 			return nil
 		}
 	}

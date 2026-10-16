@@ -127,3 +127,31 @@ func TestSprints_NoSeGuardaUnSprintDeUnProyectoQueNoExiste(t *testing.T) {
 		t.Error("se esperaba un error por el proyecto inexistente y se guardó")
 	}
 }
+
+// HU-12: la velocidad lee los SP completados de los sprints cerrados (la foto del cierre, que guarda HU-14)
+func TestSprints_GuardaYLeeLosSPCompletados(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoSprints(pool)
+	cerrado := sprintDeEjemplo(proyectoA, 1, "Cerrado")
+	completados := 16
+	cerrado.Estado, cerrado.SPCompletados = sprint.EstadoCerrado, &completados
+
+	if _, err := repo.Guardar(ctx, cerrado); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if _, err := repo.Guardar(ctx, sprintDeEjemplo(proyectoA, 2, "Abierto")); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	lista, err := repo.ListarPorProyecto(ctx, proyectoA)
+	if err != nil || len(lista) != 2 {
+		t.Fatalf("se esperaban dos sprints y se obtuvo %+v, %v", lista, err)
+	}
+	if lista[0].Estado != sprint.EstadoCerrado || lista[0].SPCompletados == nil || *lista[0].SPCompletados != 16 {
+		t.Errorf("el sprint cerrado tiene que traer sus 16 SP completados y se obtuvo %+v", lista[0])
+	}
+	if lista[1].SPCompletados != nil {
+		t.Errorf("un sprint abierto no tiene SP completados y se obtuvo %d", *lista[1].SPCompletados)
+	}
+}

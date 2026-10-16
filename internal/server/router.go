@@ -18,6 +18,8 @@ type Dependencias struct {
 	Integrantes *service.Integrantes
 	Historias   *service.Historias
 	Criterios   *service.Criterios
+	// Asignaciones arma el Sprint Backlog: asignar y quitar historias de un sprint (HU-12).
+	Asignaciones *service.Asignaciones
 	// CambioDeEstado cambia el estado de una historia (HU-08); Estado es el del proyecto (HU-04).
 	CambioDeEstado *service.Estados
 	Tareas         *service.Tareas
@@ -47,6 +49,11 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/proyectos/{id}/sprints", s.listar)
 	r.Get("/proyectos/{id}/sprints/nuevo", s.nuevo)
 	r.Post("/proyectos/{id}/sprints", s.crear)
+
+	pl := planificacion{casos: dep.Asignaciones}
+	r.Get("/proyectos/{id}/sprints/{sprint}", pl.ver)
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias", pl.asignar)
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.quitar)
 
 	in := integrantes{casos: dep.Integrantes}
 	r.Get("/proyectos/{id}/integrantes", in.listar)

@@ -36,7 +36,7 @@
     <tbody>
       {{range .Sprints}}
       <tr>
-        <td class="fw-semibold text-nowrap">Sprint {{.Numero}}</td>
+        <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/sprints/{{.Numero}}">Sprint {{.Numero}}</a></td>
         <td>{{.Objetivo}}</td>
         <td>{{.FechaInicio.Format "02/01/2006"}}</td>
         <td>{{.FechaFin.Format "02/01/2006"}}</td>

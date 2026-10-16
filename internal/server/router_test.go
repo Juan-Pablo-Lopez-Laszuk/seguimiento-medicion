@@ -29,14 +29,15 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	integrantes := memory.NuevoIntegrantes()
 	criterios := service.NuevoCriterios(proyectos, historias, memory.NuevoCriterios())
 	return server.NewRouter(server.Dependencias{
-		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
-		Sprints:     service.NuevoSprints(proyectos, sprints),
-		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
-		Historias:   service.NuevoHistorias(proyectos, historias),
-		Criterios:   criterios,
-		Tareas:      service.NuevoTareas(proyectos, historias, integrantes, memory.NuevoTareas()),
-		Estado:      service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
-		Edicion:     service.NuevoEdicionProyectos(proyectos, sprints, ahora),
+		Proyectos:    service.NuevoProyectos(proyectos, time.Now),
+		Sprints:      service.NuevoSprints(proyectos, sprints),
+		Integrantes:  service.NuevoIntegrantes(proyectos, integrantes),
+		Historias:    service.NuevoHistorias(proyectos, historias),
+		Criterios:    criterios,
+		Asignaciones: service.NuevoAsignaciones(proyectos, sprints, historias, criterios),
+		Tareas:       service.NuevoTareas(proyectos, historias, integrantes, memory.NuevoTareas()),
+		Estado:       service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
+		Edicion:      service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 	})
 }
 

@@ -270,3 +270,43 @@ func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testin
 		}
 	}
 }
+
+// HU-12: al asignar o quitar, el estado y el sprint se guardan juntos, y la historia se lee con su sprint
+func TestHistorias_ActualizarSprint(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	s, err := postgres.NuevoSprints(pool).Guardar(ctx, sprintDeEjemplo(proyectoA, 1, "Primero"))
+	if err != nil {
+		t.Fatalf("guardar el sprint: %v", err)
+	}
+	repo := postgres.NuevoHistorias(pool)
+	guardada, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Primera"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if guardada.SprintID != nil {
+		t.Errorf("una historia nueva no tiene sprint y se obtuvo %d", *guardada.SprintID)
+	}
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoEnSprint, &s.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.Estado != backlog.EstadoEnSprint || h.SprintID == nil || *h.SprintID != s.ID || h.Titulo != "Primera" {
+		t.Errorf("se esperaba la HU-1 En sprint en el sprint %d y se obtuvo %+v, %v", s.ID, h, err)
+	}
+	if lista, _ := repo.ListarPorProyecto(ctx, proyectoA); len(lista) != 1 || lista[0].SprintID == nil || *lista[0].SprintID != s.ID {
+		t.Errorf("la lista tiene que traer el sprint de la historia y se obtuvo %+v", lista)
+	}
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoPendiente, nil); err != nil {
+		t.Fatalf("no se esperaba error al quitar: %v", err)
+	}
+	if h, _ := repo.BuscarPorNumero(ctx, proyectoA, 1); h.Estado != backlog.EstadoPendiente || h.SprintID != nil {
+		t.Errorf("se esperaba la HU-1 Pendiente y sin sprint y se obtuvo %+v", h)
+	}
+	if err := repo.ActualizarSprint(ctx, 99999, backlog.EstadoEnSprint, &s.ID); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
