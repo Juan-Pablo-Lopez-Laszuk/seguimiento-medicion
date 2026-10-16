@@ -30,10 +30,16 @@ type paginaHistoria struct {
 	Aviso       string // por ejemplo, que la historia está Hecha y sus criterios no se pueden cambiar
 	Descripcion string // lo que el usuario escribió en el formulario de nuevo criterio
 	Errores     map[string]string
+	// Para el formulario de estimar (HU-16): la escala y el valor actual, que queda elegido en el desplegable.
+	Escala         []int
+	PuntosActuales string
 }
 
 func nuevaPagina(v service.VistaHistoria) paginaHistoria {
-	p := paginaHistoria{VistaHistoria: v}
+	p := paginaHistoria{VistaHistoria: v, Escala: backlog.EscalaStoryPoints}
+	if v.Historia.StoryPoints != nil {
+		p.PuntosActuales = strconv.Itoa(*v.Historia.StoryPoints)
+	}
 	if v.Progreso.Total > 0 {
 		p.Porcentaje = v.Progreso.Cumplidos * 100 / v.Progreso.Total
 	}
@@ -52,6 +58,8 @@ func mensajeDeExito(consulta url.Values) string {
 		return "Criterio marcado como no cumplido."
 	case consulta.Get("estado") == "en-progreso":
 		return "La historia pasó a En progreso."
+	case consulta.Get("estimada") == "1":
+		return "Estimación guardada."
 	}
 	return ""
 }

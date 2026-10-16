@@ -17,11 +17,18 @@ func puntos(valor string) url.Values {
 	return url.Values{"story_points": {valor}}
 }
 
+// sinEstimar arma la aplicación con el proyecto de ejemplo y su HU-1, Pendiente y sin estimar (conHistoria crea la
+// historia ya estimada en 5).
+func sinEstimar(t *testing.T) http.Handler {
+	t.Helper()
+	return conLaHistoriaEn(t, backlog.EstadoPendiente, 0, 0)
+}
+
 const avisoDeHistoriaHechaAlEstimar = "la historia está Hecha: no se puede cambiar su estimación"
 
 // CA-16.1 · la página de la historia ofrece la escala para estimar, y la historia sin estimar no tiene ningún valor elegido
 func TestPaginaDeLaHistoria_OfreceEstimarConLaEscala(t *testing.T) {
-	html := get(conHistoria(t), "/proyectos/1/backlog/1").Body.String()
+	html := get(sinEstimar(t), "/proyectos/1/backlog/1").Body.String()
 
 	verificarContiene(t, html,
 		`action="/proyectos/1/backlog/1/estimacion"`, `name="story_points"`, "Guardar estimación",
@@ -34,7 +41,7 @@ func TestPaginaDeLaHistoria_OfreceEstimarConLaEscala(t *testing.T) {
 
 // CA-16.1 · estimar guarda el valor, vuelve a la página con el mensaje y deja elegido el valor nuevo
 func TestEstimarHistoria_Valido_VuelveALaPaginaConLaEstimacion(t *testing.T) {
-	h := conHistoria(t)
+	h := sinEstimar(t)
 
 	rec := post(h, "/proyectos/1/backlog/1/estimacion", puntos("5"))
 
@@ -50,7 +57,7 @@ func TestEstimarHistoria_Valido_VuelveALaPaginaConLaEstimacion(t *testing.T) {
 
 // RN5 · re-estimar reemplaza el valor, y 0 cuenta como estimada
 func TestEstimarHistoria_Reestimar_ReemplazaElValorAnterior(t *testing.T) {
-	h := conHistoria(t)
+	h := sinEstimar(t)
 	post(h, "/proyectos/1/backlog/1/estimacion", puntos("5"))
 
 	post(h, "/proyectos/1/backlog/1/estimacion", puntos("8"))
@@ -66,7 +73,7 @@ func TestEstimarHistoria_Reestimar_ReemplazaElValorAnterior(t *testing.T) {
 
 // CA-16.2 y RN7 · un valor fuera de la escala o vacío se informa debajo del campo y se conserva la estimación anterior
 func TestEstimarHistoria_ValorInvalido_MuestraElErrorYConservaLaEstimacion(t *testing.T) {
-	h := conHistoria(t)
+	h := sinEstimar(t)
 	post(h, "/proyectos/1/backlog/1/estimacion", puntos("5"))
 
 	for _, valor := range []string{"4", "22", "-1", "abc", ""} {
