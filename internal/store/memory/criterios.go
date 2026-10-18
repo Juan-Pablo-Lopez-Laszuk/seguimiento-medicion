@@ -73,3 +73,10 @@ func (r *Criterios) Actualizar(_ context.Context, c backlog.Criterio) error {
 	}
 	return backlog.ErrCriterioNoEncontrado
 }
+
+// EliminarDeHistoria borra todos los criterios de la historia (HU-06, RN9).
+func (r *Criterios) EliminarDeHistoria(historiaID int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lista = slices.DeleteFunc(r.lista, func(c backlog.Criterio) bool { return c.HistoriaID == historiaID })
+}

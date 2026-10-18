@@ -24,6 +24,7 @@ type listaHistorias struct {
 	Proyecto  project.Proyecto
 	Historias []backlog.Historia
 	Creada    int // número de la historia recién creada, para el aviso "Historia HU-N creada"; 0 si no hay
+	Eliminada int // número de la historia recién eliminada, para el aviso "Historia HU-N eliminada"; 0 si no hay (HU-06)
 	// Progresos tiene el progreso de los criterios de cada historia, por su ID (HU-07).
 	Progresos map[int64]backlog.Progreso
 }
@@ -60,9 +61,10 @@ func (h historias) listar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	creada, _ := strconv.Atoi(r.URL.Query().Get("creada"))
+	eliminada, _ := strconv.Atoi(r.URL.Query().Get("eliminada"))
 	render(w, http.StatusOK, "backlog.html", Pagina{
 		Titulo: "Backlog",
-		Datos:  listaHistorias{Proyecto: p, Historias: lista, Creada: max(creada, 0), Progresos: progresos},
+		Datos:  listaHistorias{Proyecto: p, Historias: lista, Creada: max(creada, 0), Eliminada: max(eliminada, 0), Progresos: progresos},
 	})
 }
 
