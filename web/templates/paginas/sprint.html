@@ -1,0 +1,100 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$datos := .}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints">Sprints</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Sprint {{.Sprint.Numero}}</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+{{template "error" .Error}}
+{{template "aviso" .Aviso}}
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Sprint {{.Sprint.Numero}}</h1>
+  <p class="mb-1">{{.Sprint.Objetivo}}</p>
+  <div class="small text-body-secondary">
+    Del {{.Sprint.FechaInicio.Format "02/01/2006"}} al {{.Sprint.FechaFin.Format "02/01/2006"}}
+    · <span class="badge text-bg-secondary">{{.Sprint.Estado}}</span>
+  </div>
+</div>
+
+<section class="mb-4" aria-labelledby="titulo-asignadas">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <h2 class="h5 mb-0" id="titulo-asignadas">Sprint Backlog</h2>
+    <span class="fw-semibold">{{.Comprometidos}} SP comprometidos</span>
+  </div>
+  {{if .Asignadas}}
+  <div class="table-responsive bg-body rounded-3 shadow-sm">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Título</th>
+          <th scope="col">SP</th>
+          <th scope="col">Estado</th>
+          <th scope="col"><span class="visually-hidden">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Asignadas}}
+        <tr>
+          <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
+          <td>{{.Titulo}}</td>
+          <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{end}}</td>
+          <td>{{template "estadoHistoria" .Estado}}</td>
+          <td class="text-end">
+            {{if eq .Estado "En sprint"}}
+            <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/quitar" method="post">
+              <button class="btn btn-sm btn-outline-secondary" type="submit">Quitar</button>
+            </form>
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary">Todavía no hay historias en este sprint.</p>
+  {{end}}
+</section>
+
+<section aria-labelledby="titulo-candidatas">
+  <h2 class="h5 mb-2" id="titulo-candidatas">Historias del backlog para asignar</h2>
+  {{if not .Abierto}}
+  <p class="text-body-secondary">El sprint está cerrado: no se le pueden asignar historias.</p>
+  {{else if .Candidatas}}
+  <ul class="list-group shadow-sm">
+    {{range .Candidatas}}
+    <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <a class="fw-semibold" href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a> · {{.Titulo}}
+        <span class="small text-body-secondary ms-1">{{with .StoryPoints}}{{.}} SP{{end}}</span>
+      </div>
+      {{if .Motivo}}
+      <span class="small text-body-secondary">No se puede asignar: {{.Motivo}}</span>
+      {{else}}
+      <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias" method="post">
+        <input type="hidden" name="historia" value="{{.Numero}}">
+        <button class="btn btn-sm btn-primary" type="submit">Asignar</button>
+      </form>
+      {{end}}
+    </li>
+    {{end}}
+  </ul>
+  {{else}}
+  <p class="text-body-secondary">No hay historias pendientes sin sprint en el backlog.</p>
+  {{end}}
+</section>
+{{end}}
+{{end}}
+
+{{/* El mismo badge que en backlog.html e historia.html: cada página se arma por separado con el layout base. */}}
+{{define "estadoHistoria"}}
+<span class="badge {{if eq . "Hecho"}}text-bg-success{{else if eq . "En progreso"}}text-bg-primary{{else if eq . "En sprint"}}text-bg-info{{else}}text-bg-secondary{{end}}">{{.}}</span>
+{{end}}

@@ -47,6 +47,8 @@ var (
 	ErrFueraDelProyecto = errors.New("la fecha tiene que estar dentro del proyecto")
 	// ErrSuperpuesto se informa con el último sprint: "... (el Sprint 1 termina el 11/10/2026)".
 	ErrSuperpuesto = errors.New("el sprint tiene que empezar después del último")
+	// ErrNoEncontrado se devuelve cuando el proyecto no tiene un sprint con ese número (HU-12).
+	ErrNoEncontrado = errors.New("no existe el sprint")
 )
 
 // formatoFecha es como se muestran las fechas en los mensajes: 05/10/2026.
@@ -59,15 +61,17 @@ type Datos struct {
 	FechaFin    time.Time
 }
 
-// Sprint es un sprint ya validado.
+// Sprint es un sprint ya validado. SPCompletados es la foto que guarda el cierre (HU-14) y la lee la velocidad
+// (HU-31, aviso de HU-12): nil mientras el sprint no se cierre.
 type Sprint struct {
-	ID          int64
-	ProyectoID  int64
-	Numero      int
-	Objetivo    string
-	FechaInicio time.Time
-	FechaFin    time.Time
-	Estado      Estado
+	ID            int64
+	ProyectoID    int64
+	Numero        int
+	Objetivo      string
+	FechaInicio   time.Time
+	FechaFin      time.Time
+	Estado        Estado
+	SPCompletados *int
 }
 
 // Nuevo valida los datos contra el proyecto y sus sprints existentes y devuelve el sprint listo para guardar.

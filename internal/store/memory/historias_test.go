@@ -100,3 +100,35 @@ func TestHistorias_ActualizarEstado(t *testing.T) {
 		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
 	}
 }
+
+// HU-12: al asignar o quitar, el estado y el sprint se guardan juntos, sin tocar los demás datos
+func TestHistorias_ActualizarSprint(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoHistorias()
+	puntos := 5
+	guardada, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera", Estado: backlog.EstadoPendiente, StoryPoints: &puntos})
+	sprintID := int64(7)
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoEnSprint, &sprintID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	sprintID = 8 // el repositorio no comparte el valor con quien lo llamó
+	h, _ := repo.BuscarPorNumero(ctx, 1, 1)
+	if h.Estado != backlog.EstadoEnSprint || h.SprintID == nil || *h.SprintID != 7 || h.Titulo != "Primera" {
+		t.Errorf("se esperaba la HU-1 En sprint en el sprint 7 con el resto de sus datos y se obtuvo %+v", h)
+	}
+	*h.SprintID = 9
+	if lista, _ := repo.ListarPorProyecto(ctx, 1); *lista[0].SprintID != 7 {
+		t.Errorf("el sprint guardado cambió a %d desde afuera del repositorio", *lista[0].SprintID)
+	}
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoPendiente, nil); err != nil {
+		t.Fatalf("no se esperaba error al quitar: %v", err)
+	}
+	if h, _ := repo.BuscarPorNumero(ctx, 1, 1); h.Estado != backlog.EstadoPendiente || h.SprintID != nil {
+		t.Errorf("se esperaba la HU-1 Pendiente y sin sprint y se obtuvo %+v", h)
+	}
+	if err := repo.ActualizarSprint(ctx, 99, backlog.EstadoEnSprint, &sprintID); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
