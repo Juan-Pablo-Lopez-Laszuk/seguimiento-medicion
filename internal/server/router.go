@@ -23,6 +23,8 @@ type Dependencias struct {
 	// CambioDeEstado cambia el estado de una historia (HU-08); Estado es el del proyecto (HU-04).
 	CambioDeEstado *service.Estados
 	Tareas         *service.Tareas
+	// Esfuerzo registra las horas trabajadas en una historia o tarea (HU-24).
+	Esfuerzo *service.Esfuerzo
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	Estado   *service.EstadoProyectos
@@ -83,6 +85,10 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas", ta.agregar)
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas/{tareaID}/horas", ta.cambiarHoras)
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas/{tareaID}/completada", ta.marcar)
+
+	ef := esfuerzo{casos: dep.Esfuerzo}
+	r.Get("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.ver)
+	r.Post("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.registrar)
 
 	df := defectos{casos: dep.Defectos}
 	r.Get("/proyectos/{id}/defectos", df.ver)

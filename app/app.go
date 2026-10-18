@@ -47,12 +47,14 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		}
 		criterios service.RepositorioCriterios
 		tareas    service.RepositorioTareas
+		registros service.RepositorioRegistros
 		defectos  service.RepositorioDefectos
 		base      server.VerificadorBase // queda en nil en modo memoria: /health informa "memoria"
 	)
 	if url == "" {
 		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
 		historias, criterios, tareas = memory.NuevoHistorias(), memory.NuevoCriterios(), memory.NuevoTareas()
+		registros = memory.NuevoRegistros()
 		defectos = memory.NuevoDefectos()
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
@@ -61,6 +63,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		}
 		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
 		historias, criterios, tareas = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool), postgres.NuevoTareas(pool)
+		registros = postgres.NuevoRegistros(pool)
 		defectos = postgres.NuevoDefectos(pool)
 		base = pool
 	}
@@ -73,6 +76,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios), time.Now),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
+		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
