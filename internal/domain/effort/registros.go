@@ -98,6 +98,15 @@ func NuevoRegistro(d DatosRegistro, c ContextoRegistro) (Registro, error) {
 	}, nil
 }
 
+// HorasReales suma las horas de los registros (M5, RN7).
+func HorasReales(registros []Registro) float64 {
+	total := 0.0
+	for _, r := range registros {
+		total += r.Horas
+	}
+	return total
+}
+
 func parsearHorasTrabajadas(texto string) (float64, error) {
 	horas, err := ParsearHoras(texto)
 	if err != nil || horas > HorasPorDiaMax {
