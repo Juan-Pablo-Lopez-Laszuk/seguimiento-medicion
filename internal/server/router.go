@@ -13,11 +13,13 @@ import (
 // Dependencias son los casos de uso que usan los handlers. Se arman afuera (en app) para que los
 // tests puedan pasar repositorios en memoria.
 type Dependencias struct {
-	Proyectos    *service.Proyectos
-	Sprints      *service.Sprints
-	Integrantes  *service.Integrantes
-	Historias    *service.Historias
-	Criterios    *service.Criterios
+	Proyectos   *service.Proyectos
+	Sprints     *service.Sprints
+	Integrantes *service.Integrantes
+	Historias   *service.Historias
+	Criterios   *service.Criterios
+	// Asignaciones arma el Sprint Backlog: asignar y quitar historias de un sprint (HU-12).
+	Asignaciones *service.Asignaciones
 	Estimaciones *service.Estimaciones
 	// CambioDeEstado cambia el estado de una historia (HU-08); Estado es el del proyecto (HU-04).
 	CambioDeEstado *service.Estados
@@ -48,6 +50,13 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/proyectos/{id}/sprints", s.listar)
 	r.Get("/proyectos/{id}/sprints/nuevo", s.nuevo)
 	r.Post("/proyectos/{id}/sprints", s.crear)
+
+	pl := planificacion{casos: dep.Asignaciones}
+	r.Get("/proyectos/{id}/sprints/{sprint}", pl.ver)
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias", pl.asignar)
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.accion((*service.Asignaciones).Quitar, "quitada"))
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/empezar", pl.accion((*service.Asignaciones).Empezar, "empezada"))
+	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
 
 	in := integrantes{casos: dep.Integrantes}
 	r.Get("/proyectos/{id}/integrantes", in.listar)

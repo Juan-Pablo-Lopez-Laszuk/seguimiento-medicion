@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -39,7 +40,7 @@ func (r *Historias) Guardar(ctx context.Context, h backlog.Historia) (backlog.Hi
 // ListarPorProyecto devuelve las historias del proyecto en el orden en que se crearon.
 func (r *Historias) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]backlog.Historia, error) {
 	filas, err := r.pool.Query(ctx,
-		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points
+		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en
 		 FROM historias WHERE proyecto_id = $1 ORDER BY numero`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar las historias del proyecto: %w", err)
@@ -50,7 +51,7 @@ func (r *Historias) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]
 	for filas.Next() {
 		var h backlog.Historia
 		var prioridad, estado string
-		if err := filas.Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints); err != nil {
+		if err := filas.Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn); err != nil {
 			return nil, fmt.Errorf("leer una historia: %w", err)
 		}
 		h.Prioridad, h.Estado = backlog.Prioridad(prioridad), backlog.Estado(estado)
@@ -67,9 +68,9 @@ func (r *Historias) BuscarPorNumero(ctx context.Context, proyectoID int64, numer
 	var h backlog.Historia
 	var prioridad, estado string
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points
+		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en
 		 FROM historias WHERE proyecto_id = $1 AND numero = $2`, proyectoID, numero,
-	).Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints)
+	).Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return backlog.Historia{}, backlog.ErrHistoriaNoEncontrada
 	}
@@ -86,6 +87,35 @@ func (r *Historias) ActualizarEstado(ctx context.Context, historiaID int64, esta
 	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET estado = $1 WHERE id = $2`, string(estado), historiaID)
 	if err != nil {
 		return fmt.Errorf("actualizar el estado de la historia %d: %w", historiaID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}
+
+// ActualizarSprint guarda juntos, en una sola sentencia, el estado y el sprint de la historia (nil = sin sprint) sin
+// tocar los demás datos, o devuelve backlog.ErrHistoriaNoEncontrada si no existe. Así una historia nunca queda En
+// sprint sin sprint (HU-12). La base rechaza un sprint que no existe (clave foránea).
+func (r *Historias) ActualizarSprint(ctx context.Context, historiaID int64, estado backlog.Estado, sprintID *int64) error {
+	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET estado = $1, sprint_id = $2 WHERE id = $3`,
+		string(estado), sprintID, historiaID)
+	if err != nil {
+		return fmt.Errorf("actualizar el estado y el sprint de la historia %d: %w", historiaID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	return nil
+}
+
+// ActualizarCompletada guarda juntos, en una sola sentencia, el estado y la fecha de completado de la historia sin
+// tocar los demás datos (HU-13), o devuelve backlog.ErrHistoriaNoEncontrada si no existe.
+func (r *Historias) ActualizarCompletada(ctx context.Context, historiaID int64, estado backlog.Estado, completadaEn *time.Time) error {
+	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET estado = $1, completada_en = $2 WHERE id = $3`,
+		string(estado), completadaEn, historiaID)
+	if err != nil {
+		return fmt.Errorf("actualizar el estado y la fecha de completado de la historia %d: %w", historiaID, err)
 	}
 	if etiqueta.RowsAffected() == 0 {
 		return backlog.ErrHistoriaNoEncontrada

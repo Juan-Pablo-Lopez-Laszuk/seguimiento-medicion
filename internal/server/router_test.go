@@ -27,17 +27,21 @@ func nuevoRouter() http.Handler {
 func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	integrantes := memory.NuevoIntegrantes()
-	criterios := service.NuevoCriterios(proyectos, historias, memory.NuevoCriterios())
+	repoCriterios := memory.NuevoCriterios()
+	criterios := service.NuevoCriterios(proyectos, historias, repoCriterios)
 	return server.NewRouter(server.Dependencias{
-		Proyectos:    service.NuevoProyectos(proyectos, time.Now),
-		Sprints:      service.NuevoSprints(proyectos, sprints),
-		Integrantes:  service.NuevoIntegrantes(proyectos, integrantes),
-		Historias:    service.NuevoHistorias(proyectos, historias),
-		Criterios:    criterios,
-		Estimaciones: service.NuevoEstimaciones(proyectos, historias),
-		Tareas:       service.NuevoTareas(proyectos, historias, integrantes, memory.NuevoTareas()),
-		Estado:       service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
-		Edicion:      service.NuevoEdicionProyectos(proyectos, sprints, ahora),
+		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
+		Sprints:     service.NuevoSprints(proyectos, sprints),
+		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
+		Historias:   service.NuevoHistorias(proyectos, historias),
+		Criterios:   criterios,
+		// la página de la historia pasa a En progreso (HU-08), por ejemplo en los tests de HU-13
+		CambioDeEstado: service.NuevoEstados(proyectos, historias, repoCriterios),
+		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, criterios, ahora),
+		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, memory.NuevoTareas()),
+		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
+		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
+		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 	})
 }
 

@@ -43,6 +43,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		historias   interface {
 			service.RepositorioHistorias
 			service.RepositorioEstados
+			service.RepositorioAsignaciones
 			service.RepositorioEstimaciones
 		}
 		criterios service.RepositorioCriterios
@@ -67,6 +68,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Integrantes:    service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:      service.NuevoHistorias(proyectos, historias),
 		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
+		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios), time.Now),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
