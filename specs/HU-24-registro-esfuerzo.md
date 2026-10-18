@@ -1,6 +1,6 @@
 # SPEC-24 · Registrar esfuerzo realizado
 
-**Historia:** HU-24 (#2) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-24 (#2) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, la tabla RegistroEsfuerzo de
 > `docs/modelo-datos.md`, la métrica M5 de `docs/metricas.md` y las tareas de HU-25.
@@ -88,3 +88,18 @@ Proyecto del 05/10/2026 al 01/11/2026, hoy 18/10/2026. Carolina activa, Ana dada
 ## Trazabilidad
 
 Issue: #2 · Métrica: M5 · Feature: `features/hu-24-registro-esfuerzo.feature` · Pasos BDD: `features/hu24_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/effort/registros.go` (`NuevoRegistro`, `HorasReales`) | `internal/domain/effort/registros_test.go` |
+| Repositorio en memoria | `internal/store/memory/registros.go` | `internal/store/memory/registros_test.go` |
+| Repositorio PostgreSQL | `internal/store/postgres/registros.go` | `internal/store/postgres/registros_test.go` |
+| Caso de uso | `internal/service/esfuerzo.go` (`Ver`, `Registrar`) | `internal/service/esfuerzo_test.go` |
+| Pantalla | `internal/server/esfuerzo.go`, `web/templates/paginas/esfuerzo.html`, enlaces en `historia.html` y `tareas.html` | `internal/server/esfuerzo_test.go` |
+| Aplicación | `app/app.go` | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-24.1 De 0 a 24 h, no más de 24 h por día | Registrar horas en la historia · Horas de un registro · Total del día · Las horas reales suman todos los registros | `TestNuevoRegistro_Validaciones`, `TestNuevoRegistro_TotalDelDia`, `TestRegistrarEsfuerzo_TotalDelDiaEntreHistorias`, `TestHorasReales_SumaLosRegistros`, `TestRegistros_LaBaseRechazaDatosInvalidos` |
+| CA-24.2 Fecha no futura y dentro del proyecto | Fecha del registro | `TestNuevoRegistro_Validaciones`, `TestRegistrarEsfuerzo_DatosInvalidos` |
+| CA-24.3 Integrante del proyecto | Registrar horas en la historia · Un integrante dado de baja no registra horas | `TestNuevoRegistro_Validaciones`, `TestPaginaDeEsfuerzo_SinRegistros_MuestraElFormulario` |
