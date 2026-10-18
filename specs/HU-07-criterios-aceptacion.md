@@ -82,7 +82,7 @@ El estado inicial de un criterio **no se carga**: nace no cumplido (RN2).
   redirección 303, como en el resto de la aplicación. Las pantallas usan los componentes de TEC-07 (`exito`, `aviso`,
   `error`, `errorCampo`).
 - Los criterios no tienen `ON DELETE CASCADE` (decisión de TEC-03): qué pasa con ellos cuando se elimina una historia
-  lo define HU-06.
+  lo definió HU-06: se eliminan junto con la historia, en la misma transacción.
 - **Fuera de alcance**, porque tienen su propia historia:
   - **Editar o eliminar** un criterio. La historia pide cargar y marcar; si hace falta corregir un texto, se decide
     junto con HU-06 (editar y eliminar ítem).

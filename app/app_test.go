@@ -396,6 +396,105 @@ func TestNewHandlerConBase_ConURLElEstadoDeLaHistoriaSobreviveAUnReinicio(t *tes
 	}
 }
 
+// HU-16: sin base, las estimaciones también se guardan en memoria.
+func TestNewHandlerConBase_SinURLLasEstimacionesSeGuardanEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+
+	if rec := post(h, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {"8"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("estimar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1"), "Story points: 8") {
+		t.Error("la estimación recién guardada debería verse en la página de la historia")
+	}
+}
+
+// HU-16: la estimación y su cambio quedan en la base y sobreviven a un reinicio de la aplicación.
+func TestNewHandlerConBase_ConURLLaEstimacionSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con estimaciones")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia sin estimar"}, "prioridad": {"Alta"}})
+
+	for _, valor := range []string{"5", "13"} { // estimar y re-estimar
+		if rec := post(primera, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {valor}}); rec.Code != http.StatusSeeOther {
+			t.Fatalf("estimar en %s: se esperaba %d y se obtuvo %d", valor, http.StatusSeeOther, rec.Code)
+		}
+	}
+
+	reiniciada := nuevaApp(t, url)
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog/1"), "Story points: 13") {
+		t.Error("después de reiniciar la página de la historia tendría que mostrar 13 story points")
+	}
+	if rec := post(reiniciada, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {"4"}}); rec.Code != http.StatusUnprocessableEntity {
+		t.Errorf("un valor fuera de la escala: se esperaba %d y se obtuvo %d", http.StatusUnprocessableEntity, rec.Code)
+	}
+	if !strings.Contains(get(nuevaApp(t, url), "/proyectos/1/backlog/1"), "Story points: 13") {
+		t.Error("un valor inválido no tenía que cambiar la estimación guardada")
+	}
+}
+
+// HU-06: sin base, editar y eliminar una historia también funcionan en memoria, con sus criterios y tareas.
+func TestNewHandlerConBase_SinURLSePuedeEditarYEliminarUnaHistoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+	post(h, "/proyectos/1/backlog/1/criterios", neturl.Values{"descripcion": {"Un criterio"}})
+	tareaDeLaApp(t, h)
+
+	editar := post(h, "/proyectos/1/backlog/1/editar", neturl.Values{"titulo": {"Título corregido"}, "descripcion": {""}, "prioridad": {"Baja"}})
+	if editar.Code != http.StatusSeeOther {
+		t.Fatalf("editar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, editar.Code)
+	}
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1"), "Título corregido") {
+		t.Error("la historia editada debería mostrar el título nuevo")
+	}
+
+	eliminar := post(h, "/proyectos/1/backlog/1/eliminar", nil)
+	if eliminar.Code != http.StatusSeeOther {
+		t.Fatalf("eliminar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, eliminar.Code)
+	}
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1"), "No encontramos esa historia") {
+		t.Error("la historia eliminada ya no debería existir")
+	}
+}
+
+// HU-06: lo editado y lo eliminado quedan en la base. Eliminar una historia con criterios y tareas funciona (la base no
+// tiene ON DELETE CASCADE: los borra el repositorio en la misma transacción) y su número queda libre.
+func TestNewHandlerConBase_ConURLLaEdicionYLaEliminacionSobrevivenAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con ediciones")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia que se edita"}, "prioridad": {"Alta"}})
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia que se elimina"}, "prioridad": {"Alta"}})
+	post(primera, "/proyectos/1/backlog/2/criterios", neturl.Values{"descripcion": {"Un criterio"}})
+	post(primera, "/proyectos/1/integrantes", neturl.Values{"nombre": {"Carolina"}, "email": {"caro@mail.com"}, "rol": {"ProductBuilder"}})
+	post(primera, "/proyectos/1/backlog/2/tareas", neturl.Values{"titulo": {"Una tarea"}, "responsable": {"1"}, "horas": {"2"}})
+
+	if rec := post(primera, "/proyectos/1/backlog/1/editar", neturl.Values{"titulo": {"Historia editada"}, "descripcion": {"Nueva"}, "prioridad": {"Baja"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("editar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+	if rec := post(primera, "/proyectos/1/backlog/2/eliminar", nil); rec.Code != http.StatusSeeOther {
+		t.Fatalf("eliminar: se esperaba %d y se obtuvo %d:\n%s", http.StatusSeeOther, rec.Code, rec.Body.String())
+	}
+
+	reiniciada := nuevaApp(t, url)
+	lista := get(reiniciada, "/proyectos/1/backlog")
+	if !strings.Contains(lista, "Historia editada") || strings.Contains(lista, "Historia que se elimina") {
+		t.Errorf("después de reiniciar el backlog tendría que tener la historia editada y no la eliminada:\n%s", lista)
+	}
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog/1"), "Baja") {
+		t.Error("después de reiniciar la prioridad editada tendría que seguir")
+	}
+	// el número de la última historia queda libre
+	nueva := post(reiniciada, "/proyectos/1/backlog", neturl.Values{"titulo": {"Otra"}, "prioridad": {"Media"}})
+	if destino := nueva.Header().Get("Location"); destino != "/proyectos/1/backlog?creada=2" {
+		t.Errorf("la historia nueva redirige a %q, se esperaba ?creada=2 (HU-2)", destino)
+	}
+}
+
 // HU-24: los registros de esfuerzo quedan en la base y sobreviven a un reinicio.
 func TestNewHandlerConBase_ConURLElEsfuerzoSobreviveAUnReinicio(t *testing.T) {
 	url := urlConEsquemaMigrado(t)

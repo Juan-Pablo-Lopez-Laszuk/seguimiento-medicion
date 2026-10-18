@@ -44,6 +44,8 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			service.RepositorioHistorias
 			service.RepositorioEstados
 			service.RepositorioAsignaciones
+			service.RepositorioEstimaciones
+			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
 		tareas    service.RepositorioTareas
@@ -53,7 +55,10 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	)
 	if url == "" {
 		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
-		historias, criterios, tareas = memory.NuevoHistorias(), memory.NuevoCriterios(), memory.NuevoTareas()
+		// Eliminar una historia borra también sus criterios y sus tareas (HU-06): en memoria, el repositorio de
+		// historias conoce a los otros dos.
+		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
+		historias, criterios, tareas = memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), criteriosEnMemoria, tareasEnMemoria
 		registros = memory.NuevoRegistros()
 		defectos = memory.NuevoDefectos()
 	} else {
@@ -75,11 +80,15 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios), time.Now),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
+		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Base:           base,
+
+		// Editar y eliminar una historia (HU-06).
+		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
 	}), nil
 }

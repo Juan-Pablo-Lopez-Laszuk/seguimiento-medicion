@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
@@ -66,4 +67,11 @@ func (r *Tareas) Actualizar(_ context.Context, t effort.Tarea) error {
 		}
 	}
 	return effort.ErrTareaNoEncontrada
+}
+
+// EliminarDeHistoria borra todas las tareas de la historia (HU-06, RN9).
+func (r *Tareas) EliminarDeHistoria(historiaID int64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.lista = slices.DeleteFunc(r.lista, func(t effort.Tarea) bool { return t.HistoriaID == historiaID })
 }

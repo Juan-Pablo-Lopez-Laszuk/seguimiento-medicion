@@ -43,6 +43,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
+		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 	})
 }
 

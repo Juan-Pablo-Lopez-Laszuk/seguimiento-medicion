@@ -88,8 +88,8 @@ La historia de la tarea **no se elige**: es la de la URL (RN4). Toda tarea nace 
   `errorCampo`).
 - Las tareas tienen una página propia y la página de la historia solo suma un enlace, para no pisar el trabajo de
   HU-08 sobre esa página.
-- Las tareas no tienen `ON DELETE CASCADE` (decisión de TEC-03): qué pasa con ellas al eliminar una historia lo define
-  HU-06.
+- Las tareas no tienen `ON DELETE CASCADE` (decisión de TEC-03): qué pasa con ellas al eliminar una historia lo definió
+  HU-06: se eliminan junto con la historia, en la misma transacción.
 - **Fuera de alcance**, porque no lo piden los criterios o tienen su propia historia:
   - **Editar el título o el responsable** y **eliminar** una tarea.
   - **Registrar horas trabajadas** en una tarea (HU-24).

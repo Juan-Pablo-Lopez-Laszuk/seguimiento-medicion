@@ -1,0 +1,59 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog">{{.Proyecto.Nombre}}</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">{{.Historia.Identificador}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Editar</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-3">Editar {{.Historia.Identificador}}</h1>
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/editar" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="titulo">Título</label>
+        <input class="form-control{{if index .Errores "titulo"}} is-invalid{{end}}" id="titulo" name="titulo"
+               value="{{.Titulo}}" maxlength="120" required autofocus>
+        {{template "errorCampo" (index .Errores "titulo")}}
+        <div class="form-text">Hasta 120 caracteres.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="descripcion">Descripción <span class="text-body-secondary">(opcional)</span></label>
+        <textarea class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion"
+                  name="descripcion" rows="4" maxlength="2000">{{.Descripcion}}</textarea>
+        {{template "errorCampo" (index .Errores "descripcion")}}
+        <div class="form-text">Hasta 2000 caracteres.</div>
+      </div>
+
+      <div class="row">
+        <div class="col-sm-6 mb-3">
+          <label class="form-label" for="prioridad">Prioridad</label>
+          <select class="form-select{{if index .Errores "prioridad"}} is-invalid{{end}}" id="prioridad" name="prioridad" required>
+            <option value="">Elegí una prioridad</option>
+            {{$elegida := .Prioridad}}
+            {{range .Prioridades}}
+            <option value="{{.}}"{{if eq . $elegida}} selected{{end}}>{{.}}</option>
+            {{end}}
+          </select>
+          {{template "errorCampo" (index .Errores "prioridad")}}
+        </div>
+      </div>
+
+      <p class="form-text mt-0">
+        El identificador {{.Historia.Identificador}} no cambia. Los story points y el estado se cambian por separado, desde
+        la página de la historia.
+      </p>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Guardar cambios</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">Cancelar</a>
+      </div>
+    </form>
+    {{end}}
+  </div>
+</div>
+{{end}}

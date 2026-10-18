@@ -19,6 +19,9 @@
 {{if .Creada}}
 <div class="alert alert-success" role="status">Historia HU-{{.Creada}} creada.</div>
 {{end}}
+{{if .Eliminada}}
+<div class="alert alert-success" role="status">Historia HU-{{.Eliminada}} eliminada.</div>
+{{end}}
 
 {{if .Historias}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">
