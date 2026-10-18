@@ -1,6 +1,6 @@
 # SPEC-27 · Registrar defecto
 
-**Historia:** HU-27 (#5) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Borrador
+**Historia:** HU-27 (#5) · **Responsable:** Bravo, Carolina · **Sprint:** 2 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`, la tabla Defecto de
 > `docs/modelo-datos.md` y las métricas M8 y M9 de `docs/metricas.md`.
@@ -76,3 +76,17 @@ detectó, para darle seguimiento (HU-28) y contar los defectos detectados por sp
 ## Trazabilidad
 
 Issue: #5 · Métrica: M8 · Feature: `features/hu-27-registrar-defecto.feature` · Pasos BDD: `features/hu27_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/defect/defect.go` (`Nuevo`, severidades y estado Abierto) | `internal/domain/defect/defect_test.go` |
+| Repositorios | `internal/store/memory/defectos.go`, `internal/store/postgres/defectos.go` | `defectos_test.go` de cada uno |
+| Caso de uso | `internal/service/defectos.go` (`Ver`, `Registrar`) | `internal/service/defectos_test.go` |
+| Pantalla | `internal/server/defectos.go`, `web/templates/paginas/defectos.html`, enlaces en `proyecto.html` y `proyectos.html` | `internal/server/defectos_test.go` |
+| Aplicación | `app/app.go` | `app/app_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-27.1 Descripción y severidad | Registrar un defecto de una historia · Datos inválidos de un defecto | `TestNuevo_Validaciones`, `TestRegistrarDefecto_DatosInvalidos` |
+| CA-27.2 Arranca Abierto | Registrar un defecto de una historia · Registrar un defecto sin historia | `TestNuevo_ArrancaAbierto`, `TestRegistrarDefecto_GuardaAbiertoYSeVeEnElProyecto` |
+| CA-27.3 Historia y sprint del proyecto | El sprint y la historia tienen que ser del proyecto · Registrar un defecto sin historia | `TestNuevo_Validaciones`, `TestNuevo_SinHistoria`, `TestRegistrarDefecto_SprintDeOtroProyecto` |
