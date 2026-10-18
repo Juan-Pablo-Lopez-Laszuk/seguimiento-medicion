@@ -127,3 +127,13 @@ func TestNuevoRegistro_InformaTodosLosErrores(t *testing.T) {
 		}
 	}
 }
+
+// M5 (RN7) · las horas reales de una historia son la suma de sus registros
+func TestHorasReales_SumaLosRegistros(t *testing.T) {
+	if got := effort.HorasReales(nil); got != 0 {
+		t.Errorf("sin registros = %v, se esperaba 0", got)
+	}
+	if got := effort.HorasReales([]effort.Registro{{Horas: 20}, {Horas: 1.5}}); got != 21.5 {
+		t.Errorf("20 + 1,5 = %v, se esperaba 21,5", got)
+	}
+}
