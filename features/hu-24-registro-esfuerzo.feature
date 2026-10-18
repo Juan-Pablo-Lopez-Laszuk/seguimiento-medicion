@@ -19,7 +19,7 @@ Característica: Registrar esfuerzo realizado
   @CA-24.1
   Esquema del escenario: Horas de un registro
     Cuando "Carolina" registra "<horas>" horas el "2026-10-18" en "Pantalla de login"
-    Entonces el registro da como resultado "<resultado>"
+    Entonces el esfuerzo da como resultado "<resultado>"
 
     Ejemplos:
       | horas | resultado                                       |
@@ -33,7 +33,7 @@ Característica: Registrar esfuerzo realizado
   Esquema del escenario: Total del día
     Dado que "Carolina" ya registró "20" horas el "2026-10-17"
     Cuando "Carolina" registra "<horas>" horas el "2026-10-17" en "Más trabajo"
-    Entonces el registro da como resultado "<resultado>"
+    Entonces el esfuerzo da como resultado "<resultado>"
 
     Ejemplos:
       | horas | resultado                                     |
@@ -44,7 +44,7 @@ Característica: Registrar esfuerzo realizado
   @CA-24.2
   Esquema del escenario: Fecha del registro
     Cuando "Carolina" registra "2" horas el "<fecha>" en "Pantalla de login"
-    Entonces el registro da como resultado "<resultado>"
+    Entonces el esfuerzo da como resultado "<resultado>"
 
     Ejemplos:
       | fecha      | resultado                                                  |
@@ -57,7 +57,7 @@ Característica: Registrar esfuerzo realizado
   Escenario: Un integrante dado de baja no registra horas
     Dado que "Carolina" está dada de baja
     Cuando "Carolina" registra "2" horas el "2026-10-18" en "Pantalla de login"
-    Entonces el registro da como resultado "el integrante tiene que ser un integrante activo del proyecto"
+    Entonces el esfuerzo da como resultado "el integrante tiene que ser un integrante activo del proyecto"
 
   # Caso ALTERNATIVO: varias cargas suman en la historia (M5)
   @CA-24.1
