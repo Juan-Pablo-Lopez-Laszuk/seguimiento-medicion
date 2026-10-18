@@ -23,8 +23,10 @@ type Dependencias struct {
 	// CambioDeEstado cambia el estado de una historia (HU-08); Estado es el del proyecto (HU-04).
 	CambioDeEstado *service.Estados
 	Tareas         *service.Tareas
-	Estado         *service.EstadoProyectos
-	Edicion        *service.EdicionProyectos
+	// Defectos registra los defectos de un proyecto (HU-27).
+	Defectos *service.Defectos
+	Estado   *service.EstadoProyectos
+	Edicion  *service.EdicionProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
 	Base VerificadorBase
 }
@@ -81,6 +83,10 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas", ta.agregar)
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas/{tareaID}/horas", ta.cambiarHoras)
 	r.Post("/proyectos/{id}/backlog/{numero}/tareas/{tareaID}/completada", ta.marcar)
+
+	df := defectos{casos: dep.Defectos}
+	r.Get("/proyectos/{id}/defectos", df.ver)
+	r.Post("/proyectos/{id}/defectos", df.registrar)
 	return r
 }
 

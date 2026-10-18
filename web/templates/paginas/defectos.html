@@ -1,0 +1,96 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$proyecto := .Proyecto.ID}}
+{{$vista := .}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Defectos</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+
+<h1 class="h3 mb-4">Defectos de {{.Proyecto.Nombre}}</h1>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-lista">
+  <h2 class="h5 mb-3" id="titulo-lista">Defectos registrados</h2>
+  {{if .Defectos}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Descripción</th><th scope="col">Severidad</th><th scope="col">Estado</th><th scope="col">Detectado en</th><th scope="col">Historia</th></tr></thead>
+      <tbody>
+        {{range .Defectos}}
+        <tr>
+          <td>{{.Descripcion}}</td>
+          <td><span class="badge {{if eq .Severidad "Crítica"}}text-bg-danger{{else if eq .Severidad "Alta"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Severidad}}</span></td>
+          <td>{{.Estado}}</td>
+          <td class="text-nowrap">{{$vista.SprintDe .SprintDeteccionID}}</td>
+          <td>{{with $vista.HistoriaDe .HistoriaID}}{{.}}{{else}}<span class="text-body-secondary">—</span>{{end}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin defectos registrados.</p>
+  {{end}}
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-nuevo">
+  <h2 class="h5 mb-3" id="titulo-nuevo">Registrar defecto</h2>
+  {{if .Sprints}}
+  {{$severidad := .Nuevo.Severidad}}
+  {{$sprint := .Nuevo.SprintID}}
+  {{$historia := .Nuevo.HistoriaID}}
+  <form action="/proyectos/{{$proyecto}}/defectos" method="post" novalidate>
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label" for="descripcion">Descripción</label>
+        <textarea class="form-control{{if index .Errores "descripcion"}} is-invalid{{end}}" id="descripcion" name="descripcion"
+                  rows="2" maxlength="1000" required placeholder="Qué pasa y cómo se reproduce">{{.Nuevo.Descripcion}}</textarea>
+        {{template "errorCampo" (index .Errores "descripcion")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="severidad">Severidad</label>
+        <select class="form-select{{if index .Errores "severidad"}} is-invalid{{end}}" id="severidad" name="severidad" required>
+          <option value="">Elegí…</option>
+          {{range .Severidades}}
+          <option value="{{.}}"{{if eq . $severidad}} selected{{end}}>{{.}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "severidad")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="sprint">Sprint en que se detectó</label>
+        <select class="form-select{{if index .Errores "sprint"}} is-invalid{{end}}" id="sprint" name="sprint" required>
+          {{range .Sprints}}
+          <option value="{{.ID}}"{{if eq .ID $sprint}} selected{{end}}>Sprint {{.Numero}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "sprint")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="historia">Historia</label>
+        <select class="form-select{{if index .Errores "historia"}} is-invalid{{end}}" id="historia" name="historia">
+          <option value="">Ninguna</option>
+          {{range .Historias}}
+          <option value="{{.ID}}"{{if eq .ID $historia}} selected{{end}}>{{.Identificador}} · {{.Titulo}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "historia")}}
+      </div>
+    </div>
+    <div class="form-text">Todo defecto arranca en estado Abierto.</div>
+    <button class="btn btn-primary mt-3" type="submit">Registrar defecto</button>
+  </form>
+  {{else}}
+  <div class="alert alert-info mb-0">
+    Creá un sprint del proyecto para poder registrar defectos: cada defecto guarda el sprint en que se detectó.
+    <a class="alert-link" href="/proyectos/{{$proyecto}}/sprints/nuevo">Crear sprint</a>
+  </div>
+  {{end}}
+</section>
+{{end}}
+{{end}}
