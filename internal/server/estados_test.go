@@ -54,6 +54,7 @@ func conHistoriasEn(t *testing.T, estados []backlog.Estado, total, cumplidos int
 		Historias:      service.NuevoHistorias(proyectos, historias),
 		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
+		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 	})
 }
 

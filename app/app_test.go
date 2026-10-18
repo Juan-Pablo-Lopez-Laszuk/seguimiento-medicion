@@ -396,6 +396,46 @@ func TestNewHandlerConBase_ConURLElEstadoDeLaHistoriaSobreviveAUnReinicio(t *tes
 	}
 }
 
+// HU-16: sin base, las estimaciones también se guardan en memoria.
+func TestNewHandlerConBase_SinURLLasEstimacionesSeGuardanEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+
+	if rec := post(h, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {"8"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("estimar: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	if !strings.Contains(get(h, "/proyectos/1/backlog/1"), "Story points: 8") {
+		t.Error("la estimación recién guardada debería verse en la página de la historia")
+	}
+}
+
+// HU-16: la estimación y su cambio quedan en la base y sobreviven a un reinicio de la aplicación.
+func TestNewHandlerConBase_ConURLLaEstimacionSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con estimaciones")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia sin estimar"}, "prioridad": {"Alta"}})
+
+	for _, valor := range []string{"5", "13"} { // estimar y re-estimar
+		if rec := post(primera, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {valor}}); rec.Code != http.StatusSeeOther {
+			t.Fatalf("estimar en %s: se esperaba %d y se obtuvo %d", valor, http.StatusSeeOther, rec.Code)
+		}
+	}
+
+	reiniciada := nuevaApp(t, url)
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog/1"), "Story points: 13") {
+		t.Error("después de reiniciar la página de la historia tendría que mostrar 13 story points")
+	}
+	if rec := post(reiniciada, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {"4"}}); rec.Code != http.StatusUnprocessableEntity {
+		t.Errorf("un valor fuera de la escala: se esperaba %d y se obtuvo %d", http.StatusUnprocessableEntity, rec.Code)
+	}
+	if !strings.Contains(get(nuevaApp(t, url), "/proyectos/1/backlog/1"), "Story points: 13") {
+		t.Error("un valor inválido no tenía que cambiar la estimación guardada")
+	}
+}
+
 // HU-06: sin base, editar y eliminar una historia también funcionan en memoria, con sus criterios y tareas.
 func TestNewHandlerConBase_SinURLSePuedeEditarYEliminarUnaHistoria(t *testing.T) {
 	h := nuevaApp(t, "")

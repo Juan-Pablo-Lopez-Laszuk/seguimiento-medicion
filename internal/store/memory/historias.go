@@ -4,6 +4,7 @@ import (
 	"context"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 )
@@ -52,14 +53,32 @@ func (r *Historias) ListarPorProyecto(_ context.Context, proyectoID int64) ([]ba
 	return lista, nil
 }
 
-// copiarHistoria copia también los story points, que son un puntero, para que el repositorio y quien lo usa no
-// compartan el mismo valor.
+// copiarHistoria copia también los story points, el sprint y la fecha de completado, que son punteros, para que el repositorio y quien lo usa
+// no compartan el mismo valor.
 func copiarHistoria(h backlog.Historia) backlog.Historia {
 	if h.StoryPoints != nil {
 		puntos := *h.StoryPoints
 		h.StoryPoints = &puntos
 	}
+	h.SprintID = copiarID(h.SprintID)
+	h.CompletadaEn = copiarFecha(h.CompletadaEn)
 	return h
+}
+
+func copiarFecha(f *time.Time) *time.Time {
+	if f == nil {
+		return nil
+	}
+	copia := *f
+	return &copia
+}
+
+func copiarID(id *int64) *int64 {
+	if id == nil {
+		return nil
+	}
+	copia := *id
+	return &copia
 }
 
 // BuscarPorNumero devuelve la historia con ese número (HU-N) dentro del proyecto, o backlog.ErrHistoriaNoEncontrada.
@@ -82,6 +101,49 @@ func (r *Historias) ActualizarEstado(_ context.Context, historiaID int64, estado
 	for i, h := range r.lista {
 		if h.ID == historiaID {
 			r.lista[i].Estado = estado
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ActualizarSprint guarda juntos el estado y el sprint de la historia (nil = sin sprint) sin tocar los demás datos, o
+// devuelve backlog.ErrHistoriaNoEncontrada si no existe. Lo usa HU-12 al asignar y al quitar.
+func (r *Historias) ActualizarSprint(_ context.Context, historiaID int64, estado backlog.Estado, sprintID *int64) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].Estado, r.lista[i].SprintID = estado, copiarID(sprintID)
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ActualizarCompletada guarda juntos el estado y la fecha de completado de la historia sin tocar los demás datos, o
+// devuelve backlog.ErrHistoriaNoEncontrada si no existe. Lo usa HU-13 al completar.
+func (r *Historias) ActualizarCompletada(_ context.Context, historiaID int64, estado backlog.Estado, completadaEn *time.Time) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].Estado, r.lista[i].CompletadaEn = estado, copiarFecha(completadaEn)
+			return nil
+		}
+	}
+	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
+// backlog.ErrHistoriaNoEncontrada si no existe. Es el único lugar donde se escribe la estimación (HU-16): HU-16b lo
+// va a extender para anotar también el historial.
+func (r *Historias) ActualizarStoryPoints(_ context.Context, historiaID int64, puntos int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, h := range r.lista {
+		if h.ID == historiaID {
+			r.lista[i].StoryPoints = &puntos
 			return nil
 		}
 	}
@@ -119,8 +181,8 @@ func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	return backlog.ErrHistoriaNoEncontrada
 }
 
-// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6). En memoria todavía no se puede asignar una
-// historia a un sprint (HU-12), así que nunca lo es.
+// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6). Todavía no se puede cerrar un sprint
+// (HU-14), así que en memoria nunca lo es: HU-14 tiene que hacer que esta función consulte el sprint de la historia.
 func (r *Historias) EnSprintCerrado(_ context.Context, _ int64) (bool, error) {
 	return false, nil
 }

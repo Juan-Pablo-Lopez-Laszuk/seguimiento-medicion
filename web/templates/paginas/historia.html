@@ -1,6 +1,7 @@
 {{define "contenido"}}
 {{with .Datos}}
 {{$hecha := eq .Historia.Estado "Hecho"}}
+{{$actual := .PuntosActuales}}
 <nav aria-label="breadcrumb">
   <ol class="breadcrumb">
     <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
@@ -20,6 +21,24 @@
     <span class="small text-body-secondary">Story points: {{with .Historia.StoryPoints}}{{.}}{{else}}Sin estimar{{end}}</span>
   </div>
   {{with .Historia.Descripcion}}<p class="mb-0">{{.}}</p>{{end}}
+
+  {{if $hecha}}
+  <p class="small text-body-secondary mt-3 mb-0">La estimación no se puede cambiar: la historia está Hecha.</p>
+  {{else}}
+  <form action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/estimacion" method="post" class="mt-3 d-flex flex-wrap align-items-start gap-2" novalidate>
+    <label class="col-form-label col-form-label-sm" for="story_points">Estimar</label>
+    <div>
+      <select class="form-select form-select-sm{{if index .Errores "story_points"}} is-invalid{{end}}" id="story_points" name="story_points" required>
+        <option value="">Elegí un valor</option>
+        {{range .Escala}}
+        <option value="{{.}}"{{if eq (printf "%d" .) $actual}} selected{{end}}>{{.}}</option>
+        {{end}}
+      </select>
+      {{template "errorCampo" (index .Errores "story_points")}}
+    </div>
+    <button class="btn btn-sm btn-primary" type="submit">Guardar estimación</button>
+  </form>
+  {{end}}
 
   <div class="mt-3">
     {{if eq .Historia.Estado "En sprint"}}

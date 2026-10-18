@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
-
-	"github.com/jackc/pgx/v5/pgxpool"
+	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/member"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/postgres"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func historiaDeEjemplo(proyectoID int64, numero int, titulo string) backlog.Historia {
@@ -272,6 +272,112 @@ func TestHistorias_LosEstadosDelCodigoCoincidenConElCheckDeLaMigracion(t *testin
 			`INSERT INTO historias (proyecto_id, numero, titulo, prioridad, estado) VALUES ($1, 99, 'x', 'Alta', $2)`, proyectoA, malo); err == nil {
 			t.Errorf("la base aceptó el estado %q, que no está en el código", malo)
 		}
+	}
+}
+
+// HU-12: al asignar o quitar, el estado y el sprint se guardan juntos, y la historia se lee con su sprint
+func TestHistorias_ActualizarSprint(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	s, err := postgres.NuevoSprints(pool).Guardar(ctx, sprintDeEjemplo(proyectoA, 1, "Primero"))
+	if err != nil {
+		t.Fatalf("guardar el sprint: %v", err)
+	}
+	repo := postgres.NuevoHistorias(pool)
+	guardada, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Primera"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if guardada.SprintID != nil {
+		t.Errorf("una historia nueva no tiene sprint y se obtuvo %d", *guardada.SprintID)
+	}
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoEnSprint, &s.ID); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.Estado != backlog.EstadoEnSprint || h.SprintID == nil || *h.SprintID != s.ID || h.Titulo != "Primera" {
+		t.Errorf("se esperaba la HU-1 En sprint en el sprint %d y se obtuvo %+v, %v", s.ID, h, err)
+	}
+	if lista, _ := repo.ListarPorProyecto(ctx, proyectoA); len(lista) != 1 || lista[0].SprintID == nil || *lista[0].SprintID != s.ID {
+		t.Errorf("la lista tiene que traer el sprint de la historia y se obtuvo %+v", lista)
+	}
+
+	if err := repo.ActualizarSprint(ctx, guardada.ID, backlog.EstadoPendiente, nil); err != nil {
+		t.Fatalf("no se esperaba error al quitar: %v", err)
+	}
+	if h, _ := repo.BuscarPorNumero(ctx, proyectoA, 1); h.Estado != backlog.EstadoPendiente || h.SprintID != nil {
+		t.Errorf("se esperaba la HU-1 Pendiente y sin sprint y se obtuvo %+v", h)
+	}
+	if err := repo.ActualizarSprint(ctx, 99999, backlog.EstadoEnSprint, &s.ID); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
+
+// HU-13: al completar, el estado y la fecha de completado se guardan juntos, y la historia se lee con su fecha
+func TestHistorias_ActualizarCompletada(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	guardada, err := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 1, "Primera"))
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if guardada.CompletadaEn != nil {
+		t.Errorf("una historia nueva no está completada y se obtuvo %v", guardada.CompletadaEn)
+	}
+	completada := fecha(2026, time.October, 15)
+
+	if err := repo.ActualizarCompletada(ctx, guardada.ID, backlog.EstadoHecho, &completada); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.Estado != backlog.EstadoHecho || h.CompletadaEn == nil || !h.CompletadaEn.Equal(completada) || h.Titulo != "Primera" {
+		t.Errorf("se esperaba la HU-1 Hecha el 15/10/2026 y se obtuvo %+v, %v", h, err)
+	}
+	if lista, _ := repo.ListarPorProyecto(ctx, proyectoA); len(lista) != 1 || lista[0].CompletadaEn == nil || !lista[0].CompletadaEn.Equal(completada) {
+		t.Errorf("la lista tiene que traer la fecha de completado y se obtuvo %+v", lista)
+	}
+	if err := repo.ActualizarCompletada(ctx, 99999, backlog.EstadoHecho, &completada); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+}
+
+// HU-16: los story points de una historia se guardan sin tocar los demás datos
+func TestHistorias_ActualizarStoryPoints(t *testing.T) {
+	ctx := context.Background()
+	pool := baseMigrada(t)
+	proyectoA, _ := dosProyectos(t, pool)
+	repo := postgres.NuevoHistorias(pool)
+	primera := historiaDeEjemplo(proyectoA, 1, "Primera")
+	primera.Estado = backlog.EstadoEnSprint
+	guardada, err := repo.Guardar(ctx, primera)
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	otra, _ := repo.Guardar(ctx, historiaDeEjemplo(proyectoA, 2, "Segunda"))
+
+	for _, puntos := range []int{8, 0, 13} { // estimar, estimar en 0 y re-estimar
+		if err := repo.ActualizarStoryPoints(ctx, guardada.ID, puntos); err != nil {
+			t.Fatalf("%d story points: no se esperaba error: %v", puntos, err)
+		}
+	}
+
+	h, err := repo.BuscarPorNumero(ctx, proyectoA, 1)
+	if err != nil || h.StoryPoints == nil || *h.StoryPoints != 13 || h.Titulo != "Primera" || h.Estado != backlog.EstadoEnSprint {
+		t.Errorf("se esperaba la HU-1 con 13 story points y el resto de sus datos, y se obtuvo %+v, %v", h, err)
+	}
+	if o, _ := repo.BuscarPorNumero(ctx, proyectoA, 2); o.ID != otra.ID || o.StoryPoints != nil {
+		t.Errorf("la HU-2 no tenía que cambiar y se obtuvo %+v", o)
+	}
+	if err := repo.ActualizarStoryPoints(ctx, 99999, 5); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("historia que no existe: se esperaba backlog.ErrHistoriaNoEncontrada y se obtuvo %v", err)
+	}
+	// la base es la última defensa: un valor fuera de la escala no se guarda (CHECK historias_story_points_ck)
+	if err := repo.ActualizarStoryPoints(ctx, guardada.ID, 4); err == nil {
+		t.Error("la base aceptó 4 story points, que no están en la escala")
 	}
 }
 
