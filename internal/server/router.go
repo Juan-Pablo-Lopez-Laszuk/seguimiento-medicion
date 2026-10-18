@@ -20,6 +20,9 @@ type Dependencias struct {
 	Criterios   *service.Criterios
 	// Asignaciones arma el Sprint Backlog: asignar y quitar historias de un sprint (HU-12).
 	Asignaciones *service.Asignaciones
+	Estimaciones *service.Estimaciones
+	// EdicionHistorias edita y elimina una historia (HU-06).
+	EdicionHistorias *service.EdicionHistorias
 	// CambioDeEstado cambia el estado de una historia (HU-08); Estado es el del proyecto (HU-04).
 	CambioDeEstado *service.Estados
 	Tareas         *service.Tareas
@@ -75,6 +78,15 @@ func NewRouter(dep Dependencias) http.Handler {
 
 	es := estados{casos: dep.CambioDeEstado, vista: dep.Criterios}
 	r.Post("/proyectos/{id}/backlog/{numero}/estado", es.cambiar)
+
+	est := estimaciones{casos: dep.Estimaciones, vista: dep.Criterios}
+	r.Post("/proyectos/{id}/backlog/{numero}/estimacion", est.estimar)
+
+	eh := edicionHistorias{casos: dep.EdicionHistorias}
+	r.Get("/proyectos/{id}/backlog/{numero}/editar", eh.formulario)
+	r.Post("/proyectos/{id}/backlog/{numero}/editar", eh.editar)
+	r.Get("/proyectos/{id}/backlog/{numero}/eliminar", eh.confirmar)
+	r.Post("/proyectos/{id}/backlog/{numero}/eliminar", eh.eliminar)
 
 	ta := tareas{casos: dep.Tareas}
 	r.Get("/proyectos/{id}/backlog/{numero}/tareas", ta.ver)

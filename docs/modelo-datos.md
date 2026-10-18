@@ -263,5 +263,8 @@ migración nueva cuando la historia que las necesita las defina:
 
 - **Sin `CHECK` en los estados** (`proyectos.estado`, `sprints.estado`, `integrantes.rol`, etc.): este documento los
   describe en las notas pero no los lista en "Restricciones de valores". Hoy los controla la aplicación.
-- **Sin borrado en cascada** de las claves foráneas: eliminar una historia con criterios o tareas falla hasta que HU-06
-  (editar y eliminar ítem) decida qué pasa con ellos.
+- **Sin borrado en cascada** de las claves foráneas. HU-06 (editar y eliminar ítem) lo resolvió sin migración: al
+  eliminar una historia, `Historias.Eliminar` borra sus criterios, sus tareas y la historia **en una transacción**. Las
+  demás tablas que apuntan a la historia (sesiones de Planning Poker, registros de esfuerzo, defectos y la foto de
+  cierre de un sprint) siguen sin cascada: si tienen datos, la base rechaza el borrado, no se elimina nada y la
+  aplicación informa que la historia tiene registros asociados.
