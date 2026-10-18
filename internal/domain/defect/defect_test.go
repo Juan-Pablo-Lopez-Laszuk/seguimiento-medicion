@@ -13,8 +13,10 @@ import (
 
 // El ejemplo de la spec de HU-27: el proyecto 7 con su Sprint 1 (id 3) y la HU-1 (id 4); el sprint 30 y la historia
 // 40 son de otro proyecto.
-func sprintsDelProyecto() []sprint.Sprint  { return []sprint.Sprint{{ID: 3, ProyectoID: 7, Numero: 1}} }
-func historiasDelProyecto() []backlog.Historia { return []backlog.Historia{{ID: 4, ProyectoID: 7, Numero: 1}} }
+func sprintsDelProyecto() []sprint.Sprint { return []sprint.Sprint{{ID: 3, ProyectoID: 7, Numero: 1}} }
+func historiasDelProyecto() []backlog.Historia {
+	return []backlog.Historia{{ID: 4, ProyectoID: 7, Numero: 1}}
+}
 
 func defectoValido() defect.Datos {
 	return defect.Datos{Descripcion: "  El login falla con Google ", Severidad: defect.SeveridadAlta, SprintID: 3, HistoriaID: 4}
