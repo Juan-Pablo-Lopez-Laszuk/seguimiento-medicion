@@ -1,6 +1,6 @@
 # Sprint Review · Sprint 2 · 18/10/2026
 
-Participantes: López, Piastrellini, Bravo · Product Architect (profesores): [A COMPLETAR]
+Participantes: López, Piastrellini, Bravo · Product Architect (profesores): no estuvieron
 
 ## Sprint Goal
 
@@ -56,7 +56,7 @@ Lo que se muestra en la app:
 
 ## Feedback del cliente
 
-- [A COMPLETAR en la Review]
+- No hubo feedback durante la Review porque los profesores no estuvieron.
 
 ## Cambios en el Product Backlog
 
