@@ -61,17 +61,18 @@ type Datos struct {
 	FechaFin    time.Time
 }
 
-// Sprint es un sprint ya validado. SPCompletados es la foto que guarda el cierre (HU-14) y la lee la velocidad
-// (HU-31, aviso de HU-12): nil mientras el sprint no se cierre.
+// Sprint es un sprint ya validado. SPPlanificados y SPCompletados son la foto que guarda el cierre (HU-14): nil
+// mientras el sprint no se cierre. SPCompletados lo lee la velocidad (HU-31, aviso de HU-12).
 type Sprint struct {
-	ID            int64
-	ProyectoID    int64
-	Numero        int
-	Objetivo      string
-	FechaInicio   time.Time
-	FechaFin      time.Time
-	Estado        Estado
-	SPCompletados *int
+	ID             int64
+	ProyectoID     int64
+	Numero         int
+	Objetivo       string
+	FechaInicio    time.Time
+	FechaFin       time.Time
+	Estado         Estado
+	SPPlanificados *int
+	SPCompletados  *int
 }
 
 // Nuevo valida los datos contra el proyecto y sus sprints existentes y devuelve el sprint listo para guardar.
