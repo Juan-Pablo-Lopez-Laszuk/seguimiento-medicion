@@ -38,7 +38,8 @@ func registrarPasosHU28(sc *godog.ScenarioContext) {
 	sc.Step(`^paso el defecto a "([^"]*)"$`, func(estado string) error { return e.cambiar(estado, 0) })
 	sc.Step(`^lo resuelvo en el Sprint (\d+)$`, func(n int) error { return e.cambiar(string(defect.EstadoResuelto), e.numeros[n]) })
 	sc.Step(`^que el defecto está "En progreso"$`, func() error {
-		if e.cambiar(string(defect.EstadoEnProgreso), 0); e.err != nil {
+		_ = e.cambiar(string(defect.EstadoEnProgreso), 0) // cambiar guarda el error en e.err
+		if e.err != nil {
 			return fmt.Errorf("no se pudo pasar a En progreso: %w", e.err)
 		}
 		return nil
