@@ -553,3 +553,19 @@ func TestNewHandlerConBase_ConURLElEstadoDelDefectoSobreviveAUnReinicio(t *testi
 		t.Errorf("después de reiniciar el defecto debería seguir Resuelto en el Sprint 1")
 	}
 }
+
+// HU-33: la página de horas lee las tareas y los registros de la base, también después de un reinicio.
+func TestNewHandlerConBase_ConURLLasHorasSeCalculanDesdeLaBase(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con horas")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Login"}, "prioridad": {"Alta"}})
+	tareaDeLaApp(t, primera) // 2,5 h estimadas
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/horas")
+	for _, esperado := range []string{"HU-1 · Login", "2,5 h", "-2,5 h", "-100,0 %"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de horas debería mostrar %q", esperado)
+		}
+	}
+}
