@@ -96,7 +96,7 @@ Característica: Cerrar sprint
     Dado que hoy es el "2026-10-18" para cerrar
     Y que cerré el Sprint 1
     Cuando asigno "HU-2" al Sprint 1 cerrado
-    Entonces la asignación da el error "el Sprint 1 está cerrado: no se le pueden asignar historias"
+    Entonces asignar da el error "el Sprint 1 está cerrado: no se le pueden asignar historias"
 
   # Caso de ERROR: sin sprint activo no se cierra nada (CA-14.1)
   @CA-14.1
