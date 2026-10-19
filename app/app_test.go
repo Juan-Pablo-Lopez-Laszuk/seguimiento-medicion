@@ -515,3 +515,22 @@ func TestNewHandlerConBase_ConURLElEsfuerzoSobreviveAUnReinicio(t *testing.T) {
 		}
 	}
 }
+
+// HU-27: los defectos quedan en la base y sobreviven a un reinicio.
+func TestNewHandlerConBase_ConURLLosDefectosSobrevivenAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con defectos")
+	post(primera, "/proyectos/1/sprints", neturl.Values{"objetivo": {"MVP"}, "fecha_inicio": {"2026-10-05"}, "fecha_fin": {"2026-10-11"}})
+	campos := neturl.Values{"descripcion": {"Defecto guardado"}, "severidad": {"Crítica"}, "sprint": {"1"}}
+	if rec := post(primera, "/proyectos/1/defectos", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("registrar defecto: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/defectos")
+	for _, esperado := range []string{"Defecto guardado", "Crítica", "Abierto", "Sprint 1"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de defectos debería mostrar %q", esperado)
+		}
+	}
+}

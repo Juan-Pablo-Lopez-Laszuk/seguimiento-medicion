@@ -40,6 +40,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, criterios, ahora),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, memory.NuevoRegistros(), ahora),
+		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),

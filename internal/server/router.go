@@ -28,6 +28,8 @@ type Dependencias struct {
 	Tareas         *service.Tareas
 	// Esfuerzo registra las horas trabajadas en una historia o tarea (HU-24).
 	Esfuerzo *service.Esfuerzo
+	// Defectos registra los defectos de un proyecto (HU-27).
+	Defectos *service.Defectos
 	Estado   *service.EstadoProyectos
 	Edicion  *service.EdicionProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
@@ -99,6 +101,10 @@ func NewRouter(dep Dependencias) http.Handler {
 	ef := esfuerzo{casos: dep.Esfuerzo}
 	r.Get("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.ver)
 	r.Post("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.registrar)
+
+	df := defectos{casos: dep.Defectos}
+	r.Get("/proyectos/{id}/defectos", df.ver)
+	r.Post("/proyectos/{id}/defectos", df.registrar)
 	return r
 }
 
