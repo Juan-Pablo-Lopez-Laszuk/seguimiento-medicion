@@ -84,6 +84,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
+		Horas:          service.NuevoHoras(proyectos, sprints, historias, tareas, registros),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Base:           base,
