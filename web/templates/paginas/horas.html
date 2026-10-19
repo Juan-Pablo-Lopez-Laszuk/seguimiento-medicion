@@ -1,0 +1,71 @@
+{{define "fila-horas"}}
+<td class="text-end text-nowrap">{{horas .Estimadas}} h</td>
+<td class="text-end text-nowrap">{{horas .Reales}} h</td>
+<td class="text-end text-nowrap{{if gt .Horas 0.0}} text-danger{{else if lt .Horas 0.0}} text-success{{end}}">{{.HorasTexto}}</td>
+<td class="text-end text-nowrap">{{if .Aplica}}{{.PorcentajeTexto}}{{else}}<span class="text-body-secondary">{{.PorcentajeTexto}}</span>{{end}}</td>
+{{end}}
+
+{{define "cabecera-horas"}}
+<th scope="col" class="text-end">Estimadas</th><th scope="col" class="text-end">Reales</th>
+<th scope="col" class="text-end">Desviación</th><th scope="col" class="text-end">Desviación %</th>
+{{end}}
+
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Horas</li>
+  </ol>
+</nav>
+
+<h1 class="h3 mb-2">Horas de {{.Proyecto.Nombre}}</h1>
+<p class="text-body-secondary mb-4">
+  Estimadas: suma de las horas de las tareas. Reales: suma de las horas trabajadas. Una desviación positiva quiere
+  decir que se tardó más de lo estimado.
+</p>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-total">
+  <h2 class="h5 mb-3" id="titulo-total">Total del proyecto</h2>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr>{{template "cabecera-horas"}}</tr></thead>
+      <tbody><tr>{{template "fila-horas" .Total}}</tr></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-sprints">
+  <h2 class="h5 mb-3" id="titulo-sprints">Por sprint</h2>
+  {{if .Sprints}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Sprint</th>{{template "cabecera-horas"}}</tr></thead>
+      <tbody>
+        {{range .Sprints}}<tr><td class="text-nowrap">{{.Nombre}}</td>{{template "fila-horas" .Desviacion}}</tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin sprints todavía.</p>
+  {{end}}
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-historias">
+  <h2 class="h5 mb-3" id="titulo-historias">Por historia</h2>
+  {{if .Historias}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Historia</th>{{template "cabecera-horas"}}</tr></thead>
+      <tbody>
+        {{range .Historias}}<tr><td>{{.Nombre}}</td>{{template "fila-horas" .Desviacion}}</tr>{{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin historias en el backlog.</p>
+  {{end}}
+</section>
+{{end}}
+{{end}}

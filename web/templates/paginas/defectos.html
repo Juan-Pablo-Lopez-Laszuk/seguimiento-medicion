@@ -11,6 +11,7 @@
 </nav>
 
 {{template "exito" .Mensaje}}
+{{template "aviso" .Aviso}}
 
 <h1 class="h3 mb-4">Defectos de {{.Proyecto.Nombre}}</h1>
 
@@ -19,15 +20,32 @@
   {{if .Defectos}}
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0">
-      <thead><tr><th scope="col">Descripción</th><th scope="col">Severidad</th><th scope="col">Estado</th><th scope="col">Detectado en</th><th scope="col">Historia</th></tr></thead>
+      <thead><tr><th scope="col">Descripción</th><th scope="col">Severidad</th><th scope="col">Estado</th><th scope="col">Detectado en</th><th scope="col">Resuelto en</th><th scope="col">Historia</th><th scope="col">Cambiar estado</th></tr></thead>
       <tbody>
         {{range .Defectos}}
+        {{$d := .}}
         <tr>
           <td>{{.Descripcion}}</td>
           <td><span class="badge {{if eq .Severidad "Crítica"}}text-bg-danger{{else if eq .Severidad "Alta"}}text-bg-warning{{else}}text-bg-secondary{{end}}">{{.Severidad}}</span></td>
           <td>{{.Estado}}</td>
           <td class="text-nowrap">{{$vista.SprintDe .SprintDeteccionID}}</td>
+          <td class="text-nowrap">{{if .SprintResolucionID}}{{$vista.SprintDe .SprintResolucionID}}{{else}}<span class="text-body-secondary">—</span>{{end}}</td>
           <td>{{with $vista.HistoriaDe .HistoriaID}}{{.}}{{else}}<span class="text-body-secondary">—</span>{{end}}</td>
+          <td>
+            {{with $vista.Siguientes .Estado}}
+            <form class="d-flex flex-wrap gap-2 align-items-center" action="/proyectos/{{$proyecto}}/defectos/{{$d.ID}}/estado" method="post">
+              {{range .}}
+              {{if eq . "Resuelto"}}
+              <label class="visually-hidden" for="sprint-{{$d.ID}}">Sprint en que se resolvió</label>
+              <select class="form-select form-select-sm w-auto" id="sprint-{{$d.ID}}" name="sprint">
+                {{range $vista.Sprints}}<option value="{{.ID}}">Sprint {{.Numero}}</option>{{end}}
+              </select>
+              {{end}}
+              <button class="btn btn-sm btn-outline-primary" type="submit" name="estado" value="{{.}}">{{.}}</button>
+              {{end}}
+            </form>
+            {{else}}<span class="text-body-secondary">Estado final</span>{{end}}
+          </td>
         </tr>
         {{end}}
       </tbody>

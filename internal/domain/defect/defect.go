@@ -31,8 +31,14 @@ var Severidades = []Severidad{SeveridadCritica, SeveridadAlta, SeveridadMedia, S
 // Estado es la etapa en la que está un defecto. Los cambios de estado son de HU-28.
 type Estado string
 
-// EstadoAbierto es el estado con el que nace todo defecto (RN3).
-const EstadoAbierto Estado = "Abierto"
+// Estados de un defecto. EstadoAbierto es con el que nace todo defecto (RN3 de HU-27); los demás llegan con HU-28.
+const (
+	EstadoAbierto    Estado = "Abierto"
+	EstadoEnProgreso Estado = "En progreso"
+	EstadoResuelto   Estado = "Resuelto"
+	EstadoCerrado    Estado = "Cerrado"
+	EstadoReabierto  Estado = "Reabierto"
+)
 
 // DescripcionMax es el largo máximo de la descripción, en caracteres (RN1).
 const DescripcionMax = 1000

@@ -18,6 +18,10 @@ type RepositorioDefectos interface {
 	Guardar(ctx context.Context, d defect.Defecto) (defect.Defecto, error)
 	// ListarPorProyecto devuelve los defectos del proyecto, el más nuevo primero.
 	ListarPorProyecto(ctx context.Context, proyectoID int64) ([]defect.Defecto, error)
+	// BuscarPorID devuelve el defecto dentro de su proyecto, o defect.ErrDefectoNoEncontrado (HU-28).
+	BuscarPorID(ctx context.Context, proyectoID, id int64) (defect.Defecto, error)
+	// Actualizar guarda el estado y el sprint de resolución, o devuelve defect.ErrDefectoNoEncontrado (HU-28).
+	Actualizar(ctx context.Context, d defect.Defecto) error
 }
 
 // Defectos agrupa los casos de uso de los defectos de un proyecto (HU-27).
@@ -59,6 +63,11 @@ func (v VistaDefectos) HistoriaDe(id int64) string {
 		}
 	}
 	return ""
+}
+
+// Siguientes devuelve los estados a los que puede pasar un defecto en el estado dado (HU-28), para los botones.
+func (VistaDefectos) Siguientes(e defect.Estado) []defect.Estado {
+	return defect.Siguientes(e)
 }
 
 // Ver devuelve el proyecto con sus defectos, sprints e historias, o project.ErrNoEncontrado.
@@ -105,4 +114,25 @@ func (s *Defectos) contexto(ctx context.Context, proyectoID int64) (VistaDefecto
 		return VistaDefectos{}, fmt.Errorf("listar las historias del proyecto %d: %w", proyectoID, err)
 	}
 	return VistaDefectos{Proyecto: p, Sprints: sprints, Historias: historias}, nil
+}
+
+// CambiarEstado pasa el defecto al estado nuevo (HU-28); al resolverlo, sprintResolucion es el sprint en que se
+// resolvió. Los errores son los de defect.CambiarEstado, defect.ErrDefectoNoEncontrado o project.ErrNoEncontrado.
+func (s *Defectos) CambiarEstado(ctx context.Context, proyectoID, defectoID int64, nuevo defect.Estado, sprintResolucion int64) (defect.Defecto, error) {
+	v, err := s.contexto(ctx, proyectoID)
+	if err != nil {
+		return defect.Defecto{}, err
+	}
+	d, err := s.repo.BuscarPorID(ctx, proyectoID, defectoID)
+	if err != nil {
+		return defect.Defecto{}, fmt.Errorf("buscar el defecto %d: %w", defectoID, err)
+	}
+	cambiado, err := d.CambiarEstado(nuevo, sprintResolucion, v.Sprints)
+	if err != nil {
+		return defect.Defecto{}, err
+	}
+	if err := s.repo.Actualizar(ctx, cambiado); err != nil {
+		return defect.Defecto{}, fmt.Errorf("guardar el defecto %d: %w", defectoID, err)
+	}
+	return cambiado, nil
 }

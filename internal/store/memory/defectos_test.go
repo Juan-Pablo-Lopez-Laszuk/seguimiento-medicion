@@ -2,6 +2,7 @@ package memory_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
@@ -22,5 +23,29 @@ func TestDefectos_GuardarYListarPorProyecto(t *testing.T) {
 	lista, err := repo.ListarPorProyecto(ctx, 1)
 	if err != nil || len(lista) != 2 || lista[0] != c || lista[1] != a || a.ID != 1 {
 		t.Errorf("se esperaba [c, a] del proyecto 1 y se obtuvo %+v, %v", lista, err)
+	}
+}
+
+// HU-28 · un defecto se busca dentro de su proyecto y se actualizan su estado y su sprint de resolución
+func TestDefectos_BuscarPorIDYActualizar(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoDefectos()
+	d, _ := repo.Guardar(ctx, defect.Defecto{ProyectoID: 1, Descripcion: "A", Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintDeteccionID: 1})
+
+	if got, err := repo.BuscarPorID(ctx, 1, d.ID); err != nil || got != d {
+		t.Errorf("se esperaba %+v y se obtuvo %+v, %v", d, got, err)
+	}
+	if _, err := repo.BuscarPorID(ctx, 2, d.ID); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
+		t.Errorf("de otro proyecto: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
+	}
+	d.Estado, d.SprintResolucionID = defect.EstadoResuelto, 2
+	if err := repo.Actualizar(ctx, d); err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if got, _ := repo.BuscarPorID(ctx, 1, d.ID); got != d {
+		t.Errorf("quedó %+v, se esperaba %+v", got, d)
+	}
+	if err := repo.Actualizar(ctx, defect.Defecto{ID: 99, ProyectoID: 1}); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
+		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
 	}
 }

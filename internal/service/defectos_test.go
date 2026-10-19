@@ -86,3 +86,31 @@ func TestDefectos_ProyectoInexistente(t *testing.T) {
 		t.Errorf("registrar: se esperaba %v y se obtuvo %v", project.ErrNoEncontrado, err)
 	}
 }
+
+// HU-28 · el estado se cambia y se guarda; la vista ofrece los estados siguientes de cada defecto
+func TestCambiarEstadoDeDefecto(t *testing.T) {
+	e := nuevoEscenarioDefectos(t)
+	ctx := context.Background()
+	d, err := e.casos.Registrar(ctx, e.proyectoID, defect.Datos{Descripcion: "Falla", Severidad: defect.SeveridadAlta, SprintID: e.sprint.ID})
+	if err != nil {
+		t.Fatalf("registrar: %v", err)
+	}
+
+	if _, err := e.casos.CambiarEstado(ctx, e.proyectoID, d.ID, defect.EstadoEnProgreso, 0); err != nil {
+		t.Fatalf("a En progreso: %v", err)
+	}
+	resuelto, err := e.casos.CambiarEstado(ctx, e.proyectoID, d.ID, defect.EstadoResuelto, e.sprint.ID)
+	if err != nil || resuelto.SprintResolucionID != e.sprint.ID {
+		t.Fatalf("a Resuelto: %+v, %v", resuelto, err)
+	}
+	v, _ := e.casos.Ver(ctx, e.proyectoID)
+	if v.Defectos[0].Estado != defect.EstadoResuelto || len(v.Siguientes(v.Defectos[0].Estado)) != 2 {
+		t.Errorf("la vista = %+v", v.Defectos)
+	}
+	if _, err := e.casos.CambiarEstado(ctx, e.proyectoID, d.ID, defect.EstadoEnProgreso, 0); !errors.Is(err, defect.ErrTransicionInvalida) {
+		t.Errorf("Resuelto → En progreso: se esperaba %v y se obtuvo %v", defect.ErrTransicionInvalida, err)
+	}
+	if _, err := e.casos.CambiarEstado(ctx, e.proyectoID, d.ID+99, defect.EstadoCerrado, 0); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
+		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
+	}
+}

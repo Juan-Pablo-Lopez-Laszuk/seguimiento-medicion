@@ -534,3 +534,38 @@ func TestNewHandlerConBase_ConURLLosDefectosSobrevivenAUnReinicio(t *testing.T) 
 		}
 	}
 }
+
+// HU-28: el estado y el sprint de resolución de un defecto quedan en la base y sobreviven a un reinicio.
+func TestNewHandlerConBase_ConURLElEstadoDelDefectoSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con defecto resuelto")
+	post(primera, "/proyectos/1/sprints", neturl.Values{"objetivo": {"MVP"}, "fecha_inicio": {"2026-10-05"}, "fecha_fin": {"2026-10-11"}})
+	post(primera, "/proyectos/1/defectos", neturl.Values{"descripcion": {"Defecto a resolver"}, "severidad": {"Media"}, "sprint": {"1"}})
+	for _, campos := range []neturl.Values{{"estado": {"En progreso"}}, {"estado": {"Resuelto"}, "sprint": {"1"}}} {
+		if rec := post(primera, "/proyectos/1/defectos/1/estado", campos); rec.Code != http.StatusSeeOther {
+			t.Fatalf("pasar a %s: se esperaba %d y se obtuvo %d", campos.Get("estado"), http.StatusSeeOther, rec.Code)
+		}
+	}
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/defectos")
+	if !strings.Contains(pagina, "Resuelto") || strings.Count(pagina, "Sprint 1</td>") != 2 {
+		t.Errorf("después de reiniciar el defecto debería seguir Resuelto en el Sprint 1")
+	}
+}
+
+// HU-33: la página de horas lee las tareas y los registros de la base, también después de un reinicio.
+func TestNewHandlerConBase_ConURLLasHorasSeCalculanDesdeLaBase(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con horas")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Login"}, "prioridad": {"Alta"}})
+	tareaDeLaApp(t, primera) // 2,5 h estimadas
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/horas")
+	for _, esperado := range []string{"HU-1 · Login", "2,5 h", "-2,5 h", "-100,0 %"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de horas debería mostrar %q", esperado)
+		}
+	}
+}
