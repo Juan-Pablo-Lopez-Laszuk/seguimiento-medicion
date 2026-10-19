@@ -24,7 +24,8 @@ documentación y entrega final.
   sprint tiene 7 días y los tres están disponibles toda la semana.
 - El tablero tiene **72 SP** marcados para el Sprint 3 (67 del Sprint 3, más HU-16b y HU-28 que vienen del Sprint 2).
   Se proponen **35 SP**, unos 12 por persona.
-- **Cambio del 19/10:** Mariano adelanta **TEC-05** (autenticación, 5 SP), que estaba para el Sprint 4. El compromiso
+- **Cambio del 19/10:** Mariano adelanta **TEC-05** (autenticación, 5 SP), que estaba para el Sprint 4 (lo propuso en
+  el PR #114 y Juan Pablo lo aceptó). El compromiso
   queda en **40 SP**, 4 por encima de la velocidad promedio.
 - Criterio del recorte:
   1. Primero lo que destraba a otros (acción de la Retro del Sprint 1, que funcionó en el Sprint 2). **HU-14** es lo
@@ -105,11 +106,11 @@ desborde:
 
 | # | Decisión | Propuesta | ¿Confirmada? |
 |---|---|---|---|
-| 1 | HU-14: qué pasa con las historias no terminadas | Vuelven al backlog como Pendientes y sin sprint (CA-14.2), pero quedan en la foto del cierre (`sprint_historias`), así el sprint conserva lo que tenía planificado (#80) | [A CONFIRMAR] |
+| 1 | HU-14: qué pasa con las historias no terminadas | Vuelven al backlog como Pendientes y sin sprint (CA-14.2), pero quedan en la foto del cierre (`sprint_historias`), así el sprint conserva lo que tenía planificado (#80) | Sí (Juan Pablo, al revisar la spec de HU-14) |
 | 2 | HU-14: `EnSprintCerrado` del repositorio en memoria | HU-14 lo actualiza para que consulte el sprint de la historia y la foto del cierre, como el de PostgreSQL (hoy devuelve siempre `false`) | Sí (Review del Sprint 2) |
-| 3 | HU-16b: migración 0003 | Juan Pablo la aplica en producción el mismo día del merge. El `CHECK` de fechas de `sprints` va en la 0004, en otro PR (#106) | [A CONFIRMAR con Mariano] |
-| 4 | TEC-06: umbral de cobertura | El CI falla si la cobertura combinada de `internal/domain` e `internal/metrics` baja del 80 % (meta interna, #69) | [A CONFIRMAR con Mariano] |
-| 5 | HU-35: un indicador sin datos | Se muestra la tarjeta vacía con "sin datos" en lugar de 0 (por ejemplo, la velocidad sin sprints cerrados) (CA-35.2) | [A CONFIRMAR con Carolina] |
+| 3 | HU-16b: migración 0003 | Juan Pablo la aplica en producción el mismo día del merge. El `CHECK` de fechas de `sprints` va en la 0004, en otro PR (#106) | Sí (Mariano en el PR #114: avisa el día del merge) |
+| 4 | TEC-06: umbral de cobertura | El CI falla si la cobertura combinada de `internal/domain` e `internal/metrics` baja del 80 % (meta interna, #69) | Sí (Mariano en el PR #114: hoy están entre 97,9 % y 100 %) |
+| 5 | HU-35: un indicador sin datos | Se muestra la tarjeta vacía con "sin datos" en lugar de 0 (por ejemplo, la velocidad sin sprints cerrados) (CA-35.2) | Sí (Carolina en el PR #114) |
 
 ## Acciones de la Retro del Sprint 2 que se aplican desde hoy
 
@@ -132,8 +133,9 @@ desborde:
   el deploy de Vercel queda con un esquema viejo.
 - **Conflictos:** HU-14, HU-35 y HU-37 tocan las mismas pantallas y el mismo `app.go`. Se resuelven trayendo `main` el
   mismo día de cada merge.
-- **TEC-05 toca todas las rutas:** el middleware que valida el JWT se aplica a toda la app. Conviene que entre en un PR
-  chico y que se active con la configuración (sin las variables de Supabase Auth la app sigue sin login, como el modo
+- **TEC-05 toca todas las rutas:** el middleware que valida el JWT se aplica a toda la app. Mariano propone mergearla
+  temprano en el sprint, después de HU-16b y TEC-06. Además conviene que entre en un PR chico y que se active con la
+  configuración (sin las variables de Supabase Auth la app sigue sin login, como el modo
   memoria), así no rompe los tests ni el preview de los demás. Las claves de Supabase Auth en Vercel las carga Juan
   Pablo el mismo día del merge. [A CONFIRMAR con Mariano]
 - **Mariano tiene 15 SP**, más que el resto: si se atrasa, lo primero que pasa al Sprint 4 es HU-10 (prioridad baja).
