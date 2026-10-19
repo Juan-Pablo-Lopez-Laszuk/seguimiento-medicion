@@ -35,10 +35,16 @@ func registrarPasosHU28(sc *godog.ScenarioContext) {
 		numeros:   map[int]int64{},
 	}
 	sc.Step(`^el proyecto con los sprints 1 y 2 y un defecto Abierto detectado en el Sprint 1$`, e.preparar)
-	sc.Step(`^paso el defecto a "([^"]*)"$`, func(estado string) error { return e.cambiar(estado, 0) })
-	sc.Step(`^lo resuelvo en el Sprint (\d+)$`, func(n int) error { return e.cambiar(string(defect.EstadoResuelto), e.numeros[n]) })
+	sc.Step(`^paso el defecto a "([^"]*)"$`, func(estado string) error {
+		e.cambiar(estado, 0)
+		return nil
+	})
+	sc.Step(`^lo resuelvo en el Sprint (\d+)$`, func(n int) error {
+		e.cambiar(string(defect.EstadoResuelto), e.numeros[n])
+		return nil
+	})
 	sc.Step(`^que el defecto está "En progreso"$`, func() error {
-		_ = e.cambiar(string(defect.EstadoEnProgreso), 0) // cambiar guarda el error en e.err
+		e.cambiar(string(defect.EstadoEnProgreso), 0)
 		if e.err != nil {
 			return fmt.Errorf("no se pudo pasar a En progreso: %w", e.err)
 		}
@@ -74,13 +80,12 @@ func (e *hu28) preparar() error {
 	return err
 }
 
-// cambiar guarda el error para que lo revise el paso Entonces.
-func (e *hu28) cambiar(estado string, sprintResolucion int64) error {
+// cambiar guarda el error en e.err para que lo revise el paso Entonces.
+func (e *hu28) cambiar(estado string, sprintResolucion int64) {
 	d, err := e.defectos.CambiarEstado(context.Background(), e.proyecto, e.defecto.ID, defect.Estado(estado), sprintResolucion)
 	if e.err = err; err == nil {
 		e.defecto = d
 	}
-	return nil
 }
 
 // queda revisa el defecto guardado, no el que devolvió el último cambio.
