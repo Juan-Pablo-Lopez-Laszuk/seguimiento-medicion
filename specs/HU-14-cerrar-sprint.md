@@ -1,12 +1,13 @@
 # SPEC-14 · Cerrar sprint
 
-**Historia:** HU-14 (#46) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-14 (#46) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa el sprint activo de `specs/HU-04-estado-proyecto.md` (RN2), la
 > página del sprint de `specs/HU-12-asignar-historias.md`, la regla de estados de `specs/HU-08-estado-historia.md`
 > (En sprint → Pendiente y En progreso → Pendiente "al cerrar el sprint"), el cálculo de
-> `specs/HU-30-sp-planificados-completados.md` y la decisión del #80 (la foto del cierre). Lo marcado [A CONFIRMAR] lo
-> revisa Juan Pablo antes de programar.
+> `specs/HU-30-sp-planificados-completados.md` y la decisión del #80 (la foto del cierre). Revisada por Juan
+> Pablo el 19/10: se puede cerrar antes de la fecha de fin (RN2), cualquiera puede cerrar hasta TEC-05 y una historia
+> que volvió al backlog ya no se elimina (sección 5).
 
 ## 1. Objetivo
 
@@ -44,7 +45,7 @@ anteriores (HU-15), el reporte del sprint (HU-37) y el panel (HU-35), aunque des
 - RN1: **Solo se cierra el sprint activo** (CA-14.1): el no cerrado de menor número cuya fecha de inicio ya llegó
   (HU-04 RN2). Un sprint vencido sin cerrar sigue activo, así que se puede cerrar tarde. Un sprint futuro, o uno
   posterior a otro que sigue abierto, no se cierra.
-- RN2: **Se puede cerrar antes de la fecha de fin.** La confirmación avisa cuántos días faltaban. [A CONFIRMAR]
+- RN2: **Se puede cerrar antes de la fecha de fin.** La confirmación avisa cuántos días faltaban.
 - RN3: **La foto del cierre** (CA-14.3, decisión del #80). Al cerrar se guarda:
   - en `sprints`: el estado **Cerrado**, `sp_planificados` y `sp_completados`;
   - en `sprint_historias`: una fila por cada historia que estaba en el sprint, con sus **story points en ese momento**
@@ -56,8 +57,9 @@ anteriores (HU-15), el reporte del sprint (HU-37) y el panel (HU-35), aunque des
   **Pendiente** y quedan **sin sprint**, con la regla de HU-08 (las dos transiciones a Pendiente "al cerrar el sprint").
   Conservan sus criterios (cumplidos o no), sus tareas y su estimación. Las Hechas se quedan Hechas y en el sprint.
 - RN5: **Un sprint cerrado no se reabre ni se modifica** (CA-14.4). No hay forma de reabrirlo, y las acciones sobre un
-  sprint cerrado ya se rechazan: asignar (HU-12, "el Sprint N está cerrado: no se le pueden asignar historias") y quitar (solo las historias En sprint), empezar y completar (HU-13,
-  solo el sprint activo). Cerrarlo otra vez es un error.
+  sprint cerrado ya se rechazan: asignar (HU-12, "el Sprint N está cerrado: no se le pueden asignar historias"),
+  quitar (solo se quitan historias En sprint, y en un sprint cerrado solo quedan las Hechas), y empezar y completar
+  (HU-13, solo el sprint activo). Cerrarlo otra vez es un error.
 - RN6: **Todo o nada.** El estado del sprint, sus SP, la foto y las historias que vuelven al backlog se guardan juntos:
   si algo falla, no se guarda nada.
 - RN7: Cerrar un sprint **sin historias** vale: queda con 0 de 0 SP y la foto vacía.
@@ -78,7 +80,7 @@ anteriores (HU-15), el reporte del sprint (HU-37) y el panel (HU-35), aunque des
   sprint está cerrado **o** si aparece en la foto de un sprint cerrado (decisión 2 de la Planning del Sprint 3). Así,
   una historia que volvió al backlog no se puede eliminar, porque la foto la referencia.
 - **Sin autenticación:** "el Agile Enabler" es un rol de la historia; hasta TEC-05 (Sprint 4) cualquiera que use la
-  app puede cerrar. [A CONFIRMAR]
+  app puede cerrar.
 - La velocidad (HU-31) y el aviso de HU-12 ya leen `SPCompletados` de los sprints cerrados: empiezan a dar valores sin
   cambiar su código.
 
