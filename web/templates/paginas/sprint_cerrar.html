@@ -1,0 +1,46 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    {{with .Datos}}
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}">{{.Proyecto.Nombre}}</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints">Sprints</a></li>
+        <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}">Sprint {{.Sprint.Numero}}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Cerrar</li>
+      </ol>
+    </nav>
+    <h1 class="h3 mb-1">¿Cerrar el Sprint {{.Sprint.Numero}}?</h1>
+    <p class="text-body-secondary mb-3">{{.Sprint.Objetivo}}</p>
+
+    <div class="p-4 bg-body rounded-3 shadow-sm">
+      {{if .Error}}
+      {{template "error" .Error}}
+      <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}">Volver al sprint</a>
+      {{else}}
+      {{if .DiasAntes}}
+      <div class="alert alert-warning" role="alert">El sprint termina el {{.Sprint.FechaFin.Format "02/01/2006"}}: lo estás cerrando {{.DiasAntes}} {{if eq .DiasAntes 1}}día{{else}}días{{end}} antes.</div>
+      {{end}}
+      <p>Se completaron <strong>{{.Completados}} de {{.Planificados}} SP</strong> ({{.Hechas}} de {{.Historias}} historias).</p>
+      {{if .Devueltas}}
+      <p class="mb-1">Vuelven al backlog como Pendientes:</p>
+      <ul>
+        {{range .Devueltas}}
+        <li>{{.Identificador}} · {{.Titulo}} ({{.Estado}})</li>
+        {{end}}
+      </ul>
+      {{else}}
+      <p>Ninguna historia vuelve al backlog.</p>
+      {{end}}
+      <p>Un sprint cerrado no se puede reabrir ni modificar.</p>
+      <form class="d-flex gap-2" action="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/cerrar" method="post">
+        <button class="btn btn-danger" type="submit">Cerrar sprint</button>
+        <a class="btn btn-outline-secondary" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}">Cancelar</a>
+      </form>
+      {{end}}
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}

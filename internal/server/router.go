@@ -20,6 +20,8 @@ type Dependencias struct {
 	Criterios   *service.Criterios
 	// Asignaciones arma el Sprint Backlog: asignar y quitar historias de un sprint (HU-12).
 	Asignaciones *service.Asignaciones
+	// Cierres cierra el sprint activo (HU-14).
+	Cierres      *service.Cierres
 	Estimaciones *service.Estimaciones
 	// EdicionHistorias edita y elimina una historia (HU-06).
 	EdicionHistorias *service.EdicionHistorias
@@ -63,6 +65,10 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.accion((*service.Asignaciones).Quitar, "quitada"))
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/empezar", pl.accion((*service.Asignaciones).Empezar, "empezada"))
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
+
+	ci := cierres{casos: dep.Cierres}
+	r.Get("/proyectos/{id}/sprints/{sprint}/cerrar", ci.confirmar)
+	r.Post("/proyectos/{id}/sprints/{sprint}/cerrar", ci.cerrar)
 
 	in := integrantes{casos: dep.Integrantes}
 	r.Get("/proyectos/{id}/integrantes", in.listar)
