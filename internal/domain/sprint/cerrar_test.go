@@ -7,6 +7,7 @@ import (
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
 )
 
 // Los tests de HU-14 usan los casos límite de la spec: el Sprint 1 del 12/10 al 18/10 y el Sprint 2 del 19/10 al
@@ -201,5 +202,19 @@ func TestCerrar_IgnoraLaHora(t *testing.T) {
 	hoy := time.Date(2026, 10, 12, 0, 30, 0, 0, time.UTC)
 	if _, err := sprint.Cerrar(sprints[0], sprints, nil, hoy); err != nil {
 		t.Errorf("el 12/10 a las 00:30 el Sprint 1 ya es el activo y se obtuvo %v", err)
+	}
+}
+
+// Datos inconsistentes que la app no genera: una historia con SP negativos o una Pendiente que figura en el sprint.
+// El cierre se rechaza con el error que corresponde y no devuelve nada a medias.
+func TestCerrar_DatosInconsistentes(t *testing.T) {
+	sprints := sprintsParaCerrar(t)
+	negativos := []backlog.Historia{{ID: 1, Numero: 1, Estado: backlog.EstadoHecho, StoryPoints: puntos(-3), SprintID: idDe(10)}}
+	if c, err := sprint.Cerrar(sprints[0], sprints, negativos, fecha(t, "2026-10-18")); !errors.Is(err, metrics.ErrSPNegativos) || c.Foto != nil {
+		t.Errorf("SP negativos: se esperaba metrics.ErrSPNegativos sin cierre y se obtuvo %v, %+v", err, c)
+	}
+	pendiente := []backlog.Historia{{ID: 1, Numero: 1, Estado: backlog.EstadoPendiente, StoryPoints: puntos(3), SprintID: idDe(10)}}
+	if c, err := sprint.Cerrar(sprints[0], sprints, pendiente, fecha(t, "2026-10-18")); !errors.Is(err, backlog.ErrYaEstaEnEseEstado) || c.Foto != nil {
+		t.Errorf("Pendiente en el sprint: se esperaba backlog.ErrYaEstaEnEseEstado sin cierre y se obtuvo %v, %+v", err, c)
 	}
 }
