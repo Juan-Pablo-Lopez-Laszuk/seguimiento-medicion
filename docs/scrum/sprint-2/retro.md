@@ -2,20 +2,18 @@
 
 Participantes: López, Piastrellini, Bravo · Facilitador: Juan Pablo
 
-> Borrador armado el 17/10 a la noche con el tablero, los PRs y las dailies del #95. Lo marcado [A ACTUALIZAR] depende
-> de si HU-24 (#110) y HU-27 (#111) se mergean antes del cierre; lo demás se discute en la Retro.
+> Armada con el tablero, los PRs y las dailies del #95; se discute en la Retro.
 
 ## Métricas del sprint
 
-SP comprometidos: 33 · SP completados: 27 al 17/10 a la noche (33 si entran HU-24 y HU-27) [A ACTUALIZAR] ·
-Velocidad: 27 [A ACTUALIZAR]; el promedio de los dos sprints de construcción queda en 33 (36 si entran HU-24 y HU-27).
-El sprint tuvo 6 días en lugar de 7 · Defectos abiertos: 0 [A ACTUALIZAR]
+SP comprometidos: 33 · SP completados: 33 (27 al sábado 17/10 y 6 el domingo 18/10) · Velocidad: 33; el promedio de
+los dos sprints de construcción queda en 36. El sprint tuvo 6 días en lugar de 7 · Defectos abiertos: 0
 
 | Integrante | Terminado | SP |
 |---|---|---|
 | Juan Pablo | HU-04, HU-02, HU-12, HU-13 | 12 de 12 |
 | Mariano | HU-07, HU-08, HU-16 (sin el historial), HU-06 | 9 de 9 |
-| Carolina | TEC-07, HU-25 · [A ACTUALIZAR] HU-24 y HU-27 en revisión | 6 de 12 [A ACTUALIZAR] |
+| Carolina | TEC-07, HU-25, HU-24 (18/10), HU-27 (18/10) | 12 de 12 |
 
 ## ¿Qué salió bien?
 
@@ -49,12 +47,14 @@ El sprint tuvo 6 días en lugar de 7 · Defectos abiertos: 0 [A ACTUALIZAR]
   `router_test.go`, `features_test.go`, los repositorios de historias y `docs/ia/registro.md`). Hubo que resolver
   conflictos en #104/#105, en #108/#109 y ahora en #110.
 - **Un merge sin revisión terminada:** #104 se mergeó por error antes de terminar de revisarlo.
-- **Trabajo que llega a revisión el último día:** HU-24 (#110) y HU-27 (#111) se abrieron el sábado 17/10 a la noche, y
-  el sprint cierra el domingo. [A ACTUALIZAR]
+- **Trabajo que llega a revisión el último día:** HU-24 (#110) y HU-27 (#111) se abrieron el sábado 17/10 a la noche y
+  se mergearon el domingo 18/10 a la noche, horas antes del cierre. La revisión de Mariano fue en menos de 24 horas,
+  pero no quedaba margen: con cualquier observación, las dos pasaban al Sprint 3.
 - **Las dailies siguen atrasadas**, la misma acción del Sprint 1 que no se cumplió:
   - Juan Pablo cargó las del 14 al 17/10 juntas el 17/10.
   - Mariano cargó las del 13 y 14/10 el 14/10, y las del 15 y 16/10 el 16/10.
   - Carolina cargó las del 15 al 17/10 juntas el 17/10.
+  - El domingo 18/10 nadie cargó la daily.
   - El atraso de #105 y #107 no se vio a tiempo porque no había dailies que lo mostraran.
 
 ## Acciones
@@ -75,7 +75,7 @@ El sprint tuvo 6 días en lugar de 7 · Defectos abiertos: 0 [A ACTUALIZAR]
 |---|---|
 | La Planning se hace el lunes; el domingo se dejan listos los datos y el refinamiento | Sí: Planning el lunes 12/10, con el refinamiento del 09/10 |
 | Lo que bloquea a otros se marca en la Planning, se empieza primero y se revisa en cada daily | Sí: la Planning ordenó el camino crítico y HU-07 y HU-08 fueron lo primero que se revisó y mergeó; HU-16 se demoró por la decisión del historial |
-| Una revisión pedida se hace en menos de 24 horas | No: se cumplió con #100 y #103, pero #105, #107, #108 y #109 tardaron entre 30 y 55 horas |
+| Una revisión pedida se hace en menos de 24 horas | Parcial: se cumplió con #100, #103, #110 y #111, pero #105, #107, #108 y #109 tardaron entre 30 y 55 horas |
 | Lo que hay que hacer en producción se hace el mismo día que se mergea el PR | No aplicó: ninguna historia del sprint trajo migración |
 | Daily de lunes a viernes, el mismo día, también del Agile Enabler | No: los tres cargamos dailies atrasadas (ver arriba) |
 | Toda tarea tiene su issue antes de empezarla | Parcial: HU-16b (#106) se creó antes de empezarla, pero el workflow de #104 se hizo sin issue |

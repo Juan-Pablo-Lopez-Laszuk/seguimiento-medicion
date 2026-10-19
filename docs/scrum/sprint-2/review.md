@@ -2,19 +2,16 @@
 
 Participantes: López, Piastrellini, Bravo · Product Architect (profesores): [A COMPLETAR]
 
-> Borrador armado el 17/10 a la noche. Lo marcado [A ACTUALIZAR] depende de si HU-24 (#110) y HU-27 (#111) se
-> mergean antes del cierre.
-
 ## Sprint Goal
 
 > Trabajar el backlog y el sprint desde la app: ver el estado del proyecto, completar las historias (criterios,
 > estimación y estado), asignarlas al sprint y marcarlas como completadas, todo con un diseño base común; y empezar a
 > registrar tareas, esfuerzo y defectos.
 
-¿Se cumplió? **Sí en lo principal; lo de esfuerzo y defectos, [A ACTUALIZAR].** Desde la app ya se ve el estado del
-proyecto, se completa una historia (criterios, estimación, estado, edición y eliminación), se asigna al sprint y se
-marca como completada, todo con el diseño base de TEC-07. De "empezar a registrar tareas, esfuerzo y defectos" está
-terminado HU-25 (tareas). HU-24 (esfuerzo) y HU-27 (defectos) llegaron a revisión el sábado 17/10 a la noche.
+¿Se cumplió? **Sí.** Desde la app ya se ve el estado del proyecto, se completa una historia (criterios, estimación,
+estado, edición y eliminación), se asigna al sprint y se marca como completada, todo con el diseño base de TEC-07. Y
+ya se registran tareas (HU-25), esfuerzo (HU-24) y defectos (HU-27). HU-24 y HU-27 llegaron a revisión el sábado 17/10
+a la noche y entraron el domingo 18/10 a la noche, el último día del sprint.
 
 ## Terminado
 
@@ -30,13 +27,13 @@ terminado HU-25 (tareas). HU-24 (esfuerzo) y HU-27 (defectos) llegaron a revisi�
 | #45 | HU-13 · Registrar historias completadas | 2 | Juan Pablo | PR #107 · botones Empezar y Completar en la página del sprint activo |
 | #24 | HU-16 · Estimar historia con story points (sin el historial) | 2 | Mariano | PR #108 · formulario de estimar en la página de la historia; el historial pasó a HU-16b (#106) |
 | #19 | HU-06 · Editar y eliminar ítem | 2 | Mariano | PR #109 · `/proyectos/{id}/backlog/{numero}/editar` y `/eliminar` |
-| #2 | HU-24 · Registrar esfuerzo realizado | 3 | Carolina | [A ACTUALIZAR] PR #110 · `/proyectos/{id}/backlog/{numero}/esfuerzo` |
-| #5 | HU-27 · Registrar defecto | 3 | Carolina | [A ACTUALIZAR] PR #111 |
+| #2 | HU-24 · Registrar esfuerzo realizado | 3 | Carolina | PR #110 · `/proyectos/{id}/backlog/{numero}/esfuerzo` (18/10) |
+| #5 | HU-27 · Registrar defecto | 3 | Carolina | PR #111 · `/proyectos/{id}/defectos` (18/10) |
 
 Fuera del compromiso: workflow que pide la revisión según la rotación al abrir un PR (#104, Juan Pablo, sin SP).
 
-**Total terminado: 27 SP de 33 comprometidos** al 17/10 a la noche (**33 de 33** si entran HU-24 y HU-27)
-[A ACTUALIZAR]. Por integrante: Juan Pablo 12 de 12 · Mariano 9 de 9 · Carolina 6 de 12 [A ACTUALIZAR].
+**Total terminado: 33 SP de 33 comprometidos** (27 al sábado 17/10 y 6 el domingo 18/10). Por integrante: Juan Pablo
+12 de 12 · Mariano 9 de 9 · Carolina 12 de 12.
 
 ## Demo
 
@@ -53,7 +50,9 @@ Lo que se muestra en la app:
 5. **Sprint Backlog** (HU-12 y HU-13): asignar historias listas (estimadas y con criterios) al sprint, con el motivo de
    las que no se pueden y el aviso cuando el sprint supera la velocidad del equipo; en el sprint activo, empezar y
    completar historias (solo con todos los criterios cumplidos), con la fecha de completado y el avance del sprint.
-6. **Esfuerzo y defectos** (HU-24 y HU-27): [A ACTUALIZAR].
+6. **Esfuerzo** (HU-24): horas trabajadas por integrante en una historia o en una de sus tareas, con el tope de 24 h
+   por día y las horas reales de la historia arriba. **Defectos** (HU-27): página de defectos del proyecto, con
+   severidad, sprint de detección e historia opcional; todo defecto arranca Abierto.
 
 ## Feedback del cliente
 
@@ -68,7 +67,7 @@ Lo que se muestra en la app:
   escrito en la spec de HU-05).
 - **#101** (lo que falta de formularios y tablas de TEC-07) queda en el Product Backlog.
 - **Para el Sprint 3**, además de lo que la Planning ya pasaba (HU-14, HU-15, HU-09, HU-10, HU-17 a HU-19 y TEC-05):
-  HU-16b (#106) y [A ACTUALIZAR] HU-24 y HU-27 si no llegan. **HU-14 (cerrar sprint)** es la primera: con HU-12 y HU-13
+  HU-16b (#106) y HU-28 (gestionar el estado de un defecto), que ya tiene HU-27 en `main`. **HU-14 (cerrar sprint)** es la primera: con HU-12 y HU-13
   en `main` ya no le falta nada, y sin ella la velocidad no se puede calcular desde la app. Al hacerla hay que actualizar
   `EnSprintCerrado` del repositorio en memoria, que hoy devuelve siempre `false` porque todavía no se puede cerrar un
   sprint.

@@ -44,3 +44,8 @@ Sin daily el mismo día: Juan Pablo y Carolina (las cargaron el 17/10, juntas co
 | Juan Pablo | (junto con el 16/10) Carolina mergeó HU-12 y HU-13: mi parte del sprint está completa (12 SP). Revisé HU-16 (#108) y HU-06 (#109): resolví los conflictos con HU-12 y HU-13, las probé integradas (221 escenarios en verde, también contra PostgreSQL) y las mergeé. | preparar la Review y la Retro y cerrar el sprint. | nada; HU-24 (#110) y HU-27 (#111) esperan la revisión de Mariano. | |
 
 Sin daily: Mariano.
+
+## Domingo 18/10
+
+Sin daily: nadie la registró. Ese día Carolina trajo `main` a HU-24 (#110) y HU-27 (#111), y Mariano las revisó y las
+mergeó a la noche.
