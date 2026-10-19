@@ -1,6 +1,6 @@
 # SPEC-35 · Panel de indicadores del proyecto
 
-**Historia:** HU-35 (#13) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-35 (#13) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Junta métricas que ya existen: estado del proyecto (HU-04), velocidad
 > (M3, HU-31 con los sprints cerrados de HU-14), story points completados (M2, HU-30), desviación de horas (M6, HU-33)
@@ -67,3 +67,14 @@ Ver en una sola pantalla cómo viene el proyecto, para decidir rápido.
 ## Trazabilidad
 
 Issue: #13 · Feature: `features/hu-35-panel.feature` · Pasos BDD: `features/hu35_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Caso de uso | `internal/service/panel.go` (`Panel.Ver`, `VistaPanel.Tarjetas`; la velocidad sale de `velocidadDe`, que ahora comparte con el aviso de HU-12) | `internal/service/panel_test.go` |
+| Pantalla | `internal/server/panel.go`, `web/templates/paginas/panel.html`, botón "Panel" en `proyecto.html` | `internal/server/panel_test.go` |
+| Aplicación | `app/app.go`, ruta en `internal/server/router.go` | `app/app_test.go` (`TestNewHandlerConBase_ConURLElPanelLeeLaBase`) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-35.1 Seis tarjetas | Panel con datos · Todos los defectos resueltos | `TestPanel_ConDatos`, `TestPanel_ConUnDefecto` |
+| CA-35.2 Sin datos, vacío y sin errores | Panel de un proyecto recién creado | `TestPanel_SinDatos`, `TestPanel_SinDatos_MuestraLasSeisTarjetas` |
