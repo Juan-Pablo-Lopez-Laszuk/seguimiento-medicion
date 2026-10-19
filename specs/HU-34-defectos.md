@@ -1,6 +1,6 @@
 # SPEC-34 · Defectos detectados y resueltos
 
-**Historia:** HU-34 (#12) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-34 (#12) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las métricas M8 y M9 de `docs/metricas.md`.
 
@@ -59,3 +59,14 @@ Lo usan el panel (HU-35) y el reporte de sprint (HU-37).
 ## Trazabilidad
 
 Issue: #12 · Métricas: M8 y M9 · Feature: `features/hu-34-defectos.feature` · Pasos BDD: `features/hu34_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Métrica | `internal/metrics/defects.go` (`ContarDefectos`) | `internal/metrics/defects_test.go` |
+| Caso de uso | `internal/service/defectos.go` (`VistaDefectos.Resumen`, `ResumenDefectos`) | `internal/service/defectos_test.go` (`TestResumenDeDefectos`) |
+| Pantalla | `internal/server/defectos.go` (filtro `?severidad=`), `web/templates/paginas/defectos.html` (sección Resumen) | `internal/server/defectos_test.go` (`TestPaginaDeDefectos_MuestraElResumen`) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-34.1 Detectados y resueltos por sprint | Detectados y resueltos por sprint · Severidad desconocida | `TestContarDefectos_PorSprintYTotal`, `TestContarDefectos_ResueltoSinSprintNoCuenta`, `TestResumenDeDefectos` |
+| CA-34.2 Total y filtro por severidad | Filtrar por severidad · Severidad desconocida | `TestContarDefectos_FiltraPorSeveridad`, `TestResumenDeDefectos`, `TestPaginaDeDefectos_MuestraElResumen` |
