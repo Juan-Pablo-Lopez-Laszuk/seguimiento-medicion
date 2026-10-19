@@ -1,6 +1,6 @@
 # SPEC-33 · Horas estimadas, reales y desviación
 
-**Historia:** HU-33 (#11) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-33 (#11) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las métricas M4, M5 y M6 de `docs/metricas.md`.
 
@@ -67,3 +67,16 @@ por proyecto. La usan el panel (HU-35) y el reporte de sprint (HU-37).
 ## Trazabilidad
 
 Issue: #11 · Métrica: M6 · Feature: `features/hu-33-desviacion.feature` · Pasos BDD: `features/hu33_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Métrica | `internal/metrics/deviation.go` (`CalcularDesviacion`, `SumarDesviaciones`, `HorasTexto`, `PorcentajeTexto`) | `internal/metrics/deviation_test.go` |
+| Caso de uso | `internal/service/horas.go` (`Horas.Ver`) | `internal/service/horas_test.go` |
+| Pantalla | `internal/server/horas.go`, `web/templates/paginas/horas.html`, botón "Horas" en `proyecto.html` | `internal/server/horas_test.go` |
+| Aplicación | `app/app.go`, ruta en `internal/server/router.go` | `app/app_test.go` (`TestNewHandlerConBase_ConURLLasHorasSeCalculanDesdeLaBase`) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-33.1 Desviación en h y en % | Una historia que llevó más horas · Una historia que llevó menos horas | `TestCalcularDesviacion`, `TestPaginaDeHoras_MuestraLaDesviacion` |
+| CA-33.2 Sin estimadas, "no aplicable" | Una historia sin horas estimadas | `TestCalcularDesviacion`, `TestPaginaDeHoras_SinEstimadas_NoAplica` |
+| CA-33.3 Por historia, sprint y proyecto | Desviación por sprint y por proyecto | `TestSumarDesviaciones`, `TestVerHoras_DesviacionPorHistoriaSprintYProyecto` |
