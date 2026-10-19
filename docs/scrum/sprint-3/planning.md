@@ -97,10 +97,36 @@ Con la épica de Planning Poker (19 SP), HU-36 (5), HU-39 (exportar a PDF, 5) y 
 **Sprint 4 ya arranca con al menos 29 SP** y es el sprint de cierre (eran 34 antes de adelantar TEC-05). Para que no se
 desborde:
 
-- Si Mariano termina sus historias, adelanta HU-17 en este sprint.
-- En la Planning del Sprint 4 se decide qué parte de Planning Poker es imprescindible para la entrega.
+Además, si se suman HU-38, HU-26 y HU-29 (8 SP) porque no entran en este sprint, el Sprint 4 queda lleno de punta a
+punta y sin margen. Y después ya no hay otro sprint.
 
-[A CONFIRMAR]
+**Plan (propuesta de Juan Pablo del 19/10): terminar el código el jueves 29/10.** Rendimos el lunes 02/11, así que el
+viernes 30/10 y el fin de semana quedan solo para arreglar detalles y practicar la presentación. Para llegar:
+
+1. **Código congelado el jueves 29/10.** Después de esa fecha no entran funcionalidades nuevas, solo arreglos de bugs y
+   documentación.
+2. **Planning Poker en dos partes:**
+   - **Imprescindible (13 SP):** HU-17 (abrir sesión), HU-18 (votar oculto), HU-19 (revelar) y HU-22 (registrar la
+     estimación acordada). Con eso la épica funciona de punta a punta.
+   - **Si sobra (6 SP):** HU-20 (detectar diferencias) y HU-21 (nuevas rondas).
+
+   Así el Sprint 4 baja a unos **23 SP** de funcionalidades: 13 de Planning Poker, HU-36 y HU-39.
+3. **El margen de este sprint se usa para adelantar.** No se compromete más de entrada, porque ya estamos 4 SP por
+   encima de la velocidad. Pero el que termine primero toma algo del Sprint 4, en este orden:
+   - HU-17 (Mariano);
+   - HU-38 (Juan Pablo);
+   - HU-36 (Carolina, después del panel).
+
+   Se pasa a *Sprint Backlog* el mismo día y se avisa en la daily.
+4. **La documentación de la entrega se escribe en paralelo desde este sprint.** Cada uno documenta lo suyo a medida que
+   lo termina, así el Sprint 4 no arranca con la documentación entera por hacer. La propuesta es dividirla así:
+   - el manual de usuario, por épica (cada uno la suya);
+   - la arquitectura y el despliegue (Juan Pablo);
+   - las métricas del propio equipo: velocidad, horas y defectos por sprint (Carolina, con el panel de HU-35).
+
+   Lo que falte se termina el viernes 30/10.
+
+[A CONFIRMAR] El plan, la fecha del 29/10 y la división de la documentación.
 
 ## Decisiones
 
