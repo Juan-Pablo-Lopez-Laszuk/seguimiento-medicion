@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
@@ -42,26 +44,61 @@ func (r *Defectos) Guardar(ctx context.Context, d defect.Defecto) (defect.Defect
 
 // ListarPorProyecto devuelve los defectos del proyecto, el más nuevo primero.
 func (r *Defectos) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]defect.Defecto, error) {
-	filas, err := r.pool.Query(ctx,
-		`SELECT id, proyecto_id, COALESCE(historia_id, 0), descripcion, severidad, estado, sprint_deteccion_id,
-		        COALESCE(sprint_resolucion_id, 0)
-		 FROM defectos WHERE proyecto_id = $1 ORDER BY id DESC`, proyectoID)
+	filas, err := r.pool.Query(ctx, `SELECT `+columnasDefecto+` FROM defectos WHERE proyecto_id = $1 ORDER BY id DESC`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar los defectos: %w", err)
 	}
 	defer filas.Close()
 	var lista []defect.Defecto
 	for filas.Next() {
-		var d defect.Defecto
-		var severidad, estado string
-		if err := filas.Scan(&d.ID, &d.ProyectoID, &d.HistoriaID, &d.Descripcion, &severidad, &estado, &d.SprintDeteccionID, &d.SprintResolucionID); err != nil {
+		d, err := escanearDefecto(filas)
+		if err != nil {
 			return nil, fmt.Errorf("leer un defecto: %w", err)
 		}
-		d.Severidad, d.Estado = defect.Severidad(severidad), defect.Estado(estado)
 		lista = append(lista, d)
 	}
 	if err := filas.Err(); err != nil {
 		return nil, fmt.Errorf("listar los defectos: %w", err)
 	}
 	return lista, nil
+}
+
+// columnasDefecto son las columnas que lee escanearDefecto, en su orden.
+const columnasDefecto = `id, proyecto_id, COALESCE(historia_id, 0), descripcion, severidad, estado, sprint_deteccion_id,
+	COALESCE(sprint_resolucion_id, 0)`
+
+func escanearDefecto(fila pgx.Row) (defect.Defecto, error) {
+	var d defect.Defecto
+	var severidad, estado string
+	err := fila.Scan(&d.ID, &d.ProyectoID, &d.HistoriaID, &d.Descripcion, &severidad, &estado, &d.SprintDeteccionID, &d.SprintResolucionID)
+	d.Severidad, d.Estado = defect.Severidad(severidad), defect.Estado(estado)
+	return d, err
+}
+
+// BuscarPorID devuelve el defecto dentro de su proyecto, o defect.ErrDefectoNoEncontrado.
+func (r *Defectos) BuscarPorID(ctx context.Context, proyectoID, id int64) (defect.Defecto, error) {
+	d, err := escanearDefecto(r.pool.QueryRow(ctx,
+		`SELECT `+columnasDefecto+` FROM defectos WHERE id = $1 AND proyecto_id = $2`, id, proyectoID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return defect.Defecto{}, defect.ErrDefectoNoEncontrado
+	}
+	if err != nil {
+		return defect.Defecto{}, fmt.Errorf("buscar el defecto %d: %w", id, err)
+	}
+	return d, nil
+}
+
+// Actualizar guarda el estado y el sprint de resolución (NULL si es 0) de un defecto que ya existe (HU-28), o devuelve
+// defect.ErrDefectoNoEncontrado.
+func (r *Defectos) Actualizar(ctx context.Context, d defect.Defecto) error {
+	etiqueta, err := r.pool.Exec(ctx,
+		`UPDATE defectos SET estado = $1, sprint_resolucion_id = $2 WHERE id = $3 AND proyecto_id = $4`,
+		string(d.Estado), opcional(d.SprintResolucionID), d.ID, d.ProyectoID)
+	if err != nil {
+		return fmt.Errorf("actualizar el defecto %d: %w", d.ID, err)
+	}
+	if etiqueta.RowsAffected() == 0 {
+		return defect.ErrDefectoNoEncontrado
+	}
+	return nil
 }
