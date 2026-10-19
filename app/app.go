@@ -49,6 +49,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		}
 		criterios service.RepositorioCriterios
 		tareas    service.RepositorioTareas
+		registros service.RepositorioRegistros
 		base      server.VerificadorBase // queda en nil en modo memoria: /health informa "memoria"
 	)
 	if url == "" {
@@ -57,6 +58,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		// historias conoce a los otros dos.
 		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
 		historias, criterios, tareas = memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), criteriosEnMemoria, tareasEnMemoria
+		registros = memory.NuevoRegistros()
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
@@ -64,6 +66,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		}
 		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
 		historias, criterios, tareas = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool), postgres.NuevoTareas(pool)
+		registros = postgres.NuevoRegistros(pool)
 		base = pool
 	}
 	return server.NewRouter(server.Dependencias{
@@ -76,6 +79,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
+		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Base:           base,

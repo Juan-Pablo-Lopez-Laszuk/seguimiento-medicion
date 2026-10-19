@@ -494,3 +494,24 @@ func TestNewHandlerConBase_ConURLLaEdicionYLaEliminacionSobrevivenAUnReinicio(t 
 		t.Errorf("la historia nueva redirige a %q, se esperaba ?creada=2 (HU-2)", destino)
 	}
 }
+
+// HU-24: los registros de esfuerzo quedan en la base y sobreviven a un reinicio.
+func TestNewHandlerConBase_ConURLElEsfuerzoSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con esfuerzo")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia con esfuerzo"}, "prioridad": {"Alta"}})
+	post(primera, "/proyectos/1/integrantes", neturl.Values{"nombre": {"Carolina"}, "email": {"caro@mail.com"}, "rol": {"ProductBuilder"}})
+	// el primer día del proyecto: ya pasó y está dentro de sus fechas
+	campos := neturl.Values{"integrante": {"1"}, "fecha": {"2026-10-05"}, "actividad": {"Registro guardado"}, "horas": {"2,5"}}
+	if rec := post(primera, "/proyectos/1/backlog/1/esfuerzo", campos); rec.Code != http.StatusSeeOther {
+		t.Fatalf("registrar esfuerzo: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	pagina := get(nuevaApp(t, url), "/proyectos/1/backlog/1/esfuerzo")
+	for _, esperado := range []string{"Registro guardado", "Carolina", "2,5 h"} {
+		if !strings.Contains(pagina, esperado) {
+			t.Errorf("después de reiniciar la página de esfuerzo debería mostrar %q", esperado)
+		}
+	}
+}
