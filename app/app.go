@@ -51,14 +51,19 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		tareas    service.RepositorioTareas
 		registros service.RepositorioRegistros
 		defectos  service.RepositorioDefectos
+		cierres   service.RepositorioCierres
 		base      server.VerificadorBase // queda en nil en modo memoria: /health informa "memoria"
 	)
 	if url == "" {
-		proyectos, sprints, integrantes = memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoIntegrantes()
+		proyectos, integrantes = memory.NuevoProyectos(), memory.NuevoIntegrantes()
 		// Eliminar una historia borra también sus criterios y sus tareas (HU-06): en memoria, el repositorio de
 		// historias conoce a los otros dos.
 		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
-		historias, criterios, tareas = memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), criteriosEnMemoria, tareasEnMemoria
+		historiasEnMemoria, sprintsEnMemoria := memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), memory.NuevoSprints()
+		historias, criterios, tareas, sprints = historiasEnMemoria, criteriosEnMemoria, tareasEnMemoria, sprintsEnMemoria
+		// El cierre de un sprint (HU-14) cambia sprints e historias juntos, y le avisa al de historias qué sprints se
+		// cerraron (para HU-06).
+		cierres = memory.NuevoCierres(sprintsEnMemoria, historiasEnMemoria)
 		registros = memory.NuevoRegistros()
 		defectos = memory.NuevoDefectos()
 	} else {
@@ -70,6 +75,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		historias, criterios, tareas = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool), postgres.NuevoTareas(pool)
 		registros = postgres.NuevoRegistros(pool)
 		defectos = postgres.NuevoDefectos(pool)
+		cierres = postgres.NuevoCierres(pool)
 		base = pool
 	}
 	return server.NewRouter(server.Dependencias{
@@ -86,6 +92,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
+		Cierres:        service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now),
 		Base:           base,
 
 		// Editar y eliminar una historia (HU-06).
