@@ -105,6 +105,7 @@ func NewRouter(dep Dependencias) http.Handler {
 	df := defectos{casos: dep.Defectos}
 	r.Get("/proyectos/{id}/defectos", df.ver)
 	r.Post("/proyectos/{id}/defectos", df.registrar)
+	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	return r
 }
 
