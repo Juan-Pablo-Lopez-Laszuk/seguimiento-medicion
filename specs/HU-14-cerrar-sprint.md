@@ -1,6 +1,6 @@
 # SPEC-14 · Cerrar sprint
 
-**Historia:** HU-14 (#46) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Revisada
+**Historia:** HU-14 (#46) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa el sprint activo de `specs/HU-04-estado-proyecto.md` (RN2), la
 > página del sprint de `specs/HU-12-asignar-historias.md`, la regla de estados de `specs/HU-08-estado-historia.md`
@@ -71,8 +71,10 @@ anteriores (HU-15), el reporte del sprint (HU-37) y el panel (HU-35), aunque des
 - **Dominio** (`internal/domain/sprint`): una función pura `Cerrar` que recibe el sprint, los sprints del proyecto, las
   historias del sprint y hoy, y devuelve el sprint cerrado, la foto y las historias que vuelven al backlog (o el error de
   la regla). Las transiciones a Pendiente son las de HU-08 (`Historia.CambiarEstado`), no se repiten.
-- **Repositorio:** un método `Cerrar` que guarda todo junto (RN6). En PostgreSQL, en **una transacción**
-  (`UPDATE sprints`, `INSERT INTO sprint_historias`, `UPDATE historias`). En memoria, sin dejar el cierre a medias.
+- **Repositorio:** `Cierres`, con `Cerrar` (guarda todo junto, RN6) y `Foto` (lee la foto de un sprint). En PostgreSQL,
+  en **una transacción** (`UPDATE sprints`, `INSERT INTO sprint_historias`, `UPDATE historias`); el `UPDATE` de
+  `sprints` solo cambia un sprint que no está cerrado, así dos cierres al mismo tiempo no pisan la foto. En memoria,
+  `memory.Cierres` valida todo antes de cambiar los repositorios de sprints e historias.
 - **Sin migración:** `sprints.sp_planificados`, `sprints.sp_completados` y `sprint_historias` ya están en la 0001.
   `sprint.Sprint` suma `SPPlanificados` (ya tiene `SPCompletados`, que lee la velocidad).
 - **HU-06:** `EnSprintCerrado` del repositorio en memoria hoy devuelve siempre `false` porque no se podía cerrar un
@@ -83,6 +85,8 @@ anteriores (HU-15), el reporte del sprint (HU-37) y el panel (HU-35), aunque des
   app puede cerrar.
 - La velocidad (HU-31) y el aviso de HU-12 ya leen `SPCompletados` de los sprints cerrados: empiezan a dar valores sin
   cambiar su código.
+- La página del sprint (HU-12) muestra, para un sprint cerrado, los SP del cierre en lugar de sumar las historias que
+  le quedan (las no completadas ya volvieron al backlog). `buscarSprint` del caso de uso se comparte con el cierre.
 
 ## 6. Casos límite
 
@@ -123,5 +127,20 @@ Los errores se muestran en la pantalla de confirmación (409), que en ese caso n
 
 ## Trazabilidad
 
-Issue: #46 · Feature: `features/hu-14-cerrar-sprint.feature` · La tabla criterio → escenarios → tests se completa en el
-PR.
+Issue: #46 · Feature: `features/hu-14-cerrar-sprint.feature` · Pasos BDD: `features/hu14_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/sprint/cerrar.go` (`Cerrar`, `Cierre`, `FotoHistoria`, `ErrYaCerrado`, `ErrNoEsElActivo`) y `Sprint.SPPlanificados` | `sprint/cerrar_test.go` |
+| Repositorios | `internal/store/{memory,postgres}/cierres.go` (`Cerrar`, `Foto`); `sp_planificados` en `postgres/sprints.go`; `EnSprintCerrado` en `memory/historias.go` | `memory/cierres_test.go`, `postgres/cierres_test.go` |
+| Caso de uso | `internal/service/cierres.go` (`Cierres.Preparar`, `Cerrar`); en `asignaciones.go`, `Ver` de un sprint cerrado | `internal/service/cierres_test.go` |
+| Pantalla | `internal/server/cierres.go`, `web/templates/paginas/sprint_cerrar.html` y el botón en `sprint.html` | `internal/server/cierres_test.go` |
+| Aplicación | `app/app.go` (memoria y PostgreSQL) | `app/cierres_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-14.1 Solo el sprint activo | Cerrar un sprint vencido · Cerrar antes de la fecha de fin · No se cierra un sprint que no es el activo · Hoy no hay sprint activo | `TestCerrar_SprintActivoEnCualquierDia`, `TestCerrar_Errores`, `TestCerrar_IgnoraLaHora`, `TestPrepararCierre_UltimoDiaYVencido`, `TestCerrarSprint_Errores` (servicio y pantalla), `TestCerrarSprint_BotonSoloEnElSprintActivo`, `TestConfirmacionDeCierre_MuestraLoQueVaAPasar` |
+| CA-14.2 Las no completadas vuelven al backlog | Las historias no completadas vuelven al backlog | `TestCerrar_LasNoCompletadasVuelvenAlBacklog`, `TestCierres_Cerrar` (memoria y PostgreSQL), `TestCerrarSprint_GuardaElCierre`, `TestCerrarSprint_LaNoCompletadaVuelveAlBacklog`, `TestNewHandlerConBase_SinURLSeCierraElSprint` |
+| CA-14.3 Foto con los SP planificados y completados | Cerrar el sprint activo guarda su resultado · La foto no cambia después del cierre · La velocidad usa el sprint cerrado · Sprint sin historias | `TestCerrar_GuardaLaFotoYLosSP`, `TestCerrar_LaFotoNoComparteLosStoryPoints`, `TestCerrar_CasosLimite`, `TestCierres_Cerrar`, `TestVerSprint_CerradoMuestraLosSPDelCierre`, `TestCerrarSprint_VuelveALaPaginaDelSprintCerrado`, `TestNewHandlerConBase_ConURLElCierreSobreviveAUnReinicio` |
+| CA-14.4 No se reabre ni se modifica | Un sprint cerrado no se cierra otra vez · A un sprint cerrado no se le asignan historias | `TestCerrar_Errores`, `TestCierres_Rechazos_NoGuardanNada` (memoria y PostgreSQL), `TestCerrarSprint_Errores` |
+| RN6 Todo o nada · HU-06 RN6 | — | `TestCierres_Rechazos_NoGuardanNada`, `TestHistorias_EnSprintCerrado`, `TestCerrar_DatosInconsistentes` |
