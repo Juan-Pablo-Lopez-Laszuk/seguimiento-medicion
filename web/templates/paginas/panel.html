@@ -1,0 +1,31 @@
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Panel</li>
+  </ol>
+</nav>
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <h1 class="h3 mb-0">Panel de {{.Proyecto.Nombre}}</h1>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/horas">Horas</a>
+    <a class="btn btn-sm btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/defectos">Defectos</a>
+  </div>
+</div>
+
+<div class="row g-3">
+  {{range .Tarjetas}}
+  <div class="col-12 col-sm-6 col-lg-4">
+    <section class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6 text-body-secondary mb-2">{{.Titulo}}</h2>
+      <div class="{{if eq .Valor "sin datos"}}fs-4 text-body-secondary{{else}}display-6{{end}}" data-tarjeta="{{.Titulo}}">{{.Valor}}</div>
+      <div class="small text-body-secondary">{{.Detalle}}</div>
+    </section>
+  </div>
+  {{end}}
+</div>
+{{end}}
+{{end}}

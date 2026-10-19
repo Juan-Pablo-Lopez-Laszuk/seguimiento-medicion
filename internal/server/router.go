@@ -33,7 +33,9 @@ type Dependencias struct {
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
-	Horas   *service.Horas
+	Horas *service.Horas
+	// Panel junta los indicadores del proyecto (HU-35).
+	Panel   *service.Panel
 	Estado  *service.EstadoProyectos
 	Edicion *service.EdicionProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
@@ -115,6 +117,7 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/defectos", df.registrar)
 	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	r.Get("/proyectos/{id}/horas", horas{casos: dep.Horas}.ver)
+	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
 	return r
 }
 
