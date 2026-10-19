@@ -2,6 +2,7 @@ package postgres_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -39,6 +40,28 @@ func TestDefectos_GuardarYListarPorProyecto(t *testing.T) {
 	lista, err := repo.ListarPorProyecto(ctx, proyecto)
 	if err != nil || len(lista) != 2 || lista[0] != b || lista[1] != a {
 		t.Errorf("se esperaba [b, a] con todos sus campos y se obtuvo %+v, %v", lista, err)
+	}
+	// HU-28: se busca dentro del proyecto y se actualizan el estado y el sprint de resolución (y se vuelve a borrar)
+	if got, err := repo.BuscarPorID(ctx, proyecto, b.ID); err != nil || got != b {
+		t.Errorf("BuscarPorID = %+v, %v; se esperaba %+v", got, err, b)
+	}
+	if _, err := repo.BuscarPorID(ctx, proyecto+99, b.ID); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
+		t.Errorf("de otro proyecto: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
+	}
+	for _, cambio := range []struct {
+		estado defect.Estado
+		sprint int64
+	}{{defect.EstadoResuelto, s.ID}, {defect.EstadoReabierto, 0}} {
+		b.Estado, b.SprintResolucionID = cambio.estado, cambio.sprint
+		if err := repo.Actualizar(ctx, b); err != nil {
+			t.Fatalf("actualizar a %s: %v", cambio.estado, err)
+		}
+		if got, _ := repo.BuscarPorID(ctx, proyecto, b.ID); got != b {
+			t.Errorf("después de actualizar a %s quedó %+v, se esperaba %+v", cambio.estado, got, b)
+		}
+	}
+	if err := repo.Actualizar(ctx, defect.Defecto{ID: b.ID + 99, ProyectoID: proyecto, Estado: defect.EstadoAbierto}); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
+		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
 	}
 	if _, err := repo.Guardar(ctx, defect.Defecto{ProyectoID: proyecto, Descripcion: "x", Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintDeteccionID: s.ID + 99}); err == nil {
 		t.Error("la base debería rechazar un sprint que no existe")
