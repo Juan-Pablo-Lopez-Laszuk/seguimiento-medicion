@@ -1,6 +1,6 @@
 # SPEC-28 · Gestionar el estado de un defecto
 
-**Historia:** HU-28 (#6) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-28 (#6) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la tabla Defecto de `docs/modelo-datos.md`, la métrica M9 de
 > `docs/metricas.md` y los defectos de HU-27.
@@ -74,3 +74,17 @@ Sprint 1 (detección) y Sprint 2 del proyecto.
 ## Trazabilidad
 
 Issue: #6 · Métrica: M9 · Feature: `features/hu-28-estado-defecto.feature` · Pasos BDD: `features/hu28_steps_test.go`
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/defect/estados.go` (`CambiarEstado`, `Siguientes`, errores) | `internal/domain/defect/estados_test.go` |
+| Repositorios | `BuscarPorID` y `Actualizar` en `internal/store/memory/defectos.go` y `internal/store/postgres/defectos.go` | `defectos_test.go` de cada uno |
+| Caso de uso | `internal/service/defectos.go` (`CambiarEstado`, `VistaDefectos.Siguientes`) | `internal/service/defectos_test.go` (`TestCambiarEstadoDeDefecto`) |
+| Pantalla | `internal/server/defectos.go` (`cambiarEstado`, POST `/proyectos/{id}/defectos/{defecto}/estado`), `web/templates/paginas/defectos.html` | `internal/server/defectos_test.go` |
+| Aplicación | ruta en `internal/server/router.go` | `app/app_test.go` (`TestNewHandlerConBase_ConURLElEstadoDelDefectoSobreviveAUnReinicio`) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-28.1 Transiciones | Llevar un defecto hasta Cerrado · Transiciones no permitidas | `estados_test.go`, `TestCambiarEstadoDeDefecto_CambioNoPermitido_Responde409` |
+| CA-28.2 Sprint de resolución | Llevar un defecto hasta Cerrado · Resolver en el mismo sprint en que se detectó | `estados_test.go`, `TestCambiarEstadoDeDefecto_VuelveALaListaConElEstadoNuevo` |
+| CA-28.3 Reabrir borra el sprint | Reabrir un defecto resuelto | `estados_test.go`, `TestDefectos_BuscarPorIDYActualizar` |
