@@ -93,3 +93,81 @@ func TestDefectos_ProyectoInexistente_Responde404(t *testing.T) {
 		}
 	}
 }
+
+// conDefecto arma la aplicación con el proyecto de ejemplo, su Sprint 1 y un defecto Abierto (ID 1).
+func conDefecto(t *testing.T) http.Handler {
+	t.Helper()
+	h := conSprintEHistoria(t)
+	if rec := post(h, "/proyectos/1/defectos", defectoValido()); rec.Code != http.StatusSeeOther {
+		t.Fatalf("no se pudo registrar el defecto de ejemplo: código %d", rec.Code)
+	}
+	return h
+}
+
+// HU-28 · cada defecto ofrece los estados a los que puede pasar
+func TestPaginaDeDefectos_OfreceLosEstadosSiguientes(t *testing.T) {
+	verificarContiene(t, get(conDefecto(t), "/proyectos/1/defectos").Body.String(),
+		`action="/proyectos/1/defectos/1/estado"`, `value="En progreso"`, "Resuelto en")
+}
+
+// HU-28 · CA-28.1 y CA-28.2 · el defecto pasa a En progreso y se resuelve en el Sprint 1
+func TestCambiarEstadoDeDefecto_VuelveALaListaConElEstadoNuevo(t *testing.T) {
+	h := conDefecto(t)
+	rec := post(h, "/proyectos/1/defectos/1/estado", url.Values{"estado": {"En progreso"}})
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/proyectos/1/defectos?estado=en-progreso" {
+		t.Fatalf("código = %d y destino %q, se esperaba 303 a ?estado=en-progreso", rec.Code, rec.Header().Get("Location"))
+	}
+	verificarContiene(t, get(h, "/proyectos/1/defectos?estado=en-progreso").Body.String(), "Defecto en estado En progreso.", `value="Resuelto"`, `name="sprint"`)
+
+	if rec := post(h, "/proyectos/1/defectos/1/estado", url.Values{"estado": {"Resuelto"}, "sprint": {"1"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("resolver: código = %d, se esperaba %d", rec.Code, http.StatusSeeOther)
+	}
+	html := get(h, "/proyectos/1/defectos?estado=resuelto").Body.String()
+	verificarContiene(t, html, "Defecto en estado Resuelto.", `value="Cerrado"`, `value="Reabierto"`)
+	if strings.Count(html, "Sprint 1</td>") != 2 {
+		t.Errorf("la tabla debería mostrar el Sprint 1 como sprint de detección y de resolución")
+	}
+}
+
+// HU-28 · un valor de ?estado= que no es conocido no muestra ningún mensaje
+func TestPaginaDeDefectos_EstadoDesconocidoEnLaURL_NoMuestraMensaje(t *testing.T) {
+	if strings.Contains(get(conDefecto(t), "/proyectos/1/defectos?estado=hackeado").Body.String(), "Defecto en estado") {
+		t.Error("no debería mostrar un mensaje para un estado desconocido")
+	}
+}
+
+// HU-28 · CA-28.1 y CA-28.2 · las transiciones y los sprints que no valen se rechazan con el motivo (409)
+func TestCambiarEstadoDeDefecto_CambioNoPermitido_Responde409(t *testing.T) {
+	h := conDefecto(t)
+	rec := post(h, "/proyectos/1/defectos/1/estado", url.Values{"estado": {"Cerrado"}})
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("código = %d, se esperaba %d", rec.Code, http.StatusConflict)
+	}
+	verificarContiene(t, rec.Body.String(), "un defecto en estado Abierto no puede pasar a Cerrado", "El login falla con Google")
+
+	post(h, "/proyectos/1/defectos/1/estado", url.Values{"estado": {"En progreso"}})
+	rec = post(h, "/proyectos/1/defectos/1/estado", url.Values{"estado": {"Resuelto"}, "sprint": {"x"}})
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("sin sprint: código = %d, se esperaba %d", rec.Code, http.StatusConflict)
+	}
+	verificarContiene(t, rec.Body.String(), "el sprint de resolución tiene que ser un sprint del proyecto")
+}
+
+// HU-28 · un estado que no existe es un pedido inválido; un defecto o proyecto que no existe, 404
+func TestCambiarEstadoDeDefecto_PedidosInvalidos(t *testing.T) {
+	h := conDefecto(t)
+	for ruta, esperado := range map[string]int{
+		"/proyectos/1/defectos/1/estado":  http.StatusBadRequest,
+		"/proyectos/1/defectos/99/estado": http.StatusNotFound,
+		"/proyectos/1/defectos/x/estado":  http.StatusNotFound,
+		"/proyectos/99/defectos/1/estado": http.StatusNotFound,
+	} {
+		estado := "En progreso"
+		if esperado == http.StatusBadRequest {
+			estado = "Hecho"
+		}
+		if rec := post(h, ruta, url.Values{"estado": {estado}}); rec.Code != esperado {
+			t.Errorf("%s (%s): código = %d, se esperaba %d", ruta, estado, rec.Code, esperado)
+		}
+	}
+}
