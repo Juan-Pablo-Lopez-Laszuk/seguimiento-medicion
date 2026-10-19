@@ -38,6 +38,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		// la página de la historia pasa a En progreso (HU-08), por ejemplo en los tests de HU-13
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, repoCriterios),
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, criterios, ahora),
+		Cierres:        service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),

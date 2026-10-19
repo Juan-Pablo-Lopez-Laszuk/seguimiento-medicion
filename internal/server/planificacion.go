@@ -40,7 +40,11 @@ func (h planificacion) ver(w http.ResponseWriter, r *http.Request) {
 	if respondeErrorDeSprint(w, err, "ver el sprint") {
 		return
 	}
-	renderSprint(w, http.StatusOK, paginaSprint{VistaSprint: vista, Mensaje: mensajeDelSprint(r.URL.Query(), numeroSprint)})
+	mensaje := mensajeDelSprint(r.URL.Query(), numeroSprint)
+	if mensaje == "" {
+		mensaje = mensajeDeCierre(r.URL.Query(), vista)
+	}
+	renderSprint(w, http.StatusOK, paginaSprint{VistaSprint: vista, Mensaje: mensaje})
 }
 
 // asignar recibe el botón Asignar. Si se puede, vuelve a la página del sprint (redirección 303); si no, la muestra con

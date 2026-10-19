@@ -14,13 +14,18 @@
 {{template "error" .Error}}
 {{template "aviso" .Aviso}}
 
-<div class="mb-4">
-  <h1 class="h3 mb-1">Sprint {{.Sprint.Numero}}</h1>
-  <p class="mb-1">{{.Sprint.Objetivo}}</p>
-  <div class="small text-body-secondary">
-    Del {{.Sprint.FechaInicio.Format "02/01/2006"}} al {{.Sprint.FechaFin.Format "02/01/2006"}}
-    · <span class="badge text-bg-secondary">{{.Sprint.Estado}}</span>
+<div class="mb-4 d-flex flex-wrap justify-content-between align-items-start gap-2">
+  <div>
+    <h1 class="h3 mb-1">Sprint {{.Sprint.Numero}}</h1>
+    <p class="mb-1">{{.Sprint.Objetivo}}</p>
+    <div class="small text-body-secondary">
+      Del {{.Sprint.FechaInicio.Format "02/01/2006"}} al {{.Sprint.FechaFin.Format "02/01/2006"}}
+      · <span class="badge {{if eq .Sprint.Estado "Cerrado"}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Sprint.Estado}}</span>
+    </div>
   </div>
+  {{if .Activo}}
+  <a class="btn btn-outline-danger" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/cerrar">Cerrar sprint</a>
+  {{end}}
 </div>
 
 <section class="mb-4" aria-labelledby="titulo-asignadas">
@@ -67,7 +72,7 @@
               <span class="small text-body-secondary">sin criterios de aceptación</span>
               {{end}}
               {{end}}
-              {{if eq .Estado "En sprint"}}
+              {{if and $datos.Abierto (eq .Estado "En sprint")}}
               <form action="/proyectos/{{.ProyectoID}}/sprints/{{$datos.Sprint.Numero}}/historias/{{.Numero}}/quitar" method="post">
                 <button class="btn btn-sm btn-outline-secondary" type="submit">Quitar</button>
               </form>

@@ -22,6 +22,7 @@ type Historias struct {
 	lista        []backlog.Historia
 	ultimoID     int64
 	dependientes []Dependiente
+	cierres      *Cierres // lo conecta NuevoCierres (HU-14), para EnSprintCerrado
 }
 
 // NuevoHistorias crea un repositorio vacío. Los dependientes, si hay, son los repositorios de lo que cuelga de una
@@ -181,8 +182,20 @@ func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	return backlog.ErrHistoriaNoEncontrada
 }
 
-// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6). Todavía no se puede cerrar un sprint
-// (HU-14), así que en memoria nunca lo es: HU-14 tiene que hacer que esta función consulte el sprint de la historia.
-func (r *Historias) EnSprintCerrado(_ context.Context, _ int64) (bool, error) {
-	return false, nil
+// EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6): si su sprint está cerrado o si aparece en
+// la foto del cierre de uno (HU-14), igual que en PostgreSQL. Sin el repositorio de cierres, ningún sprint se cerró.
+func (r *Historias) EnSprintCerrado(_ context.Context, historiaID int64) (bool, error) {
+	r.mu.Lock()
+	i := slices.IndexFunc(r.lista, func(h backlog.Historia) bool { return h.ID == historiaID })
+	var h backlog.Historia
+	if i >= 0 {
+		h = copiarHistoria(r.lista[i])
+	}
+	cierres := r.cierres
+	r.mu.Unlock() // el cierre toma los candados en otro orden: se consulta sin tener tomado este
+
+	if i < 0 || cierres == nil {
+		return false, nil
+	}
+	return cierres.esDeUnSprintCerrado(h), nil
 }

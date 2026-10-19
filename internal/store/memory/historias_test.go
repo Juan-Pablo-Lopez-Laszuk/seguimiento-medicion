@@ -266,8 +266,8 @@ func TestHistorias_Eliminar_HistoriaInexistente(t *testing.T) {
 	}
 }
 
-// HU-06 · en memoria no hay forma de asignar una historia a un sprint (HU-12), así que nunca es de un sprint cerrado
-func TestHistorias_EnSprintCerrado_EnMemoriaEsFalso(t *testing.T) {
+// HU-06 · sin el repositorio de cierres (HU-14) ningún sprint se cerró, así que la historia no es de un sprint cerrado
+func TestHistorias_EnSprintCerrado_SinCierresEsFalso(t *testing.T) {
 	ctx := context.Background()
 	repo := memory.NuevoHistorias()
 	h, _ := repo.Guardar(ctx, backlog.Historia{ProyectoID: 1, Numero: 1, Titulo: "Primera"})

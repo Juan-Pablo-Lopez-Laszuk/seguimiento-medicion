@@ -121,6 +121,11 @@ func (s *Asignaciones) Ver(ctx context.Context, proyectoID int64, numeroSprint i
 		_, errAsignar := h.AsignarA(abierto, progresos[h.ID], nil)
 		v.Candidatas = append(v.Candidatas, Candidata{Historia: h, Motivo: motivo(errAsignar)})
 	}
+	if !v.Abierto && destino.SPPlanificados != nil && destino.SPCompletados != nil {
+		// Un sprint cerrado muestra los SP de la foto del cierre (HU-14): las no completadas ya volvieron al backlog.
+		v.Comprometidos, v.Completados = *destino.SPPlanificados, *destino.SPCompletados
+		return v, nil
+	}
 	v.Comprometidos = comprometidos(historias, destino.ID)
 	v.Aviso, err = avisoDeVelocidad(destino, v.Comprometidos, sprints)
 	return v, err
@@ -251,13 +256,18 @@ func (s *Asignaciones) esElActivo(destino sprint.Sprint, sprints []sprint.Sprint
 	return ok && activo.ID == destino.ID
 }
 
-// buscarSprint trae el proyecto, el Sprint N y todos los sprints del proyecto, o el error de "no encontrado".
 func (s *Asignaciones) buscarSprint(ctx context.Context, proyectoID int64, numero int) (project.Proyecto, sprint.Sprint, []sprint.Sprint, error) {
-	p, err := s.proyectos.BuscarPorID(ctx, proyectoID)
+	return buscarSprint(ctx, s.proyectos, s.sprints, proyectoID, numero)
+}
+
+// buscarSprint trae el proyecto, el Sprint N y todos los sprints del proyecto, o el error de "no encontrado". La usan
+// la página del sprint (HU-12 y HU-13) y el cierre (HU-14).
+func buscarSprint(ctx context.Context, proyectos BuscadorProyectos, repo ListadorSprints, proyectoID int64, numero int) (project.Proyecto, sprint.Sprint, []sprint.Sprint, error) {
+	p, err := proyectos.BuscarPorID(ctx, proyectoID)
 	if err != nil {
 		return project.Proyecto{}, sprint.Sprint{}, nil, fmt.Errorf("buscar el proyecto %d: %w", proyectoID, err)
 	}
-	sprints, err := s.sprints.ListarPorProyecto(ctx, proyectoID)
+	sprints, err := repo.ListarPorProyecto(ctx, proyectoID)
 	if err != nil {
 		return project.Proyecto{}, sprint.Sprint{}, nil, fmt.Errorf("listar los sprints del proyecto %d: %w", proyectoID, err)
 	}
