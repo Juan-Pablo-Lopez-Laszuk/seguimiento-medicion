@@ -114,7 +114,7 @@ de la entrega, el **Sprint 4 ya arranca con al menos 34 SP** y es el sprint de c
 - **Las consultas que esperan una decisión se contestan en el día.**
 - **Después de cada merge, los PRs abiertos traen `main` ese mismo día** (lo hace el autor).
 - **Lo que no esté en revisión el viernes 23/10 se avisa en la daily** y se decide si entra o pasa al Sprint 4.
-- **Daily el mismo día**, en el issue "Sprint 3 · Dailies". Juan Pablo revisa el issue cada noche y le avisa a quien
+- **Daily el mismo día**, en el issue "Sprint 3 · Dailies" (#115). Juan Pablo revisa el issue cada noche y le avisa a quien
   falte.
 - **HU-14 va primera.**
 
@@ -130,5 +130,5 @@ de la entrega, el **Sprint 4 ya arranca con al menos 34 SP** y es el sprint de c
 
 ## Dailies
 
-Lunes a viernes, como comentario en el issue "Sprint 3 · Dailies". Al cerrar el sprint se copian a
+Lunes a viernes, como comentario en el issue "Sprint 3 · Dailies" (#115). Al cerrar el sprint se copian a
 [`dailies.md`](dailies.md).
