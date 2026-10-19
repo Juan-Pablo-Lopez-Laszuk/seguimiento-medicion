@@ -41,3 +41,29 @@ func (r *Defectos) ListarPorProyecto(_ context.Context, proyectoID int64) ([]def
 	}
 	return lista, nil
 }
+
+// BuscarPorID devuelve el defecto dentro de su proyecto, o defect.ErrDefectoNoEncontrado.
+func (r *Defectos) BuscarPorID(_ context.Context, proyectoID, id int64) (defect.Defecto, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, d := range r.lista {
+		if d.ID == id && d.ProyectoID == proyectoID {
+			return d, nil
+		}
+	}
+	return defect.Defecto{}, defect.ErrDefectoNoEncontrado
+}
+
+// Actualizar guarda el estado y el sprint de resolución de un defecto que ya existe (HU-28), o devuelve
+// defect.ErrDefectoNoEncontrado.
+func (r *Defectos) Actualizar(_ context.Context, d defect.Defecto) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, existente := range r.lista {
+		if existente.ID == d.ID && existente.ProyectoID == d.ProyectoID {
+			r.lista[i].Estado, r.lista[i].SprintResolucionID = d.Estado, d.SprintResolucionID
+			return nil
+		}
+	}
+	return defect.ErrDefectoNoEncontrado
+}
