@@ -1,6 +1,6 @@
 # SPEC-15 · Consultar sprints anteriores
 
-**Historia:** HU-15 (#47) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Revisada
+**Historia:** HU-15 (#47) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la lista de sprints de `specs/HU-11-crear-sprint.md`, la página
 > del sprint de `specs/HU-12-asignar-historias.md` y la foto del cierre de `specs/HU-14-cerrar-sprint.md` (RN3). El
@@ -68,7 +68,12 @@ No hay datos que cargue el usuario: es una consulta.
   ni HTTP, con su texto para pantalla, como `Porcentaje.Texto` de HU-32.
 - **Sin migración ni cambios en los repositorios:** la lista usa `SPPlanificados` y `SPCompletados` de
   `sprint.Sprint`, que ya se leen (HU-14), y el detalle usa `Cierres.Foto` de HU-14. Los títulos salen de las
-  historias del proyecto, que la página del sprint ya lista.
+  historias del proyecto.
+- **Casos de uso:** la lista es `Sprints.Resumir` (junto a `Listar` de HU-11) y el detalle es `Cierres.Detalle`
+  (el caso de uso de HU-14, que ya tiene la foto). Así `Asignaciones` no cambia: la página del sprint pide el detalle
+  solo si el sprint está cerrado.
+- Un sprint cerrado que no tenga `sp_planificados` (por ejemplo, cargado a mano antes de HU-14) se muestra como sin
+  resultado ("—"), igual que uno abierto.
 - **Sin pantallas nuevas:** la lista es la de HU-11 y el detalle es la página del sprint de HU-12. Así no hay dos
   listas de sprints que mantener.
 - Los repositorios devuelven los sprints en el orden en que se crearon, que es el orden de los números (HU-11). Igual
@@ -108,4 +113,14 @@ Sprint 3 (26/10 al 01/11) sin cerrar.
 
 Issue: #47 · Feature: `features/hu-15-sprints-anteriores.feature` · Pasos BDD: `features/hu15_steps_test.go`
 
-Las tablas de código y tests se completan al implementar.
+| Capa | Código | Tests |
+|---|---|---|
+| Métrica | `internal/metrics/cumplimiento.go` (`StoryPoints.Cumplimiento`, `CumplimientoTexto`) | `metrics/cumplimiento_test.go` |
+| Caso de uso | `internal/service/anteriores.go` (`Sprints.Resumir`, `ResumenSprint`, `Cierres.Detalle`, `DetalleCierre`, `FilaFoto`) | `internal/service/anteriores_test.go` |
+| Pantalla | `internal/server/sprints.go` (lista), `internal/server/planificacion.go` (detalle), `web/templates/paginas/sprints.html` y `sprint.html` | `internal/server/anteriores_test.go` |
+| Aplicación | sin cambios: la página del sprint ya recibe `Cierres` (HU-14) | `app/anteriores_test.go` (memoria y PostgreSQL) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-15.1 Lista ordenada con goal, fechas, SP y cumplimiento | Ver los sprints anteriores con su resultado · Sprint cerrado sin historias · Sprint cerrado con todas sus historias completadas | `TestCumplimiento_CompletadosSobrePlanificados`, `TestCumplimiento_SinSPPlanificadosNoDividePorCero`, `TestResumirSprints_OrdenadosConElResultadoDeLosCerrados`, `TestResumirSprints_CerradoSinHistorias`, `TestResumirSprints_Errores`, `TestListaDeSprints_MuestraElResultadoDeLosCerrados`, `TestSprintCerradoSinHistorias` |
+| CA-15.2 Detalle de cada sprint | Ver el detalle de un sprint cerrado · El detalle conserva la foto aunque la historia cambie después · Consultar un sprint que no existe | `TestDetalleDeCierre_MuestraLaFoto`, `TestDetalleDeCierre_NoCambiaDespuesDelCierre`, `TestDetalleDeCierre_SprintAbierto`, `TestDetalleDeCierre_Errores`, `TestPaginaDeSprintCerrado_MuestraLaFoto`, `TestPaginaDeSprintAbierto_NoTieneLaFoto`, `TestNewHandlerConBase_SinURLSeConsultaElSprintAnterior`, `TestNewHandlerConBase_ConURLElSprintAnteriorSobreviveAUnReinicio` |
