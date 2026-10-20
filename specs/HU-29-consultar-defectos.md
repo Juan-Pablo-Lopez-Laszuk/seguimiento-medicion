@@ -1,6 +1,6 @@
 # SPEC-29 · Consultar defectos
 
-**Historia:** HU-29 (#7) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-29 (#7) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Tareas: #173 a #178.
 
@@ -13,9 +13,9 @@ Ver los defectos del proyecto filtrados, para priorizar cuáles arreglar.
 | Dato | De dónde sale | Validación |
 |---|---|---|
 | Proyecto | id (viene en la URL) | Tiene que existir |
-| Severidad | `?severidad=` | Crítica, Alta, Media o Baja; vacío o cualquier otro valor = todas |
-| Estado | `?estado=` | Abierto, En progreso, Resuelto, Cerrado o Reabierto; otro valor = todos |
-| Sprint | `?sprint=` (id) | Sprint de detección, del proyecto; otro valor = todos |
+| Severidad | `?filtro_severidad=` | Crítica, Alta, Media o Baja; vacío o cualquier otro valor = todas |
+| Estado | `?filtro_estado=` | Abierto, En progreso, Resuelto, Cerrado o Reabierto; otro valor = todos |
+| Sprint | `?filtro_sprint=` (id) | Sprint de detección, del proyecto; otro valor = todos |
 
 ## 3. Salidas esperadas
 
@@ -30,7 +30,7 @@ Ver los defectos del proyecto filtrados, para priorizar cuáles arreglar.
 - RN1: Los filtros se combinan: un defecto aparece si cumple todos los que se eligieron (CA-29.1).
 - RN2: El filtro de sprint es por sprint de detección.
 - RN3: Un valor que no existe o un sprint de otro proyecto se ignora: se muestran todos (no es un error).
-- RN4: La severidad elegida también filtra el resumen de HU-34 (es el mismo parámetro de la página).
+- RN4: Los filtros de la lista no cambian el resumen de HU-34, que tiene su propio filtro de severidad (`?severidad=`).
 
 ## 5. Restricciones
 
@@ -60,3 +60,15 @@ Ver los defectos del proyecto filtrados, para priorizar cuáles arreglar.
 ## Trazabilidad
 
 Issue: #7 · Feature: `features/hu-29-consultar-defectos.feature` · Pasos BDD: `features/hu29_steps_test.go`
+
+| Tarea | Capa | Código | Tests |
+|---|---|---|---|
+| T2 (#174) | Dominio y repositorios | `internal/domain/defect/filtro.go` (`Filtro`, `Cumple`, `Estados`); `ListarFiltrados` en `internal/store/memory/defectos.go` y `internal/store/postgres/defectos.go` | `filtro_test.go`, `defectos_test.go` de cada repositorio |
+| T3 (#175) | Caso de uso | `internal/service/defectos.go` (`Consultar`, `VistaDefectos.PorSeveridad`) | `internal/service/defectos_test.go` (`TestConsultarDefectos`) |
+| T4 (#176) | Pantalla | `internal/server/defectos.go` (`?filtro_severidad`, `?filtro_estado`, `?filtro_sprint`), `web/templates/paginas/defectos.html` | `TestPaginaDeDefectos_FiltrosYCantidadPorSeveridad` |
+| T5 (#177) | Integración y BDD | `RepositorioDefectos` suma `ListarFiltrados` (la app ya lo arma) | `features/hu29_steps_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-29.1 Filtros | Filtrar por severidad, estado y sprint · Filtrar por estado y contar · Un estado que no existe se ignora | `TestFiltro_Cumple`, `TestDefectos_ListarFiltrados`, `TestConsultarDefectos` |
+| CA-29.2 Cantidad por severidad | Filtrar por estado y contar · Ningún defecto cumple los filtros | `TestConsultarDefectos`, `TestPaginaDeDefectos_FiltrosYCantidadPorSeveridad` |
