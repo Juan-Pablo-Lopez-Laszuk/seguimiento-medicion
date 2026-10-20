@@ -18,13 +18,7 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/cobertura"
 )
 
-const (
-	perfilPorDefecto = "coverage.out"
-	umbralPorDefecto = 80.0
-)
-
-// paquetesPorDefecto son los que el equipo se comprometió a mantener cubiertos (Definition of Done).
-var paquetesPorDefecto = []string{"internal/domain", "internal/metrics"}
+const perfilPorDefecto = "coverage.out"
 
 const ayuda = `Uso: go run ./cmd/cobertura [-perfil coverage.out] [-umbral 80] [paquete ...]
 
@@ -45,7 +39,7 @@ func run(args []string, out io.Writer) error {
 	opciones := flag.NewFlagSet("cobertura", flag.ContinueOnError)
 	opciones.SetOutput(io.Discard)
 	ruta := opciones.String("perfil", perfilPorDefecto, "")
-	umbral := opciones.Float64("umbral", umbralPorDefecto, "")
+	umbral := opciones.Float64("umbral", cobertura.MinimoPorDefecto, "")
 	if err := opciones.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			_, err := fmt.Fprintln(out, ayuda)
@@ -55,7 +49,7 @@ func run(args []string, out io.Writer) error {
 	}
 	paquetes := opciones.Args()
 	if len(paquetes) == 0 {
-		paquetes = paquetesPorDefecto
+		paquetes = cobertura.PaquetesPorDefecto()
 	}
 
 	perfil, err := os.Open(*ruta)
