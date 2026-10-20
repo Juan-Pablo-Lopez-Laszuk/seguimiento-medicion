@@ -21,10 +21,11 @@ type sprints struct {
 	casos *service.Sprints
 }
 
-// listaSprints son los datos de la página sprints.html.
+// listaSprints son los datos de la página sprints.html: los sprints ordenados por número, con el resultado de los
+// cerrados (HU-15).
 type listaSprints struct {
 	Proyecto project.Proyecto
-	Sprints  []sprint.Sprint
+	Sprints  []service.ResumenSprint
 	Creado   string // número del sprint recién creado, para el aviso "Sprint N creado"
 }
 
@@ -39,10 +40,14 @@ type formSprint struct {
 	ErrorGeneral string
 }
 
-// listar muestra el proyecto y sus sprints.
+// listar muestra el proyecto y sus sprints con el resultado de los cerrados.
 func (h sprints) listar(w http.ResponseWriter, r *http.Request) {
-	p, lista, ok := h.cargar(w, r)
+	id, ok := idDeProyecto(w, r)
 	if !ok {
+		return
+	}
+	p, lista, err := h.casos.Resumir(r.Context(), id)
+	if !sprintsCargados(w, err, id) {
 		return
 	}
 	render(w, http.StatusOK, "sprints.html", Pagina{
@@ -108,16 +113,21 @@ func (h sprints) cargar(w http.ResponseWriter, r *http.Request) (p project.Proye
 		return p, nil, false
 	}
 	p, lista, err := h.casos.Listar(r.Context(), id)
+	return p, lista, sprintsCargados(w, err, id)
+}
+
+// sprintsCargados responde 404 si el proyecto no existe o 500 si falló la base, y dice si se cargaron los sprints.
+func sprintsCargados(w http.ResponseWriter, err error, id int64) bool {
 	switch {
 	case errors.Is(err, project.ErrNoEncontrado):
 		proyectoNoEncontrado(w)
-		return p, nil, false
+		return false
 	case err != nil:
 		log.Printf("listar sprints del proyecto %d: %v", id, err)
 		http.Error(w, "No se pudieron cargar los sprints. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
-		return p, nil, false
+		return false
 	}
-	return p, lista, true
+	return true
 }
 
 // idDeProyecto lee el {id} de la URL. Si no es un número responde 404, igual que un proyecto que no existe.
