@@ -33,9 +33,11 @@ type Dependencias struct {
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
-	Horas   *service.Horas
-	Estado  *service.EstadoProyectos
-	Edicion *service.EdicionProyectos
+	Horas *service.Horas
+	// Reportes arma el reporte de un sprint (HU-37).
+	Reportes *service.Reportes
+	Estado   *service.EstadoProyectos
+	Edicion  *service.EdicionProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
 	Base VerificadorBase
 }
@@ -67,6 +69,8 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/quitar", pl.accion((*service.Asignaciones).Quitar, "quitada"))
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/empezar", pl.accion((*service.Asignaciones).Empezar, "empezada"))
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
+
+	r.Get("/proyectos/{id}/sprints/{sprint}/reporte", reportes{casos: dep.Reportes}.sprint)
 
 	ci := cierres{casos: dep.Cierres}
 	r.Get("/proyectos/{id}/sprints/{sprint}/cerrar", ci.confirmar)

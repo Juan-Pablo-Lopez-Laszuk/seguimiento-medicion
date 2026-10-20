@@ -23,9 +23,12 @@
       · <span class="badge {{if eq .Sprint.Estado "Cerrado"}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Sprint.Estado}}</span>
     </div>
   </div>
-  {{if .Activo}}
-  <a class="btn btn-outline-danger" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/cerrar">Cerrar sprint</a>
-  {{end}}
+  <div class="d-flex flex-wrap gap-2">
+    <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/reporte">Reporte del sprint</a>
+    {{if .Activo}}
+    <a class="btn btn-outline-danger" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/cerrar">Cerrar sprint</a>
+    {{end}}
+  </div>
 </div>
 
 {{if .Cierre.Cerrado}}

@@ -1,0 +1,87 @@
+{{define "metrica"}}
+<div class="col">
+  <div class="h-100 p-3 bg-body rounded-3 shadow-sm">
+    <div class="small text-body-secondary">{{.nombre}}</div>
+    <div class="fs-5 fw-semibold">{{.valor}}</div>
+  </div>
+</div>
+{{end}}
+
+{{define "contenido"}}
+{{with .Datos}}
+<nav aria-label="breadcrumb" class="d-print-none">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints">Sprints</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}">Sprint {{.Sprint.Numero}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Reporte</li>
+  </ol>
+</nav>
+
+<div class="mb-4 d-flex flex-wrap justify-content-between align-items-start gap-2">
+  <div>
+    <h1 class="h3 mb-1">Reporte del Sprint {{.Sprint.Numero}} · {{.Proyecto.Nombre}}</h1>
+    <p class="mb-1">{{.Sprint.Objetivo}}</p>
+    <div class="small text-body-secondary">
+      Del {{.Sprint.FechaInicio.Format "02/01/2006"}} al {{.Sprint.FechaFin.Format "02/01/2006"}}
+      · <span class="badge {{if .Cerrado}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Sprint.Estado}}</span>
+    </div>
+  </div>
+  <button type="button" class="btn btn-outline-primary d-print-none" onclick="window.print()">Imprimir</button>
+</div>
+
+{{if not .Cerrado}}
+<div class="alert alert-info" role="status">El sprint no está cerrado: el reporte muestra cómo va hasta hoy.</div>
+{{end}}
+{{template "aviso" .Advertencia}}
+
+<section class="mb-4" aria-labelledby="titulo-metricas">
+  <h2 class="h5 mb-3" id="titulo-metricas">Métricas</h2>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+    {{template "metrica" dict "nombre" "SP planificados y completados" "valor" .SPTexto}}
+    {{template "metrica" dict "nombre" "Cumplimiento" "valor" .CumplimientoTexto}}
+    {{template "metrica" dict "nombre" "Historias completadas" "valor" .CompletadasTexto}}
+    {{template "metrica" dict "nombre" "Velocidad del equipo" "valor" .VelocidadTexto}}
+    {{template "metrica" dict "nombre" "Horas estimadas y reales" "valor" .HorasTexto}}
+    {{template "metrica" dict "nombre" "Desviación" "valor" .DesviacionTexto}}
+  </div>
+</section>
+
+<section class="mb-4" aria-labelledby="titulo-historias">
+  <h2 class="h5 mb-3" id="titulo-historias">Historias del sprint</h2>
+  {{if .Historias}}
+  <div class="table-responsive bg-body rounded-3 shadow-sm">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Título</th>
+          <th scope="col">SP</th>
+          <th scope="col">Resultado</th>
+          <th scope="col" class="text-end">Estimadas</th>
+          <th scope="col" class="text-end">Reales</th>
+          <th scope="col" class="text-end">Desviación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Historias}}
+        <tr>
+          <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
+          <td>{{.Titulo}}</td>
+          <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
+          <td><span class="badge {{if .Completada}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.Resultado}}</span></td>
+          <td class="text-end text-nowrap">{{.EstimadasTexto}}</td>
+          <td class="text-end text-nowrap">{{.RealesTexto}}</td>
+          <td class="text-end text-nowrap">{{.DesviacionTexto}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">El sprint no tiene historias.</p>
+  {{end}}
+</section>
+{{end}}
+{{end}}
