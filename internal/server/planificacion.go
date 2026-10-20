@@ -17,15 +17,18 @@ import (
 )
 
 // planificacion agrupa los handlers de la página de un sprint: ver su Sprint Backlog, asignarle historias y
-// quitárselas (HU-12), y empezar y completar sus historias (HU-13).
+// quitárselas (HU-12), y empezar y completar sus historias (HU-13). De un sprint cerrado muestra la foto del cierre
+// (HU-15).
 type planificacion struct {
-	casos *service.Asignaciones
+	casos   *service.Asignaciones
+	cierres *service.Cierres
 }
 
 // paginaSprint son los datos de la página sprint.html: el sprint con sus historias, el mensaje de éxito después de
 // asignar o quitar y el motivo si algo no se pudo.
 type paginaSprint struct {
 	service.VistaSprint
+	Cierre  service.DetalleCierre // el resultado y la foto, si el sprint está cerrado (HU-15)
 	Mensaje string
 	Error   string
 }
@@ -36,15 +39,32 @@ func (h planificacion) ver(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	vista, err := h.casos.Ver(r.Context(), proyectoID, numeroSprint)
-	if respondeErrorDeSprint(w, err, "ver el sprint") {
+	pagina, ok := h.pagina(w, r, proyectoID, numeroSprint, "ver el sprint")
+	if !ok {
 		return
 	}
-	mensaje := mensajeDelSprint(r.URL.Query(), numeroSprint)
-	if mensaje == "" {
-		mensaje = mensajeDeCierre(r.URL.Query(), vista)
+	pagina.Mensaje = mensajeDelSprint(r.URL.Query(), numeroSprint)
+	if pagina.Mensaje == "" {
+		pagina.Mensaje = mensajeDeCierre(r.URL.Query(), pagina.VistaSprint)
 	}
-	renderSprint(w, http.StatusOK, paginaSprint{VistaSprint: vista, Mensaje: mensaje})
+	renderSprint(w, http.StatusOK, pagina)
+}
+
+// pagina arma los datos de la página del sprint: el Sprint Backlog y, si está cerrado, la foto del cierre. Si algo
+// falla responde el error y devuelve false.
+func (h planificacion) pagina(w http.ResponseWriter, r *http.Request, proyectoID int64, numeroSprint int, accion string) (paginaSprint, bool) {
+	vista, err := h.casos.Ver(r.Context(), proyectoID, numeroSprint)
+	if respondeErrorDeSprint(w, err, accion) {
+		return paginaSprint{}, false
+	}
+	p := paginaSprint{VistaSprint: vista}
+	if !vista.Abierto && h.cierres != nil {
+		p.Cierre, err = h.cierres.Detalle(r.Context(), proyectoID, numeroSprint)
+		if respondeErrorDeSprint(w, err, accion) {
+			return paginaSprint{}, false
+		}
+	}
+	return p, true
 }
 
 // asignar recibe el botón Asignar. Si se puede, vuelve a la página del sprint (redirección 303); si no, la muestra con
@@ -94,11 +114,12 @@ func (h planificacion) responder(w http.ResponseWriter, r *http.Request, err err
 		respondeErrorDeSprint(w, err, "asignar o quitar una historia del sprint")
 		return
 	}
-	vista, errVista := h.casos.Ver(r.Context(), proyectoID, numeroSprint)
-	if respondeErrorDeSprint(w, errVista, "volver a mostrar el sprint") {
+	pagina, ok := h.pagina(w, r, proyectoID, numeroSprint, "volver a mostrar el sprint")
+	if !ok {
 		return
 	}
-	renderSprint(w, http.StatusConflict, paginaSprint{VistaSprint: vista, Error: err.Error()})
+	pagina.Error = err.Error()
+	renderSprint(w, http.StatusConflict, pagina)
 }
 
 // esErrorDeLaRegla dice si err es un motivo de la regla de asignar o quitar (o de las transiciones de HU-08), que se
