@@ -48,11 +48,14 @@ func (m Medicion) Cubiertas() int {
 // Porcentaje es la cobertura combinada (RN1): sentencias cubiertas sobre sentencias totales, de 0 a 100. Un paquete con
 // más sentencias pesa más. Sin sentencias es 0.
 func (m Medicion) Porcentaje() float64 {
-	total := m.Sentencias()
-	if total == 0 {
+	return porcentajeDe(m.Cubiertas(), m.Sentencias())
+}
+
+func porcentajeDe(cubiertas, sentencias int) float64 {
+	if sentencias == 0 {
 		return 0
 	}
-	return float64(m.Cubiertas()) * 100 / float64(total)
+	return float64(cubiertas) * 100 / float64(sentencias)
 }
 
 // bloque es un tramo de código del perfil. Si aparece más de una vez cuenta una sola (RN4).
