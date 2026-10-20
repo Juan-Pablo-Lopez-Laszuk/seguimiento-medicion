@@ -69,3 +69,17 @@ func TestReporteDeSprint_NoExiste(t *testing.T) {
 		}
 	}
 }
+
+// CA-37.1 · el reporte muestra los defectos del sprint con su conteo, y un sprint sin defectos lo dice
+func TestReporteDeSprint_MuestraLosDefectos(t *testing.T) {
+	h := conSprintCerrado(t)
+	if rec := post(h, "/proyectos/1/defectos", defectoValido()); rec.Code != http.StatusSeeOther {
+		t.Fatalf("no se pudo registrar el defecto: código %d", rec.Code)
+	}
+
+	verificarContiene(t, get(h, rutaDelReporte).Body.String(),
+		"Defectos", "1 detectado · 0 resueltos", "Defectos del sprint",
+		"El login falla con Google", "Alta", "Abierto", "HU-1 · Iniciar sesión con Google", "Sprint 1", "—")
+	verificarContiene(t, get(h, "/proyectos/1/sprints/2/reporte").Body.String(),
+		"0 detectados · 0 resueltos", "No hubo defectos en este sprint.")
+}
