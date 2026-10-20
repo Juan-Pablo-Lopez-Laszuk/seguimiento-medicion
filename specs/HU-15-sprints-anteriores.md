@@ -1,10 +1,11 @@
 # SPEC-15 · Consultar sprints anteriores
 
-**Historia:** HU-15 (#47) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-15 (#47) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Usa la lista de sprints de `specs/HU-11-crear-sprint.md`, la página
 > del sprint de `specs/HU-12-asignar-historias.md` y la foto del cierre de `specs/HU-14-cerrar-sprint.md` (RN3). El
 > porcentaje sigue la regla de HU-04 (RN4: nunca se divide por cero) y el formato de HU-32 (1 decimal y coma).
+> Revisada por Juan Pablo el 19/10: sin pantallas nuevas, cumplimiento por SP de la foto y detalle desde la foto.
 
 ## 1. Objetivo
 
