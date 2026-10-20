@@ -62,7 +62,7 @@ Característica: Historial de estimaciones
   Escenario: Un valor inválido no anota nada
     Dado que "Iniciar sesión con Google" está estimada en 5 story points
     Cuando cambio la estimación de "Iniciar sesión con Google" a "4"
-    Entonces el cambio da como resultado "story_points: los story points tienen que ser 0, 1, 2, 3, 5, 8, 13 o 21"
+    Entonces la re-estimación da como resultado "story_points: los story points tienen que ser 0, 1, 2, 3, 5, 8, 13 o 21"
     Y el historial de "Iniciar sesión con Google" está vacío
     Y la estimación de "Iniciar sesión con Google" es "5"
 
@@ -73,7 +73,7 @@ Característica: Historial de estimaciones
     Y que "Iniciar sesión con Google" se re-estimó a "8"
     Y que "Iniciar sesión con Google" está Hecha
     Cuando cambio la estimación de "Iniciar sesión con Google" a "13"
-    Entonces el cambio da como resultado "la historia está Hecha: no se puede cambiar su estimación"
+    Entonces la re-estimación da como resultado "la historia está Hecha: no se puede cambiar su estimación"
     Y el historial de "Iniciar sesión con Google" es:
       | anterior | nuevo |
       | 5        | 8     |
