@@ -3,10 +3,13 @@ package service_test
 import (
 	"context"
 	"errors"
+	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
@@ -16,7 +19,7 @@ import (
 
 // Los tests de HU-37 usan el ejemplo de la spec: el Sprint 1 (12/10 al 18/10) tiene HU-1 Login (5 SP, Hecha, 6 h
 // estimadas y 8 h reales), HU-2 Registro (3 SP, En progreso, 4 h y 3 h) y HU-3 Perfil (5 SP, sin horas). El Sprint 2
-// (19/10 al 25/10) no tiene historias.
+// (19/10 al 25/10) no tiene historias. Los defectos se agregan en cada test.
 type escenarioReporte struct {
 	proyectos  *memory.Proyectos
 	sprints    *memory.Sprints
@@ -24,6 +27,7 @@ type escenarioReporte struct {
 	tareas     *memory.Tareas
 	registros  *memory.Registros
 	cierres    *memory.Cierres
+	defectos   *memory.Defectos
 	proyectoID int64
 	sprintIDs  map[int]int64 // ID de cada sprint, por número
 }
@@ -33,7 +37,7 @@ func nuevoEscenarioReporte(t *testing.T) *escenarioReporte {
 	ctx := context.Background()
 	e := &escenarioReporte{
 		proyectos: memory.NuevoProyectos(), sprints: memory.NuevoSprints(), historias: memory.NuevoHistorias(),
-		tareas: memory.NuevoTareas(), registros: memory.NuevoRegistros(), sprintIDs: map[int]int64{},
+		tareas: memory.NuevoTareas(), registros: memory.NuevoRegistros(), defectos: memory.NuevoDefectos(), sprintIDs: map[int]int64{},
 	}
 	e.cierres = memory.NuevoCierres(e.sprints, e.historias)
 	p, err := e.proyectos.Guardar(ctx, project.Proyecto{Nombre: "Software Metrics", FechaInicio: fechaISO(t, "2026-10-05"), FechaFin: fechaISO(t, "2026-11-30")})
@@ -106,9 +110,62 @@ func (e *escenarioReporte) moverAlSprint2(t *testing.T, numero, sp int) {
 
 // reportes arma el caso de uso con los repositorios del escenario y el de historias que se le pasa.
 func (e *escenarioReporte) reportes(historias service.ListadorHistorias) *service.Reportes {
+	return e.reportesCon(historias, e.defectos)
+}
+
+func (e *escenarioReporte) reportesCon(historias service.ListadorHistorias, defectos service.ListadorDefectos) *service.Reportes {
 	cierres := service.NuevoCierres(e.proyectos, e.sprints, e.historias, e.cierres, time.Now)
 	horas := service.NuevoHoras(e.proyectos, e.sprints, e.historias, e.tareas, e.registros)
-	return service.NuevoReportes(e.proyectos, e.sprints, historias, cierres, horas)
+	return service.NuevoReportes(e.proyectos, e.sprints, historias, cierres, horas, defectos)
+}
+
+// defecto guarda un defecto de la HU-historia detectado en el Sprint detectado y, si resuelto no es 0, Resuelto en ese
+// sprint. Devuelve el defecto guardado.
+func (e *escenarioReporte) defecto(t *testing.T, descripcion string, severidad defect.Severidad, historia, detectado, resuelto int) defect.Defecto {
+	t.Helper()
+	h, err := e.historias.BuscarPorNumero(context.Background(), e.proyectoID, historia)
+	if err != nil {
+		t.Fatalf("no está la HU-%d: %v", historia, err)
+	}
+	d := defect.Defecto{ProyectoID: e.proyectoID, HistoriaID: h.ID, Descripcion: descripcion, Severidad: severidad,
+		Estado: defect.EstadoAbierto, SprintDeteccionID: e.sprintIDs[detectado]}
+	if resuelto != 0 {
+		d.Estado, d.SprintResolucionID = defect.EstadoResuelto, e.sprintIDs[resuelto]
+	}
+	guardado, err := e.defectos.Guardar(context.Background(), d)
+	if err != nil {
+		t.Fatalf("no se pudo guardar el defecto %q: %v", descripcion, err)
+	}
+	return guardado
+}
+
+// conDefectosDelEjemplo guarda los defectos de la sección 6 de la spec: #1 Crítica de HU-1 detectado y resuelto en el
+// Sprint 1, #2 Media de HU-2 detectado en el Sprint 1 y abierto, y #3 Baja de HU-3 detectado en el Sprint 2.
+func (e *escenarioReporte) conDefectosDelEjemplo(t *testing.T) (uno, dos defect.Defecto) {
+	t.Helper()
+	uno = e.defecto(t, "El login no valida el correo", defect.SeveridadCritica, 1, 1, 1)
+	dos = e.defecto(t, "El registro tarda mucho", defect.SeveridadMedia, 2, 1, 0)
+	e.defecto(t, "El perfil no guarda la foto", defect.SeveridadBaja, 3, 2, 0)
+	return uno, dos
+}
+
+// filasDeDefectos devuelve cada fila de la tabla de defectos del reporte como texto.
+func filasDeDefectos(r service.ReporteSprint) []string {
+	filas := make([]string, len(r.Defectos))
+	for i, f := range r.Defectos {
+		filas[i] = strings.Join([]string{f.Descripcion, string(f.Severidad), string(f.Estado), f.Historia, f.DetectadoEn, f.ResueltoEn}, " | ")
+	}
+	return filas
+}
+
+func verificarDefectos(t *testing.T, r service.ReporteSprint, texto string, filas ...string) {
+	t.Helper()
+	if r.DefectosTexto() != texto {
+		t.Errorf("se esperaba %q y se obtuvo %q", texto, r.DefectosTexto())
+	}
+	if obtenidas := filasDeDefectos(r); !slices.Equal(obtenidas, filas) {
+		t.Errorf("se esperaban los defectos\n%s\ny se obtuvieron\n%s", strings.Join(filas, "\n"), strings.Join(obtenidas, "\n"))
+	}
 }
 
 func (e *escenarioReporte) reporte(t *testing.T, numero int) service.ReporteSprint {
@@ -272,5 +329,60 @@ func TestReporteDeSprint_Errores(t *testing.T) {
 				t.Errorf("se esperaba %v y se obtuvo %v", c.quiero, err)
 			}
 		})
+	}
+}
+
+// CA-37.1 y RN6 · el reporte cuenta los defectos detectados y resueltos en el sprint (M8 y M9) y los lista por ID
+func TestReporteDeSprint_Defectos(t *testing.T) {
+	e := nuevoEscenarioReporte(t)
+	e.conDefectosDelEjemplo(t)
+	e.cerrar(t, 1, "2026-10-18")
+
+	verificarDefectos(t, e.reporte(t, 1), "2 detectados · 1 resuelto",
+		"El login no valida el correo | Crítica | Resuelto | HU-1 · Login | Sprint 1 | Sprint 1",
+		"El registro tarda mucho | Media | Abierto | HU-2 · Registro | Sprint 1 | —")
+	verificarDefectos(t, e.reporte(t, 2), "1 detectado · 0 resueltos",
+		"El perfil no guarda la foto | Baja | Abierto | HU-3 · Perfil | Sprint 2 | —")
+}
+
+// RN6 · un defecto del Sprint 1 resuelto en el Sprint 2 suma en el Sprint 2 y sigue detectado en el Sprint 1; uno
+// reabierto deja de contar como resuelto
+func TestReporteDeSprint_DefectosResueltosDespuesOReabiertos(t *testing.T) {
+	e := nuevoEscenarioReporte(t)
+	uno, dos := e.conDefectosDelEjemplo(t)
+	e.cerrar(t, 1, "2026-10-18")
+	dos.Estado, dos.SprintResolucionID = defect.EstadoResuelto, e.sprintIDs[2]
+	uno.Estado, uno.SprintResolucionID = defect.EstadoReabierto, 0
+	for _, d := range []defect.Defecto{uno, dos} {
+		if err := e.defectos.Actualizar(context.Background(), d); err != nil {
+			t.Fatalf("no se pudo actualizar el defecto %d: %v", d.ID, err)
+		}
+	}
+
+	if texto := e.reporte(t, 1).DefectosTexto(); texto != "2 detectados · 0 resueltos" {
+		t.Errorf("Sprint 1: se esperaba %q y se obtuvo %q", "2 detectados · 0 resueltos", texto)
+	}
+	verificarDefectos(t, e.reporte(t, 2), "1 detectado · 1 resuelto",
+		"El registro tarda mucho | Media | Resuelto | HU-2 · Registro | Sprint 1 | Sprint 2",
+		"El perfil no guarda la foto | Baja | Abierto | HU-3 · Perfil | Sprint 2 | —")
+}
+
+// RN6 · un sprint sin defectos los cuenta en 0
+func TestReporteDeSprint_SinDefectos(t *testing.T) {
+	verificarDefectos(t, nuevoEscenarioReporte(t).reporte(t, 1), "0 detectados · 0 resueltos")
+}
+
+// defectosQueFallan es un repositorio de defectos que no puede listar.
+type defectosQueFallan struct{}
+
+func (defectosQueFallan) ListarPorProyecto(context.Context, int64) ([]defect.Defecto, error) {
+	return nil, errRepo
+}
+
+// Sección 7 · una falla al leer los defectos es un error
+func TestReporteDeSprint_FallanLosDefectos(t *testing.T) {
+	e := nuevoEscenarioReporte(t)
+	if _, err := e.reportesCon(e.historias, defectosQueFallan{}).Sprint(context.Background(), e.proyectoID, 1); !errors.Is(err, errRepo) {
+		t.Errorf("se esperaba %v y se obtuvo %v", errRepo, err)
 	}
 }
