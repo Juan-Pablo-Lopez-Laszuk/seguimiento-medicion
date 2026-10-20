@@ -78,6 +78,8 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		cierres = postgres.NuevoCierres(pool)
 		base = pool
 	}
+	casosDeCierre := service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now)
+	casosDeHoras := service.NuevoHoras(proyectos, sprints, historias, tareas, registros)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
 		Sprints:        service.NuevoSprints(proyectos, sprints),
@@ -90,10 +92,11 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
-		Horas:          service.NuevoHoras(proyectos, sprints, historias, tareas, registros),
+		Horas:          casosDeHoras,
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, casosDeHoras),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
-		Cierres:        service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now),
+		Cierres:        casosDeCierre,
 		Base:           base,
 
 		// Editar y eliminar una historia (HU-06).
