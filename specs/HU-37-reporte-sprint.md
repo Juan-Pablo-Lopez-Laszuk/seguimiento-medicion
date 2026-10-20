@@ -7,6 +7,8 @@
 > (HU-32), velocidad (HU-31), horas estimadas, reales y desviación (HU-23, HU-24 y HU-33) y defectos detectados y
 > resueltos (HU-34). No calcula nada nuevo: arma el reporte con esas funciones (CA-37.2). Es la base del reporte de
 > proyecto (HU-38) y del PDF (HU-39).
+> Revisada por Juan Pablo el 20/10: pantalla nueva con botón Imprimir, foto del cierre en los sprints cerrados, reporte
+> parcial en los abiertos y velocidad con los sprints cerrados hasta ese.
 
 ## 1. Objetivo
 
