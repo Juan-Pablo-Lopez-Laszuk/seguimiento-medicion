@@ -60,10 +60,39 @@ func TestDefectos_GuardarYListarPorProyecto(t *testing.T) {
 			t.Errorf("después de actualizar a %s quedó %+v, se esperaba %+v", cambio.estado, got, b)
 		}
 	}
+	// HU-29: los filtros se combinan y se aplican en la consulta (b quedó Reabierto)
+	for _, c := range []struct {
+		filtro defect.Filtro
+		ids    []int64
+	}{
+		{defect.Filtro{}, []int64{b.ID, a.ID}},
+		{defect.Filtro{Severidad: defect.SeveridadAlta}, []int64{b.ID}},
+		{defect.Filtro{Estado: defect.EstadoReabierto, SprintID: s.ID}, []int64{b.ID}},
+		{defect.Filtro{Estado: defect.EstadoAbierto, Severidad: defect.SeveridadAlta}, nil},
+		{defect.Filtro{SprintID: s.ID + 99}, nil},
+	} {
+		lista, err := repo.ListarFiltrados(ctx, proyecto, c.filtro)
+		if err != nil || !mismosIDs(lista, c.ids) {
+			t.Errorf("ListarFiltrados(%+v) = %+v, %v; se esperaban los IDs %v", c.filtro, lista, err, c.ids)
+		}
+	}
 	if err := repo.Actualizar(ctx, defect.Defecto{ID: b.ID + 99, ProyectoID: proyecto, Estado: defect.EstadoAbierto}); !errors.Is(err, defect.ErrDefectoNoEncontrado) {
 		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
 	}
 	if _, err := repo.Guardar(ctx, defect.Defecto{ProyectoID: proyecto, Descripcion: "x", Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintDeteccionID: s.ID + 99}); err == nil {
 		t.Error("la base debería rechazar un sprint que no existe")
 	}
+}
+
+// mismosIDs dice si la lista tiene exactamente esos IDs, en ese orden.
+func mismosIDs(lista []defect.Defecto, ids []int64) bool {
+	if len(lista) != len(ids) {
+		return false
+	}
+	for i, d := range lista {
+		if d.ID != ids[i] {
+			return false
+		}
+	}
+	return true
 }
