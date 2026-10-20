@@ -31,6 +31,8 @@
         <th scope="col">Inicio</th>
         <th scope="col">Fin</th>
         <th scope="col">Estado</th>
+        <th scope="col" class="text-nowrap">SP completados</th>
+        <th scope="col">Cumplimiento</th>
       </tr>
     </thead>
     <tbody>
@@ -40,7 +42,9 @@
         <td>{{.Objetivo}}</td>
         <td>{{.FechaInicio.Format "02/01/2006"}}</td>
         <td>{{.FechaFin.Format "02/01/2006"}}</td>
-        <td><span class="badge text-bg-secondary">{{.Estado}}</span></td>
+        <td><span class="badge {{if eq .Estado "Cerrado"}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Estado}}</span></td>
+        <td class="text-nowrap">{{.SPCompletadosTexto}}</td>
+        <td class="text-nowrap">{{.CumplimientoTexto}}</td>
       </tr>
       {{end}}
     </tbody>
