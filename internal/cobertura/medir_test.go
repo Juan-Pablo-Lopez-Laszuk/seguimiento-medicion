@@ -1,8 +1,11 @@
 package cobertura
 
 import (
+	"errors"
+	"io"
 	"strings"
 	"testing"
+	"testing/iotest"
 )
 
 const modulo = "github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/"
@@ -172,6 +175,26 @@ func TestMedicion_Porcentaje(t *testing.T) {
 		t.Run(c.nombre, func(t *testing.T) {
 			if got := c.m.Porcentaje(); got != c.esperado {
 				t.Errorf("Porcentaje() = %v, se esperaba %v", got, c.esperado)
+			}
+		})
+	}
+}
+
+func TestMedir_UnErrorDeLecturaSeInformaConElPrefijoDelPerfil(t *testing.T) {
+	falla := errors.New("disco roto")
+	casos := []struct {
+		nombre string
+		lector io.Reader
+	}{
+		{"antes de la primera línea", iotest.ErrReader(falla)},
+		{"a mitad del perfil", io.MultiReader(strings.NewReader(perfil(modulo+"internal/metrics/velocity.go:10.2,12.3 4 1")), iotest.ErrReader(falla))},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			_, err := Medir(c.lector, controlados)
+
+			if !errors.Is(err, falla) || !strings.HasPrefix(err.Error(), "perfil de cobertura: ") {
+				t.Errorf("Medir() = %v, se esperaba el error de lectura con el prefijo \"perfil de cobertura: \"", err)
 			}
 		})
 	}
