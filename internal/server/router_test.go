@@ -28,6 +28,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	integrantes := memory.NuevoIntegrantes()
 	repoCriterios, repoTareas, repoRegistros := memory.NuevoCriterios(), memory.NuevoTareas(), memory.NuevoRegistros()
+	repoDefectos := memory.NuevoDefectos()
 	criterios := service.NuevoCriterios(proyectos, historias, repoCriterios)
 	cierres := service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora)
 	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
@@ -43,9 +44,9 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		Cierres:        cierres,
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
-		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),
+		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, repoDefectos),
 		Horas:          horas,
-		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas),
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas, repoDefectos),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
