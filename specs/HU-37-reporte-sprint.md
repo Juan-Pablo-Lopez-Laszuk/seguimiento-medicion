@@ -1,6 +1,6 @@
 # SPEC-37 · Reporte de sprint
 
-**Historia:** HU-37 (#48) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-37 (#48) · **Responsable:** López, Juan Pablo · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Junta en una página las métricas de `docs/metricas.md` que ya están
 > hechas: SP planificados y completados (HU-30), cumplimiento y foto del cierre (HU-15), % de historias completadas
@@ -99,8 +99,8 @@ Con el ejemplo de la sección 6 (Sprint 1 cerrado), el reporte muestra, en este 
   página no pueden dar distinto.
 - **Pantalla nueva** con el layout de siempre: tablas dentro de `table-responsive` para el celular y `@media print`
   para imprimir.
-- **Depende de dos PRs abiertos:** HU-15 (#413, la foto y el cumplimiento) y HU-34 (#119, `ContarDefectos`). La rama
-  sale de HU-15. Los defectos se hacen al final, cuando #119 esté en `main`.
+- **Depende de HU-15 y HU-34:** usa la foto y el cumplimiento de HU-15 (#413, ya en `main`) y el resumen de defectos
+  de HU-34 (#119, `VistaDefectos.Resumen` con `ContarDefectos`). La rama trae la de HU-34 hasta que #119 se mergee.
 
 ## 6. Casos límite
 
@@ -140,4 +140,16 @@ Sprint 2.
 
 Issue: #48 · Feature: `features/hu-37-reporte-sprint.feature` · Pasos BDD: `features/hu37_steps_test.go`
 
-Se completa con el código y los tests.
+| Capa | Código | Tests |
+|---|---|---|
+| Métricas | sin cambios: `CalcularStoryPoints`, `StoryPoints.CumplimientoTexto`, `CalcularPorcentajeCompletadas`, `CalcularVelocidad`, `CalcularDesviacion`, `SumarDesviaciones` y `ContarDefectos` (CA-37.2) | los de cada métrica |
+| Caso de uso | `internal/service/reportes.go` (`Reportes.Sprint`, `ReporteSprint`, `FilaReporte`, `FilaDefecto`); `historialDeVelocidad` en `asignaciones.go`, compartido con el aviso de HU-12 | `internal/service/reportes_test.go` |
+| Repositorios | sin cambios: alcanzan los listados de sprints, historias, foto, tareas, registros y defectos (T2) | — |
+| Pantalla | `internal/server/reportes.go`, `web/templates/paginas/reporte_sprint.html`, botón en `sprint.html` y `d-print-none` en `base.html` | `internal/server/reportes_test.go` |
+| Aplicación | `app/app.go` arma `Reportes` con los cierres, las horas y los defectos | `app/reportes_test.go` (memoria y PostgreSQL) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-37.1 Historias, estimaciones, esfuerzo, métricas y defectos | Las métricas del reporte de un sprint cerrado · Las historias del reporte con sus horas · El reporte conserva la foto del cierre · Reporte de un sprint que todavía no se cerró · Reporte de un sprint sin historias ni defectos | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_ConservaLaFoto`, `TestReporteDeSprint_Abierto`, `TestReporteDeSprint_VelocidadHastaEseSprint`, `TestReporteDeSprint_SinHistorias`, `TestReporteDeSprint_Defectos`, `TestReporteDeSprint_DefectosResueltosDespuesOReabiertos`, `TestReporteDeSprint_SinDefectos`, `TestReporteDeSprint_MuestraElReporte`, `TestReporteDeSprint_SeImprime`, `TestPaginaDelSprint_EnlazaAlReporte`, `TestReporteDeSprintAbierto_AvisaQueEsParcial`, `TestReporteDeSprint_MuestraLosDefectos`, `TestNewHandlerConBase_SinURLSeVeElReporteDelSprint`, `TestNewHandlerConBase_ConURLElReporteSobreviveAUnReinicio` |
+| CA-37.2 Reutiliza `internal/metrics` | Las métricas del reporte de un sprint cerrado | `TestReporteDeSprint_Cerrado` (los valores son los de cada métrica), `TestReporteDeSprint_Defectos` |
+| CA-37.3 Sprint inexistente → 404 | Pedir el reporte de un sprint que no existe | `TestReporteDeSprint_Errores`, `TestReporteDeSprint_FallanLosDefectos`, `TestReporteDeSprint_NoExiste` |
