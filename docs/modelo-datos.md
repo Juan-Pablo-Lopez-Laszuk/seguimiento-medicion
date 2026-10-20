@@ -7,7 +7,8 @@ datos de `internal/store/postgres` comprueban las restricciones de este document
 **Estado:** aprobado en la revisión de Juan Pablo (PR #56) y cerrado en la Review del Sprint 0.
 Carolina dio su conformidad sobre sus entidades (Tarea, RegistroEsfuerzo y Defecto) el 10/10/2026, en
 el PR #91 (TEC-03).
-Cualquier cambio posterior se hace con una migración nueva y se actualiza este documento.
+Cualquier cambio posterior se hace con una migración nueva y se actualiza este documento. Hasta ahora: `0002` (RLS de
+la tabla de versiones de goose) y `0003` (`estimaciones_historia`, el historial de estimaciones de HU-16b).
 
 ## Diagrama entidad-relación
 
@@ -20,6 +21,7 @@ erDiagram
 
     HISTORIA ||--o{ TAREA : "se divide en"
     HISTORIA ||--o{ CRITERIO_ACEPTACION : tiene
+    HISTORIA ||--o{ ESTIMACION_HISTORIA : "historial de estimaciones"
     HISTORIA ||--o{ REGISTRO_ESFUERZO : acumula
     HISTORIA ||--o{ DEFECTO : "puede tener"
     HISTORIA }o--o| SPRINT : "asignada a (sprint abierto)"
@@ -108,6 +110,21 @@ sección 5.6). Los paquetes de Go siguen en inglés (Guía, sección 5). Las cla
 | historia_id | bigint FK | |
 | descripcion | text | |
 | cumplido | bool | default false |
+
+### EstimacionHistoria (E2 · Mariano, HU-16b · migración 0003)
+Un cambio de la estimación de una historia. La aplicación solo agrega filas (no las edita ni las borra); se borran junto
+con la historia (HU-06).
+| Campo | Tipo | Notas |
+|---|---|---|
+| id | bigserial PK | |
+| historia_id | bigint FK | |
+| valor_anterior | int | los story points que tenía la historia; de la escala |
+| valor_nuevo | int | los que quedaron; de la escala y distintos del anterior |
+| cambiada_en | timestamptz | cuándo se re-estimó |
+
+Se anota solo cuando la historia ya tenía una estimación y el valor nuevo es distinto: la primera estimación no tiene
+valor anterior y pedir el mismo valor no cambia nada (0 cuenta como estimación). No guarda quién estimó, porque todavía
+no hay login: cuando llegue TEC-05 se le suma la columna.
 
 ### Tarea (E5 · Carolina, HU-25)
 | Campo | Tipo | Notas |
@@ -208,6 +225,8 @@ HU-37) deben leer de esta tabla y no del estado actual de las historias.
 | Tabla.columna | Regla | Motivo |
 |---|---|---|
 | `historias.story_points`, `sprint_historias.story_points`, `sesiones_poker.valor_acordado`, `votos.valor` | `IN (0, 1, 2, 3, 5, 8, 13, 21)` | escala Fibonacci acordada (CA-16.1, CA-18.4, CA-22.1) |
+| `estimaciones_historia.valor_anterior`, `estimaciones_historia.valor_nuevo` | `IN (0, 1, 2, 3, 5, 8, 13, 21)` | la misma escala (HU-16b, CA-16.3) |
+| `estimaciones_historia` | `valor_anterior <> valor_nuevo` | una entrada es un cambio: el mismo valor no se anota |
 | `historias.prioridad` | `IN ('Alta', 'Media', 'Baja')` | CA-05.2 |
 | `historias.estado` | `IN ('Pendiente', 'En sprint', 'En progreso', 'Hecho')` | CA-08.1 |
 | `proyectos.fecha_fin` | `> fecha_inicio` | validación de HU-01 |
@@ -240,7 +259,7 @@ Dependen de varias filas o de datos de otras tablas, así que no se expresan con
 Supabase publica cada tabla del esquema `public` por una API que se maneja con la clave `anon`. Para que
 esa API no pueda leer ni escribir nuestras tablas (en particular `votos` antes de revelar), **todas las tablas
 se crean con RLS activado y sin políticas**. La aplicación entra por `DATABASE_URL` con el usuario `postgres`,
-que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que las 12 tablas tengan RLS activado. La tabla `goose_db_version` (donde goose anota las
+que no está sujeto a RLS, así que no se ve afectada. Un test de TEC-03 comprueba que todas las tablas del modelo (hoy 13) tengan RLS activado. La tabla `goose_db_version` (donde goose anota las
 migraciones aplicadas) no es del modelo, pero también queda en `public` y expuesta: la migración `0002` le activa RLS.
 
 ## Decisiones tomadas en el Sprint 0
@@ -264,7 +283,8 @@ migración nueva cuando la historia que las necesita las defina:
 - **Sin `CHECK` en los estados** (`proyectos.estado`, `sprints.estado`, `integrantes.rol`, etc.): este documento los
   describe en las notas pero no los lista en "Restricciones de valores". Hoy los controla la aplicación.
 - **Sin borrado en cascada** de las claves foráneas. HU-06 (editar y eliminar ítem) lo resolvió sin migración: al
-  eliminar una historia, `Historias.Eliminar` borra sus criterios, sus tareas y la historia **en una transacción**. Las
+  eliminar una historia, `Historias.Eliminar` borra sus criterios, sus tareas, su historial de estimaciones (HU-16b) y la
+  historia **en una transacción**. Las
   demás tablas que apuntan a la historia (sesiones de Planning Poker, registros de esfuerzo, defectos y la foto de
   cierre de un sprint) siguen sin cascada: si tienen datos, la base rechaza el borrado, no se elimina nada y la
   aplicación informa que la historia tiene registros asociados.
