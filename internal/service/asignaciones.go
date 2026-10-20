@@ -11,7 +11,6 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
 )
 
 // RepositorioAsignaciones es lo que el caso de uso necesita del repositorio de historias. Lo implementan
@@ -319,20 +318,9 @@ func comprometidos(historias []backlog.Historia, sprintID int64) int {
 // avisoDeVelocidad devuelve el aviso si los SP comprometidos del sprint superan la velocidad del equipo (RN5): la de
 // HU-31, con los SP completados de los últimos sprints cerrados. Sin sprints cerrados no hay velocidad ni aviso.
 func avisoDeVelocidad(destino sprint.Sprint, comprometidos int, sprints []sprint.Sprint) (string, error) {
-	historial := make([]metrics.Sprint, 0, len(sprints))
-	for _, s := range sprints {
-		m := metrics.Sprint{Numero: s.Numero, Estado: metrics.SprintPlanificado}
-		if s.Estado == sprint.EstadoCerrado {
-			m.Estado = metrics.SprintCerrado
-		}
-		if s.SPCompletados != nil {
-			m.SPCompletados = float64(*s.SPCompletados)
-		}
-		historial = append(historial, m)
-	}
-	v, err := metrics.CalcularVelocidad(historial, metrics.VentanaPorDefecto)
+	v, err := velocidadDe(sprints)
 	if err != nil {
-		return "", fmt.Errorf("calcular la velocidad: %w", err)
+		return "", err
 	}
 	if v.SprintsUsados == 0 || float64(comprometidos) <= v.Valor {
 		return "", nil

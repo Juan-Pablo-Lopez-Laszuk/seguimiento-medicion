@@ -15,6 +15,40 @@
 
 <h1 class="h3 mb-4">Defectos de {{.Proyecto.Nombre}}</h1>
 
+{{with .ResumenFiltrado}}
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-resumen">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="h5 mb-0" id="titulo-resumen">Resumen</h2>
+    {{$filtro := .Severidad}}
+    <form class="d-flex gap-2 align-items-center" action="/proyectos/{{$proyecto}}/defectos" method="get">
+      <label class="form-label mb-0" for="filtro-severidad">Severidad</label>
+      <select class="form-select form-select-sm w-auto" id="filtro-severidad" name="severidad">
+        <option value=""{{if eq $filtro ""}} selected{{end}}>Todas</option>
+        {{range $vista.Severidades}}<option value="{{.}}"{{if eq . $filtro}} selected{{end}}>{{.}}</option>{{end}}
+      </select>
+      <button class="btn btn-sm btn-outline-primary" type="submit">Filtrar</button>
+    </form>
+  </div>
+  <div class="row g-3 mb-3 text-center">
+    <div class="col-4"><div class="small text-body-secondary">Detectados</div><strong id="total-detectados">{{.Detectados}}</strong></div>
+    <div class="col-4"><div class="small text-body-secondary">Resueltos</div><strong id="total-resueltos">{{.Resueltos}}</strong></div>
+    <div class="col-4"><div class="small text-body-secondary">Abiertos</div><strong id="total-abiertos">{{.Abiertos}}</strong></div>
+  </div>
+  {{if .Sprints}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Sprint</th><th scope="col" class="text-end">Detectados</th><th scope="col" class="text-end">Resueltos</th></tr></thead>
+      <tbody>
+        {{range .Sprints}}
+        <tr><th scope="row" class="fw-normal">{{.Nombre}}</th><td class="text-end" data-detectados="{{.Nombre}}">{{.Detectados}}</td><td class="text-end" data-resueltos="{{.Nombre}}">{{.Resueltos}}</td></tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+</section>
+{{end}}
+
 <section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-lista">
   <h2 class="h5 mb-3" id="titulo-lista">Defectos registrados</h2>
   {{if .Defectos}}
