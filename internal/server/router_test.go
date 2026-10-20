@@ -29,6 +29,8 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	integrantes := memory.NuevoIntegrantes()
 	repoCriterios, repoTareas, repoRegistros := memory.NuevoCriterios(), memory.NuevoTareas(), memory.NuevoRegistros()
 	criterios := service.NuevoCriterios(proyectos, historias, repoCriterios)
+	cierres := service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora)
+	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
@@ -38,11 +40,12 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		// la página de la historia pasa a En progreso (HU-08), por ejemplo en los tests de HU-13
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, repoCriterios),
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, criterios, ahora),
-		Cierres:        service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora),
+		Cierres:        cierres,
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
 		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),
-		Horas:          service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros),
+		Horas:          horas,
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas),
 		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
