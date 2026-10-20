@@ -1,6 +1,6 @@
 # SPEC-TEC-06 · Umbral de cobertura en el CI
 
-**Tarea:** TEC-06 (#69) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Borrador
+**Tarea:** TEC-06 (#69) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada (parte 1: el umbral; falta la matriz, CA-06.3)
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. TEC-06 tiene cuatro criterios de
 > aceptación y se entrega en **dos PRs**: este (el umbral del CI, CA-06.2) y otro después (la matriz de trazabilidad,
@@ -99,4 +99,25 @@ Cobertura de los paquetes controlados (sentencias cubiertas / totales)
 
 Issue: #69 · Feature: `features/tec-06-umbral-cobertura.feature` · Pasos BDD: `features/tec06_steps_test.go`
 
-Las columnas de código y tests se completan al implementar.
+| Capa | Código | Tests |
+|---|---|---|
+| Medición | `internal/cobertura/medir.go` (`Medir`, `Medicion`, `Paquete`) | `internal/cobertura/medir_test.go` |
+| Umbral e informe | `internal/cobertura/verificar.go` (`Verificar`, `Informe`) y `defecto.go` (`MinimoPorDefecto`, `PaquetesPorDefecto`) | `internal/cobertura/verificar_test.go`, `internal/cobertura/defecto_test.go` |
+| Línea de comandos | `cmd/cobertura/main.go` | `cmd/cobertura/main_test.go` |
+| CI | paso "Umbral de cobertura (dominio y métricas)" de `.github/workflows/ci.yml`; atajo `make umbral`; `README.md` | Se comprueba en el CI de este PR (ver abajo) |
+
+| Criterio / regla | Escenarios BDD | Tests |
+|---|---|---|
+| CA-06.1 Repositorios contra una base real | — | Ya cubierto por TEC-03: `internal/store/postgres/*_test.go`, `app/app_test.go` y `cmd/migrar/main_test.go` (con `TEST_DATABASE_URL`; en el CI, con el PostgreSQL de servicio) |
+| CA-06.2 y RN2 (el CI falla bajo el mínimo; justo en el mínimo pasa) | La cobertura supera el umbral · La cobertura está justo en el umbral · La cobertura queda por debajo del umbral | `TestVerificar_CumpleSiLaCoberturaCombinadaLlegaAlUmbral`, `TestVerificar_UnPuntoPorDebajoDelUmbralFalla`, `TestVerificar_ElMensajeNombraTodosLosPaquetesControlados`, `TestVerificar_ElUmbralTieneQueEstarEntreCeroYCien`, `TestMinimoPorDefecto_EsElOchentaPorCiento`, `TestRun_ConCoberturaSuficienteMuestraElInformeYNoFalla`, `TestRun_ConCoberturaBajaFallaPeroMuestraElInforme`, `TestRun_ElUmbralSePuedeCambiar`, `TestRun_ElUmbralFueraDeRangoDaError` |
+| RN1 (cobertura combinada, ponderada por sentencias) | La cobertura se combina entre los paquetes | `TestMedir_SumaLasSentenciasDeLosPaquetesControlados`, `TestMedir_AgrupaPorPaqueteYLosOrdenaPorRuta`, `TestMedicion_Porcentaje` |
+| RN3 (solo dominio y métricas, con subpaquetes) | Los demás paquetes no cuentan para el umbral | `TestMedir_LosSubpaquetesCuentanComoParteDelPaqueteControlado`, `TestMedir_IgnoraLosPaquetesQueNoSeControlan`, `TestPaquetesPorDefecto_SonElDominioYLasMetricas`, `TestPaquetesPorDefecto_DevuelveUnaCopiaQueNoSePuedePisar`, `TestRun_NoMideLosPaquetesQueNoSeControlan`, `TestRun_LosPaquetesControladosSePuedenElegir` |
+| RN4 (bloque repetido) | Un bloque repetido en el perfil cuenta una sola vez | `TestMedir_UnBloqueRepetidoCuentaUnaSolaVezYEstaCubiertoSiAlgunaAparicionLoCubre` |
+| RN5 (sin sentencias controladas) | El perfil no tiene sentencias de los paquetes controlados | `TestMedir_SinSentenciasControladasDevuelveUnaMedicionVacia`, `TestVerificar_SinSentenciasControladasFalla`, `TestRun_SinSentenciasControladasFalla` |
+| RN6 (perfil ilegible) | El perfil está mal formado | `TestMedir_UnPerfilIlegibleDaError`, `TestMedir_UnErrorDeLecturaSeInformaConElPrefijoDelPerfil`, `TestMedir_AceptaLosTresModosDeCobertura`, `TestMedir_IgnoraLasLineasEnBlanco`, `TestRun_UnPerfilQueNoExisteDaError`, `TestRun_UnPerfilMalFormadoDaError`, `TestRun_SinPerfilUsaCoverageOutDeLaCarpetaActual`, `TestRun_UnaOpcionDesconocidaMuestraLaAyuda`, `TestRun_PedirAyudaLaMuestraYNoFalla` |
+| CA-06.4 (cobertura por paquete disponible) | — | `TestInforme_TieneUnaLineaPorPaqueteYLaCombinada`, `TestInforme_SinPaquetesMuestraSoloLaCombinada`; el paso del CI deja el informe en el resumen de la corrida |
+| CA-06.3 (matriz requerimiento → test) | — | PR siguiente: `docs/trazabilidad-requisitos.md` |
+
+**Cómo se comprobó que el CI de verdad falla:** el paso se corrió localmente con las mismas variables que usa GitHub
+Actions, una vez con la cobertura real de `main` (607 de 610 sentencias, 99,5 %: sale con código 0) y otra con un perfil
+de 79 de 100 sentencias (sale con código 1 y deja la anotación `::error` con el motivo).
