@@ -45,6 +45,7 @@
     {{template "metrica" dict "nombre" "Velocidad del equipo" "valor" .VelocidadTexto}}
     {{template "metrica" dict "nombre" "Horas estimadas y reales" "valor" .HorasTexto}}
     {{template "metrica" dict "nombre" "Desviación" "valor" .DesviacionTexto}}
+    {{template "metrica" dict "nombre" "Defectos" "valor" .DefectosTexto}}
   </div>
 </section>
 
@@ -81,6 +82,40 @@
   </div>
   {{else}}
   <p class="text-body-secondary mb-0">El sprint no tiene historias.</p>
+  {{end}}
+</section>
+
+<section class="mb-4" aria-labelledby="titulo-defectos">
+  <h2 class="h5 mb-3" id="titulo-defectos">Defectos del sprint</h2>
+  {{if .Defectos}}
+  <div class="table-responsive bg-body rounded-3 shadow-sm">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Defecto</th>
+          <th scope="col">Severidad</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Historia</th>
+          <th scope="col">Detectado en</th>
+          <th scope="col">Resuelto en</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Defectos}}
+        <tr>
+          <td><span class="text-body-secondary">#{{.ID}}</span> {{.Descripcion}}</td>
+          <td class="text-nowrap">{{.Severidad}}</td>
+          <td class="text-nowrap">{{.Estado}}</td>
+          <td>{{with .Historia}}{{.}}{{else}}<span class="text-body-secondary">—</span>{{end}}</td>
+          <td class="text-nowrap">{{.DetectadoEn}}</td>
+          <td class="text-nowrap">{{.ResueltoEn}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">No hubo defectos en este sprint.</p>
   {{end}}
 </section>
 {{end}}
