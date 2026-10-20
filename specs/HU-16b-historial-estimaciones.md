@@ -1,6 +1,6 @@
 # SPEC-16b · Historial de estimaciones
 
-**Historia:** HU-16b (#106) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Revisada
+**Historia:** HU-16b (#106) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Sale de dividir HU-16 (decisión de Juan Pablo del 15/10, issue #106):
 > HU-16 (`specs/HU-16-estimar-historia.md`) quedó con CA-16.1 y CA-16.2, y esta historia suma CA-16.3. Usa
@@ -55,23 +55,26 @@ pantalla de HU-16 (o, más adelante, desde Planning Poker).
 
 ## 5. Restricciones
 
-- **La regla de qué se anota es una función pura** en `internal/domain/backlog`, que recibe la estimación anterior (puede
-  ser "sin estimar"), la nueva y la hora, y devuelve la entrada a anotar o que no corresponde (RN1 a RN4). No usa base
-  de datos ni HTTP, así se prueba con TDD. Los dos repositorios la usan, así que la regla está en un solo lugar.
+- **La regla de qué se anota es una función pura** en `internal/domain/backlog` (`NuevaReestimacion`), que recibe la
+  estimación anterior (nil si estaba "sin estimar"), la nueva y la hora, y devuelve la entrada (`Reestimacion`: anterior,
+  nuevo y `CambiadaEn`) o que no corresponde (RN1 a RN4). No usa base de datos ni HTTP, así se prueba con TDD. Los dos
+  repositorios la usan, así que la regla está en un solo lugar.
 - **Migración 0003** (`migrations/0003_estimaciones_historia.sql`, en su propio PR, sin el `CHECK` de fechas de `sprints`
   que va en la 0004): tabla `estimaciones_historia` con `id`, `historia_id` (FK a `historias`), `valor_anterior`,
   `valor_nuevo` y `cambiada_en` (`timestamptz`), con los mismos `CHECK` de escala que `historias` y `valor_anterior <>
   valor_nuevo`. Sin `ON DELETE CASCADE`, como el resto del modelo. **RLS habilitado y sin políticas**, como las demás
   tablas (`0001` y `0002`): Supabase publica por API cada tabla de `public`. Se actualiza `docs/modelo-datos.md`.
-- **`ActualizarStoryPoints` sigue siendo el único lugar donde se escribe la estimación** (HU-16): pasa a recibir la hora
-  del cambio. En PostgreSQL hace todo en **una transacción**: lee los story points actuales con `FOR UPDATE`, los
-  actualiza y agrega la entrada si corresponde, así dos re-estimaciones a la vez no pierden un valor. En memoria hace lo
-  mismo con su candado.
+- **`ActualizarStoryPoints` sigue siendo el único lugar donde se escribe la estimación** (HU-16) y **conserva su
+  firma**, porque otros casos de uso y tests la llaman. La hora del cambio la pone el repositorio con su reloj
+  (`ConReloj`; sin llamarlo, la hora actual), así los tests la fijan. En PostgreSQL hace todo en **una transacción**:
+  lee los story points actuales con `FOR UPDATE`, los actualiza y agrega la entrada si corresponde, así dos
+  re-estimaciones a la vez no pierden un valor. En memoria hace lo mismo con su candado.
 - **Lectura:** los repositorios suman `ListarEstimaciones(ctx, historiaID)`, de la más reciente a la más antigua.
-- **Caso de uso:** `Estimaciones` recibe el reloj (`ahora func() time.Time`, como `Asignaciones`) y suma `Historial` (con
-  el proyecto y el número de la historia). La página de la historia lo muestra.
-- **HU-06:** `Eliminar` borra también el historial dentro de su transacción (PostgreSQL) y el repositorio en memoria
-  suma el historial a sus dependientes (RN9).
+- **Caso de uso:** la vista de la historia (`Criterios.Ver`) trae el historial en `VistaHistoria.Historial` cuando se le
+  conecta con `Criterios.ConHistorial`; sin conectarlo no lo trae y no falla, así no cambia `NuevoCriterios` ni a quienes
+  lo arman. La página de la historia lo muestra con `domain.FechaHoraEnArgentina` (el servidor corre en UTC).
+- **HU-06:** `Eliminar` borra también el historial dentro de su transacción (PostgreSQL), y el repositorio en memoria,
+  que guarda el historial él mismo, lo borra junto con la historia (RN9).
 - **Sin cambios** en HU-05 (crear), en HU-06 (editar) ni en el formulario de estimar de HU-16. La pantalla usa los
   componentes de TEC-07.
 - **Producción:** la migración 0003 la aplica Juan Pablo el mismo día del merge (acción de la Retro del Sprint 1); sin
@@ -117,19 +120,18 @@ No hay errores nuevos: valen los de HU-16 (valor inválido, historia Hecha, proy
 
 Issue: #106 · Feature: `features/hu-16b-historial-estimaciones.feature` · Pasos BDD: `features/hu16b_steps_test.go`
 
-Las columnas de código y tests se completan al implementar.
-
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | `internal/domain/backlog/` (regla de qué se anota) | |
-| Migración | `migrations/0003_estimaciones_historia.sql` | |
-| Repositorio en memoria | `ActualizarStoryPoints` y `ListarEstimaciones` en `internal/store/memory/historias.go` | |
-| Repositorio PostgreSQL | `ActualizarStoryPoints`, `ListarEstimaciones` y `Eliminar` en `internal/store/postgres/historias.go` | |
-| Caso de uso | `internal/service/estimaciones.go` (`Estimaciones.Estimar` y `Estimaciones.Historial`) | |
-| Pantalla | `web/templates/paginas/historia.html` | |
-| Aplicación | `app/app.go` | |
+| Dominio | `internal/domain/backlog/reestimacion.go` (`NuevaReestimacion`, `Reestimacion`) y `internal/domain/fecha.go` (`FechaHoraEnArgentina`) | `internal/domain/backlog/reestimacion_test.go`, `internal/domain/fechahora_test.go` |
+| Migración | `migrations/0003_estimaciones_historia.sql` y `docs/modelo-datos.md` | `internal/store/postgres/migraciones_test.go` (`TestMigracion_SubeTodasLasTablasConRLS`, `TestMigracion_RestriccionesDelModelo`, `TestMigracion_BajaDejaLaBaseSinTablasDelModelo`) |
+| Repositorio en memoria | `ConReloj`, `ActualizarStoryPoints`, `ListarEstimaciones` y `Eliminar` en `internal/store/memory/historias.go` | `internal/store/memory/estimaciones_test.go` |
+| Repositorio PostgreSQL | `ConReloj`, `ActualizarStoryPoints`, `ListarEstimaciones` y `Eliminar` en `internal/store/postgres/historias.go` | `internal/store/postgres/estimaciones_test.go` |
+| Caso de uso | `internal/service/criterios.go` (`Criterios.ConHistorial`, `VistaHistoria.Historial`) | `internal/service/historial_estimaciones_test.go` |
+| Pantalla | sección "Historial de estimaciones" de `web/templates/paginas/historia.html` y la función `fechaHora` de `internal/server/render.go` | `internal/server/historial_estimaciones_test.go` |
+| Aplicación | `app/app.go` (conecta el historial a la vista de la historia) | `app/app_test.go` (`TestNewHandlerConBase_SinURLElHistorialDeEstimacionesSeGuardaEnMemoria`, `TestNewHandlerConBase_ConURLElHistorialDeEstimacionesSobreviveAUnReinicio`) |
 
 | Criterio | Escenarios BDD | Tests |
 |---|---|---|
-| CA-16.3 Re-estimar conserva el valor anterior | Re-estimar conserva el valor anterior · Varias re-estimaciones, la más reciente primero · La primera estimación no tiene valor anterior · Pedir el mismo valor no anota nada · Cero cuenta como estimación · Un valor inválido no anota nada · Una historia Hecha no se re-estima · El historial es de cada historia | |
-| RN9 Eliminar una historia elimina su historial | Eliminar una historia con historial | |
+| CA-16.3 Re-estimar conserva el valor anterior | Re-estimar conserva el valor anterior · Varias re-estimaciones, la más reciente primero · La primera estimación no tiene valor anterior · Pedir el mismo valor no anota nada · Cero cuenta como estimación · Un valor inválido no anota nada · Una historia Hecha no se re-estima · El historial es de cada historia | `TestNuevaReestimacion_ConUnValorDistinto_AnotaElCambio`, `TestNuevaReestimacion_TodosLosParesDistintosDeLaEscala_Anotan`, `TestNuevaReestimacion_PrimeraEstimacion_NoSeAnota`, `TestNuevaReestimacion_ElMismoValor_NoSeAnota`, `TestNuevaReestimacion_ElCeroEsUnValor_Anota`, `TestHistorias_Reestimar_AnotaElValorAnterior`, `TestHistorias_Reestimar_SoloAnotaLosCambios`, `TestHistorias_Reestimar_ElHistorialEsDeCadaHistoria`, `TestHistorias_Reestimar_LoQueFallaNoDejaHistorial`, `TestHistorias_Reestimar_ALaVez_NoPierdeValores`, `TestVerHistoria_ConHistorial_TraeLasReestimaciones`, `TestPaginaDeLaHistoria_MuestraElHistorialDeEstimaciones`, `TestPaginaDeLaHistoria_SinReestimar_DiceQueNoSeReestimo`, `TestEstimarHistoria_ValorInvalido_ConservaElHistorial`, `TestPaginaDeLaHistoria_Hecha_MuestraElHistorial` |
+| RN9 Eliminar una historia elimina su historial | Eliminar una historia con historial | `TestHistorias_Eliminar_EliminaElHistorial`, `TestHistorias_Eliminar_ConHistorialDeEstimaciones`, `TestNewHandlerConBase_SinURLElHistorialDeEstimacionesSeGuardaEnMemoria`, `TestNewHandlerConBase_ConURLElHistorialDeEstimacionesSobreviveAUnReinicio` |
+| Se guarda en la base | — | `TestNewHandlerConBase_ConURLElHistorialDeEstimacionesSobreviveAUnReinicio` |
