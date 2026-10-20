@@ -569,3 +569,18 @@ func TestNewHandlerConBase_ConURLLasHorasSeCalculanDesdeLaBase(t *testing.T) {
 		}
 	}
 }
+
+// HU-35: el panel lee las métricas de la base, también después de un reinicio.
+func TestNewHandlerConBase_ConURLElPanelLeeLaBase(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con panel")
+	post(primera, "/proyectos/1/sprints", neturl.Values{"objetivo": {"MVP"}, "fecha_inicio": {"2026-10-05"}, "fecha_fin": {"2026-10-11"}})
+	if rec := post(primera, "/proyectos/1/defectos", neturl.Values{"descripcion": {"Defecto"}, "severidad": {"Alta"}, "sprint": {"1"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("registrar defecto: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+
+	if pagina := get(nuevaApp(t, url), "/proyectos/1/panel"); !strings.Contains(pagina, `data-tarjeta="Defectos abiertos">1<`) {
+		t.Errorf("después de reiniciar el panel debería mostrar 1 defecto abierto")
+	}
+}

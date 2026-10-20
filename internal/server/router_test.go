@@ -29,6 +29,9 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	integrantes := memory.NuevoIntegrantes()
 	repoCriterios, repoTareas, repoRegistros := memory.NuevoCriterios(), memory.NuevoTareas(), memory.NuevoRegistros()
 	criterios := service.NuevoCriterios(proyectos, historias, repoCriterios)
+	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora)
+	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
+	defectos := service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos())
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
@@ -41,9 +44,10 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		Cierres:        service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
-		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos()),
-		Horas:          service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros),
-		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora),
+		Defectos:       defectos,
+		Horas:          horas,
+		Panel:          service.NuevoPanel(estado, sprints, horas, defectos),
+		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 	})

@@ -37,6 +37,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	registrarPasosHU32(sc)
 	registrarPasosHU33(sc)
 	registrarPasosHU34(sc)
+	registrarPasosHU35(sc)
 	registrarPasosTEC04(sc)
 }
 
