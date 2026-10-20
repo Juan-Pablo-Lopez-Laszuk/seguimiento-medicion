@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
 )
 
 // Los sprints y las historias del proyecto se piden con ListadorSprints y ListadorHistorias (de HU-04).
@@ -68,6 +70,42 @@ func (v VistaDefectos) HistoriaDe(id int64) string {
 // Siguientes devuelve los estados a los que puede pasar un defecto en el estado dado (HU-28), para los botones.
 func (VistaDefectos) Siguientes(e defect.Estado) []defect.Estado {
 	return defect.Siguientes(e)
+}
+
+// FilaDefectos es una fila del resumen de defectos (HU-34): un sprint con sus detectados y resueltos.
+type FilaDefectos struct {
+	Nombre string
+	metrics.ConteoSprint
+}
+
+// ResumenDefectos es el resumen de defectos del proyecto (HU-34): una fila por sprint y el total.
+type ResumenDefectos struct {
+	Severidad  defect.Severidad // la del filtro; "" = todas
+	Sprints    []FilaDefectos   // en el orden de los sprints
+	Detectados int
+	Resueltos  int
+	Abiertos   int
+}
+
+// Resumen cuenta los defectos detectados y resueltos por sprint y en el proyecto (M8 y M9), solo los de esa severidad.
+// Una severidad vacía o que no existe cuenta todos (CA-34.2).
+func (v VistaDefectos) Resumen(severidad defect.Severidad) ResumenDefectos {
+	if !slices.Contains(defect.Severidades, severidad) {
+		severidad = ""
+	}
+	datos := make([]metrics.Defecto, len(v.Defectos))
+	for i, d := range v.Defectos {
+		datos[i] = metrics.Defecto{
+			Severidad: string(d.Severidad), SprintDeteccion: d.SprintDeteccionID, SprintResolucion: d.SprintResolucionID,
+			Resuelto: d.Estado == defect.EstadoResuelto || d.Estado == defect.EstadoCerrado,
+		}
+	}
+	c := metrics.ContarDefectos(datos, string(severidad))
+	r := ResumenDefectos{Severidad: severidad, Detectados: c.Detectados, Resueltos: c.Resueltos, Abiertos: c.Abiertos}
+	for _, s := range v.Sprints {
+		r.Sprints = append(r.Sprints, FilaDefectos{Nombre: fmt.Sprintf("Sprint %d", s.Numero), ConteoSprint: c.PorSprint[s.ID]})
+	}
+	return r
 }
 
 // Ver devuelve el proyecto con sus defectos, sprints e historias, o project.ErrNoEncontrado.

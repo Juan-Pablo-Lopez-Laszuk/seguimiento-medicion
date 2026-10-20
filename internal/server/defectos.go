@@ -27,6 +27,12 @@ type paginaDefectos struct {
 	Nuevo       defect.Datos
 	Errores     map[string]string
 	Severidades []defect.Severidad
+	Filtro      defect.Severidad // severidad del resumen (HU-34); "" = todas
+}
+
+// ResumenFiltrado devuelve el resumen de defectos con el filtro de la página (HU-34).
+func (p paginaDefectos) ResumenFiltrado() service.ResumenDefectos {
+	return p.Resumen(p.Filtro)
 }
 
 // ver muestra los defectos del proyecto y el formulario para registrar uno.
@@ -39,7 +45,7 @@ func (h defectos) ver(w http.ResponseWriter, r *http.Request) {
 	if respondeErrorDeTareas(w, err, "ver los defectos") {
 		return
 	}
-	pagina := paginaDefectos{VistaDefectos: vista, Severidades: defect.Severidades}
+	pagina := paginaDefectos{VistaDefectos: vista, Severidades: defect.Severidades, Filtro: defect.Severidad(r.URL.Query().Get("severidad"))}
 	if r.URL.Query().Get("registrado") == "1" {
 		pagina.Mensaje = "Defecto registrado."
 	}

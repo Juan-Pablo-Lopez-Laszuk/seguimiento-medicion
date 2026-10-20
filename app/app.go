@@ -79,6 +79,9 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		cierres = postgres.NuevoCierres(pool)
 		base = pool
 	}
+	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now)
+	horas := service.NuevoHoras(proyectos, sprints, historias, tareas, registros)
+	casosDefectos := service.NuevoDefectos(proyectos, sprints, historias, defectos)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
 		Sprints:        service.NuevoSprints(proyectos, sprints),
@@ -90,9 +93,10 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, tareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
-		Defectos:       service.NuevoDefectos(proyectos, sprints, historias, defectos),
-		Horas:          service.NuevoHoras(proyectos, sprints, historias, tareas, registros),
-		Estado:         service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now),
+		Defectos:       casosDefectos,
+		Horas:          horas,
+		Panel:          service.NuevoPanel(estado, sprints, horas, casosDefectos),
+		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Cierres:        service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now),
 		Base:           base,
