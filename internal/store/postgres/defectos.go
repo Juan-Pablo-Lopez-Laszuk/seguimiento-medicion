@@ -102,3 +102,24 @@ func (r *Defectos) Actualizar(ctx context.Context, d defect.Defecto) error {
 	}
 	return nil
 }
+
+// ListarFiltrados devuelve los defectos del proyecto que cumplen el filtro, el más nuevo primero (HU-29). Los valores
+// del filtro van como parámetros: un campo vacío (o 0) no filtra.
+func (r *Defectos) ListarFiltrados(ctx context.Context, proyectoID int64, f defect.Filtro) ([]defect.Defecto, error) {
+	filas, err := r.pool.Query(ctx, `SELECT `+columnasDefecto+` FROM defectos
+		WHERE proyecto_id = $1 AND ($2 = '' OR severidad = $2) AND ($3 = '' OR estado = $3) AND ($4 = 0 OR sprint_deteccion_id = $4)
+		ORDER BY id DESC`, proyectoID, string(f.Severidad), string(f.Estado), f.SprintID)
+	if err != nil {
+		return nil, fmt.Errorf("listar los defectos filtrados del proyecto %d: %w", proyectoID, err)
+	}
+	defer filas.Close()
+	var lista []defect.Defecto
+	for filas.Next() {
+		d, err := escanearDefecto(filas)
+		if err != nil {
+			return nil, err
+		}
+		lista = append(lista, d)
+	}
+	return lista, filas.Err()
+}
