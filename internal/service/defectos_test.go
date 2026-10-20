@@ -114,3 +114,41 @@ func TestCambiarEstadoDeDefecto(t *testing.T) {
 		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
 	}
 }
+
+// HU-34 · CA-34.1 y CA-34.2 · el resumen cuenta detectados y resueltos por sprint, el total y filtra por severidad
+func TestResumenDeDefectos(t *testing.T) {
+	e := nuevoEscenarioDefectos(t)
+	ctx := context.Background()
+	registrar := func(sev defect.Severidad) defect.Defecto {
+		d, err := e.casos.Registrar(ctx, e.proyectoID, defect.Datos{Descripcion: "Falla", Severidad: sev, SprintID: e.sprint.ID})
+		if err != nil {
+			t.Fatalf("registrar: %v", err)
+		}
+		return d
+	}
+	resuelto := registrar(defect.SeveridadAlta)
+	registrar(defect.SeveridadBaja)
+	for _, paso := range []defect.Estado{defect.EstadoEnProgreso, defect.EstadoResuelto} {
+		if _, err := e.casos.CambiarEstado(ctx, e.proyectoID, resuelto.ID, paso, e.sprint.ID); err != nil {
+			t.Fatalf("a %s: %v", paso, err)
+		}
+	}
+	v, err := e.casos.Ver(ctx, e.proyectoID)
+	if err != nil {
+		t.Fatalf("ver: %v", err)
+	}
+
+	todas := v.Resumen("")
+	if len(todas.Sprints) != 1 || todas.Sprints[0].Nombre != "Sprint 1" || todas.Sprints[0].Detectados != 2 || todas.Sprints[0].Resueltos != 1 {
+		t.Errorf("sprints = %+v", todas.Sprints)
+	}
+	if todas.Detectados != 2 || todas.Resueltos != 1 || todas.Abiertos != 1 || todas.Severidad != "" {
+		t.Errorf("total = %+v", todas)
+	}
+	if baja := v.Resumen(defect.SeveridadBaja); baja.Detectados != 1 || baja.Resueltos != 0 || baja.Severidad != defect.SeveridadBaja {
+		t.Errorf("Baja = %+v", baja)
+	}
+	if otra := v.Resumen("Urgente"); otra.Detectados != 2 || otra.Severidad != "" {
+		t.Errorf("una severidad desconocida debería mostrar todas: %+v", otra)
+	}
+}

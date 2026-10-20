@@ -171,3 +171,17 @@ func TestCambiarEstadoDeDefecto_PedidosInvalidos(t *testing.T) {
 		}
 	}
 }
+
+// HU-34 · CA-34.1 y CA-34.2 · la página de defectos muestra el resumen por sprint y el total, con filtro por severidad
+func TestPaginaDeDefectos_MuestraElResumen(t *testing.T) {
+	h := conDefecto(t) // un defecto Alta detectado en el Sprint 1
+	verificarContiene(t, get(h, "/proyectos/1/defectos").Body.String(),
+		"Resumen", `id="filtro-severidad"`, `<option value="" selected>Todas</option>`,
+		`<td class="text-end" data-detectados="Sprint 1">1</td>`, `<td class="text-end" data-resueltos="Sprint 1">0</td>`,
+		`<strong id="total-detectados">1</strong>`, `<strong id="total-resueltos">0</strong>`, `<strong id="total-abiertos">1</strong>`,
+	)
+	verificarContiene(t, get(h, "/proyectos/1/defectos?severidad=Baja").Body.String(),
+		`<option value="Baja" selected>Baja</option>`, `<strong id="total-detectados">0</strong>`,
+		"El login falla con Google", // la lista de defectos no se filtra
+	)
+}
