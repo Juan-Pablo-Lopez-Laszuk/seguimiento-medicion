@@ -36,6 +36,7 @@ func InitializeScenario(sc *godog.ScenarioContext) {
 	registrarPasosHU32(sc)
 	registrarPasosHU33(sc)
 	registrarPasosTEC04(sc)
+	registrarPasosTEC06(sc)
 }
 
 func TestFeatures(t *testing.T) {
