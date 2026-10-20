@@ -28,6 +28,38 @@
   {{end}}
 </div>
 
+{{if .Cierre.Cerrado}}
+<section class="mb-4" aria-labelledby="titulo-foto">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+    <h2 class="h5 mb-0" id="titulo-foto">Historias al cerrar</h2>
+    <span class="fw-semibold">{{.Cierre.Resumen}}</span>
+  </div>
+  {{if .Cierre.Historias}}
+  <div class="table-responsive bg-body rounded-3 shadow-sm">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Título</th>
+          <th scope="col">SP al cerrar</th>
+          <th scope="col">Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Cierre.Historias}}
+        <tr>
+          <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
+          <td>{{.Titulo}}</td>
+          <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{end}}</td>
+          <td><span class="badge {{if .Completada}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.Resultado}}</span></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{end}}
+</section>
+{{else}}
 <section class="mb-4" aria-labelledby="titulo-asignadas">
   <div class="d-flex justify-content-between align-items-center mb-2">
     <h2 class="h5 mb-0" id="titulo-asignadas">Sprint Backlog</h2>
@@ -88,6 +120,7 @@
   <p class="text-body-secondary">Todavía no hay historias en este sprint.</p>
   {{end}}
 </section>
+{{end}}
 
 <section aria-labelledby="titulo-candidatas">
   <h2 class="h5 mb-2" id="titulo-candidatas">Historias del backlog para asignar</h2>
