@@ -570,6 +570,50 @@ func TestNewHandlerConBase_ConURLLasHorasSeCalculanDesdeLaBase(t *testing.T) {
 	}
 }
 
+// reestimarLaHU1 deja la HU-1 del proyecto 1 estimada en 5 y la re-estima a 13 (un solo cambio: 5 → 13).
+func reestimarLaHU1(t *testing.T, h http.Handler) {
+	t.Helper()
+	for _, valor := range []string{"5", "13"} {
+		if rec := post(h, "/proyectos/1/backlog/1/estimacion", neturl.Values{"story_points": {valor}}); rec.Code != http.StatusSeeOther {
+			t.Fatalf("estimar en %s: se esperaba %d y se obtuvo %d", valor, http.StatusSeeOther, rec.Code)
+		}
+	}
+}
+
+// HU-16b: sin base, el historial de estimaciones también se guarda en memoria, y una historia re-estimada se puede eliminar.
+func TestNewHandlerConBase_SinURLElHistorialDeEstimacionesSeGuardaEnMemoria(t *testing.T) {
+	h := nuevaApp(t, "")
+	crearProyecto(h, "En memoria")
+	post(h, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia en memoria"}, "prioridad": {"Media"}})
+	reestimarLaHU1(t, h)
+
+	pagina := get(h, "/proyectos/1/backlog/1")
+	if !strings.Contains(pagina, "Historial de estimaciones") || !strings.Contains(pagina, "5 → 13") {
+		t.Error("la página de la historia tendría que mostrar el cambio 5 → 13 en el historial de estimaciones")
+	}
+	if rec := post(h, "/proyectos/1/backlog/1/eliminar", neturl.Values{}); rec.Code != http.StatusSeeOther {
+		t.Errorf("eliminar una historia con historial: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+}
+
+// HU-16b: con base, el historial queda guardado y sobrevive a un reinicio; y la historia con historial se puede
+// eliminar (sin el borrado del historial, la clave foránea la rechazaría con un 409).
+func TestNewHandlerConBase_ConURLElHistorialDeEstimacionesSobreviveAUnReinicio(t *testing.T) {
+	url := urlConEsquemaMigrado(t)
+	primera := nuevaApp(t, url)
+	crearProyecto(primera, "Con historial")
+	post(primera, "/proyectos/1/backlog", neturl.Values{"titulo": {"Historia con historial"}, "prioridad": {"Alta"}})
+	reestimarLaHU1(t, primera)
+
+	reiniciada := nuevaApp(t, url)
+	if !strings.Contains(get(reiniciada, "/proyectos/1/backlog/1"), "5 → 13") {
+		t.Error("después de reiniciar, la página de la historia tendría que seguir mostrando el cambio 5 → 13")
+	}
+	if rec := post(reiniciada, "/proyectos/1/backlog/1/eliminar", neturl.Values{}); rec.Code != http.StatusSeeOther {
+		t.Errorf("eliminar una historia con historial: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
+}
+
 // HU-35: el panel lee las métricas de la base, también después de un reinicio.
 func TestNewHandlerConBase_ConURLElPanelLeeLaBase(t *testing.T) {
 	url := urlConEsquemaMigrado(t)

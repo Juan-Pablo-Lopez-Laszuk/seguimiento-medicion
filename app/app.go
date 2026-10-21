@@ -45,6 +45,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			service.RepositorioEstados
 			service.RepositorioAsignaciones
 			service.RepositorioEstimaciones
+			service.ListadorEstimaciones // el historial de estimaciones de la página de la historia (HU-16b)
 			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
@@ -86,7 +87,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Sprints:        service.NuevoSprints(proyectos, sprints),
 		Integrantes:    service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:      service.NuevoHistorias(proyectos, historias),
-		Criterios:      service.NuevoCriterios(proyectos, historias, criterios),
+		Criterios:      service.NuevoCriterios(proyectos, historias, criterios).ConHistorial(historias),
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, service.NuevoCriterios(proyectos, historias, criterios), time.Now),
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, criterios),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),

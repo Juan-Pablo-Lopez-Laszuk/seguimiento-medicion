@@ -21,6 +21,12 @@ func HoyEnArgentina(ahora time.Time) time.Time {
 	return SoloFecha(ahora.In(zonaArgentina))
 }
 
+// FechaHoraEnArgentina muestra una hora en hora de Argentina, como "20/10/2026 18:30" (HU-16b): el servidor corre en UTC y
+// el equipo trabaja en UTC−3.
+func FechaHoraEnArgentina(hora time.Time) string {
+	return hora.In(zonaArgentina).Format("02/01/2006 15:04")
+}
+
 // DiasRestantes cuenta los días corridos desde hoy hasta fin, sin contar hoy: el último día da 0 y una
 // fecha ya pasada también da 0, nunca un número negativo (HU-04 RN3).
 func DiasRestantes(hoy, fin time.Time) int {

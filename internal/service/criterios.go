@@ -29,11 +29,19 @@ type RepositorioCriterios interface {
 	Actualizar(ctx context.Context, c backlog.Criterio) error
 }
 
+// ListadorEstimaciones es lo que la página de la historia necesita para mostrar su historial de estimaciones (HU-16b).
+// Lo implementan internal/store/memory (tests) e internal/store/postgres (Supabase).
+type ListadorEstimaciones interface {
+	// ListarEstimaciones devuelve el historial de re-estimaciones de la historia, la más reciente primero.
+	ListarEstimaciones(ctx context.Context, historiaID int64) ([]backlog.Reestimacion, error)
+}
+
 // Criterios agrupa los casos de uso de los criterios de aceptación de una historia (HU-07).
 type Criterios struct {
-	proyectos BuscadorProyectos
-	historias BuscadorHistorias
-	repo      RepositorioCriterios
+	proyectos    BuscadorProyectos
+	historias    BuscadorHistorias
+	repo         RepositorioCriterios
+	estimaciones ListadorEstimaciones // opcional (HU-16b): sin él, la vista no trae el historial
 }
 
 // NuevoCriterios arma el caso de uso.
@@ -41,13 +49,21 @@ func NuevoCriterios(proyectos BuscadorProyectos, historias BuscadorHistorias, re
 	return &Criterios{proyectos: proyectos, historias: historias, repo: repo}
 }
 
-// VistaHistoria es lo que muestra la página de una historia: el proyecto, la historia, sus criterios en orden y su
-// progreso.
+// ConHistorial conecta el historial de estimaciones (HU-16b): desde entonces, la vista de la historia lo trae. Se hace
+// aparte de NuevoCriterios para no cambiar a quienes arman este caso de uso sin historial.
+func (s *Criterios) ConHistorial(estimaciones ListadorEstimaciones) *Criterios {
+	s.estimaciones = estimaciones
+	return s
+}
+
+// VistaHistoria es lo que muestra la página de una historia: el proyecto, la historia, sus criterios en orden, su
+// progreso y su historial de estimaciones.
 type VistaHistoria struct {
 	Proyecto  project.Proyecto
 	Historia  backlog.Historia
 	Criterios []backlog.Criterio
 	Progreso  backlog.Progreso
+	Historial []backlog.Reestimacion // los cambios de la estimación, el más reciente primero (HU-16b)
 }
 
 // Ver devuelve la historia HU-N del proyecto con sus criterios y su progreso. Si el proyecto no existe, el error es
@@ -61,7 +77,13 @@ func (s *Criterios) Ver(ctx context.Context, proyectoID int64, numero int) (Vist
 	if err != nil {
 		return VistaHistoria{}, fmt.Errorf("listar los criterios de la historia %d: %w", h.ID, err)
 	}
-	return VistaHistoria{Proyecto: p, Historia: h, Criterios: lista, Progreso: backlog.ProgresoDe(lista)}, nil
+	v := VistaHistoria{Proyecto: p, Historia: h, Criterios: lista, Progreso: backlog.ProgresoDe(lista)}
+	if s.estimaciones != nil {
+		if v.Historial, err = s.estimaciones.ListarEstimaciones(ctx, h.ID); err != nil {
+			return VistaHistoria{}, fmt.Errorf("listar el historial de estimaciones de la historia %d: %w", h.ID, err)
+		}
+	}
+	return v, nil
 }
 
 // Agregar valida la descripción (HU-07) y guarda el criterio nuevo en la historia. Una descripción inválida se
