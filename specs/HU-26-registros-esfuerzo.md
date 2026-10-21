@@ -1,6 +1,6 @@
 # SPEC-26 · Consultar y corregir registros de esfuerzo
 
-**Historia:** HU-26 (#4) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-26 (#4) · **Responsable:** Bravo, Carolina · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa los registros de HU-24, las tareas de HU-25 y la desviación de
 > HU-33. Tareas: #152 a #158.
@@ -94,4 +94,16 @@ Que cada integrante pueda ver y corregir las horas que cargó, para que los dato
 
 Issue: #4 · Feature: `features/hu-26-registros-esfuerzo.feature` · Pasos BDD: `features/hu26_steps_test.go`
 
-(Se completa al implementar.)
+| Tarea | Capa | Código | Tests |
+|---|---|---|---|
+| T2 (#153) | Dominio | `internal/domain/effort/correccion.go` (`Filtro`, `Cumple`, `PuedeCorregir`, `Corregir`) | `correccion_test.go` |
+| T3 (#154) | Repositorios | `ListarFiltrados`, `BuscarPorID` y `Actualizar` en `internal/store/memory/registros.go` y `internal/store/postgres/registros.go` | `registros_hu26_test.go` de cada repositorio |
+| T4 (#155) | Caso de uso | `internal/service/registros_esfuerzo.go` (`RegistrosEsfuerzo`: `Consultar`, `VerCorreccion`, `Corregir`) | `internal/service/registros_esfuerzo_test.go` |
+| T5 (#156) | Pantalla | `internal/server/registros_esfuerzo.go`, `web/templates/paginas/registros_esfuerzo.html`, `corregir_registro.html`, botón en `proyecto.html` | `internal/server/registros_esfuerzo_test.go` |
+| T6 (#157) | Integración y BDD | `app/app.go` arma `RegistrosEsfuerzo`; `RepositorioRegistros` suma los métodos de HU-26 | `app/registros_esfuerzo_test.go`, `features/hu26_steps_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-26.1 Filtros | Filtrar por integrante y sprint · Ver horas estimadas y reales por historia · Un integrante que no existe se ignora | `TestFiltro_Cumple`, `TestRegistros_ListarFiltrados`, `TestConsultarRegistros_Filtros`, `TestPaginaDeRegistros_FiltrosListaYHorasPorHistoria` |
+| CA-26.2 Corregir solo lo propio (el Agile Enabler, todo) | Corregir un registro propio · El Agile Enabler corrige el registro de otro · Un integrante no corrige el registro de otro · Las horas corregidas siguen las reglas de HU-24 | `TestPuedeCorregir`, `TestCorregir_*`, `TestCorregirRegistro`, `TestCorregirRegistro_DeOtro_MuestraElError` |
+| CA-26.3 Estimadas vs reales por historia | Ver horas estimadas y reales por historia · Corregir un registro propio | `TestConsultarRegistros_FilasYHorasPorHistoria`, `TestPaginaDeRegistros_FiltrosListaYHorasPorHistoria` |
