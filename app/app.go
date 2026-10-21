@@ -102,5 +102,8 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 
 		// Editar y eliminar una historia (HU-06).
 		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
+
+		// Consultar y corregir los registros de horas (HU-26).
+		RegistrosEsfuerzo: service.NuevoRegistrosEsfuerzo(proyectos, sprints, historias, integrantes, tareas, registros, horas, time.Now),
 	}), nil
 }
