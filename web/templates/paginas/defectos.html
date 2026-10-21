@@ -52,11 +52,40 @@
 <section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-lista">
   <h2 class="h5 mb-3" id="titulo-lista">Defectos registrados</h2>
   {{if .Defectos}}
+  {{$f := .VistaDefectos.Filtro}}
+  <form class="row g-2 align-items-end mb-3" action="/proyectos/{{$proyecto}}/defectos" method="get">
+    <div class="col-sm-4 col-lg-3">
+      <label class="form-label mb-1" for="filtro-lista-severidad">Severidad</label>
+      <select class="form-select form-select-sm" id="filtro-lista-severidad" name="filtro_severidad">
+        <option value="">Todas</option>
+        {{range $vista.Severidades}}<option value="{{.}}"{{if eq . $f.Severidad}} selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </div>
+    <div class="col-sm-4 col-lg-3">
+      <label class="form-label mb-1" for="filtro-estado">Estado</label>
+      <select class="form-select form-select-sm" id="filtro-estado" name="filtro_estado">
+        <option value="">Todos</option>
+        {{range $vista.Estados}}<option value="{{.}}"{{if eq . $f.Estado}} selected{{end}}>{{.}}</option>{{end}}
+      </select>
+    </div>
+    <div class="col-sm-4 col-lg-3">
+      <label class="form-label mb-1" for="filtro-sprint">Detectado en</label>
+      <select class="form-select form-select-sm" id="filtro-sprint" name="filtro_sprint">
+        <option value="">Todos los sprints</option>
+        {{range $vista.Sprints}}<option value="{{.ID}}"{{if eq .ID $f.SprintID}} selected{{end}}>Sprint {{.Numero}}</option>{{end}}
+      </select>
+    </div>
+    <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit">Filtrar</button></div>
+  </form>
+  <div class="d-flex flex-wrap gap-3 mb-3 small" aria-label="Cantidad por severidad">
+    {{range .PorSeveridad}}<span>{{.Severidad}}: <strong data-severidad="{{.Severidad}}">{{.Cantidad}}</strong></span>{{end}}
+  </div>
+  {{if .Filtrados}}
   <div class="table-responsive">
     <table class="table table-sm align-middle mb-0">
       <thead><tr><th scope="col">Descripción</th><th scope="col">Severidad</th><th scope="col">Estado</th><th scope="col">Detectado en</th><th scope="col">Resuelto en</th><th scope="col">Historia</th><th scope="col">Cambiar estado</th></tr></thead>
       <tbody>
-        {{range .Defectos}}
+        {{range .Filtrados}}
         {{$d := .}}
         <tr>
           <td>{{.Descripcion}}</td>
@@ -85,6 +114,9 @@
       </tbody>
     </table>
   </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Ningún defecto con esos filtros. <a href="/proyectos/{{$proyecto}}/defectos">Quitar los filtros</a></p>
+  {{end}}
   {{else}}
   <p class="text-body-secondary mb-0">Sin defectos registrados.</p>
   {{end}}

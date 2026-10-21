@@ -67,3 +67,18 @@ func (r *Defectos) Actualizar(_ context.Context, d defect.Defecto) error {
 	}
 	return defect.ErrDefectoNoEncontrado
 }
+
+// ListarFiltrados devuelve los defectos del proyecto que cumplen el filtro, el más nuevo primero (HU-29).
+func (r *Defectos) ListarFiltrados(ctx context.Context, proyectoID int64, f defect.Filtro) ([]defect.Defecto, error) {
+	todos, err := r.ListarPorProyecto(ctx, proyectoID)
+	if err != nil {
+		return nil, err
+	}
+	var lista []defect.Defecto
+	for _, d := range todos {
+		if f.Cumple(d) {
+			lista = append(lista, d)
+		}
+	}
+	return lista, nil
+}

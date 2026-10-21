@@ -49,3 +49,32 @@ func TestDefectos_BuscarPorIDYActualizar(t *testing.T) {
 		t.Errorf("inexistente: se esperaba %v y se obtuvo %v", defect.ErrDefectoNoEncontrado, err)
 	}
 }
+
+// HU-29 · los filtros por severidad, estado y sprint se combinan, sin mezclar proyectos
+func TestDefectos_ListarFiltrados(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoDefectos()
+	a, _ := repo.Guardar(ctx, defect.Defecto{ProyectoID: 1, Descripcion: "A", Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintDeteccionID: 1})
+	b, _ := repo.Guardar(ctx, defect.Defecto{ProyectoID: 1, Descripcion: "B", Severidad: defect.SeveridadAlta, Estado: defect.EstadoEnProgreso, SprintDeteccionID: 2})
+	_, _ = repo.Guardar(ctx, defect.Defecto{ProyectoID: 2, Descripcion: "Otro", Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintDeteccionID: 1})
+
+	for _, c := range []struct {
+		filtro defect.Filtro
+		want   []defect.Defecto
+	}{
+		{defect.Filtro{}, []defect.Defecto{b, a}},
+		{defect.Filtro{Severidad: defect.SeveridadAlta, SprintID: 1}, []defect.Defecto{a}},
+		{defect.Filtro{Estado: defect.EstadoEnProgreso}, []defect.Defecto{b}},
+		{defect.Filtro{Severidad: defect.SeveridadBaja}, nil},
+	} {
+		got, err := repo.ListarFiltrados(ctx, 1, c.filtro)
+		if err != nil || len(got) != len(c.want) {
+			t.Fatalf("ListarFiltrados(%+v) = %+v, %v; se esperaba %+v", c.filtro, got, err, c.want)
+		}
+		for i := range got {
+			if got[i] != c.want[i] {
+				t.Errorf("ListarFiltrados(%+v)[%d] = %+v, se esperaba %+v", c.filtro, i, got[i], c.want[i])
+			}
+		}
+	}
+}
