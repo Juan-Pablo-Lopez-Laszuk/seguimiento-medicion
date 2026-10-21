@@ -82,6 +82,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now)
 	horas := service.NuevoHoras(proyectos, sprints, historias, tareas, registros)
 	casosDefectos := service.NuevoDefectos(proyectos, sprints, historias, defectos)
+	casosDeCierre := service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
 		Sprints:        service.NuevoSprints(proyectos, sprints),
@@ -96,9 +97,10 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Defectos:       casosDefectos,
 		Horas:          horas,
 		Panel:          service.NuevoPanel(estado, sprints, horas, casosDefectos),
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos),
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
-		Cierres:        service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now),
+		Cierres:        casosDeCierre,
 		Base:           base,
 
 		// Editar y eliminar una historia (HU-06).

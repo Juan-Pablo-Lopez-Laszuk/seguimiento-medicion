@@ -28,10 +28,12 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	integrantes := memory.NuevoIntegrantes()
 	repoCriterios, repoTareas, repoRegistros := memory.NuevoCriterios(), memory.NuevoTareas(), memory.NuevoRegistros()
+	repoDefectos := memory.NuevoDefectos()
 	criterios := service.NuevoCriterios(proyectos, historias, repoCriterios)
+	cierres := service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora)
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora)
 	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
-	defectos := service.NuevoDefectos(proyectos, sprints, historias, memory.NuevoDefectos())
+	defectos := service.NuevoDefectos(proyectos, sprints, historias, repoDefectos)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
@@ -41,12 +43,13 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		// la página de la historia pasa a En progreso (HU-08), por ejemplo en los tests de HU-13
 		CambioDeEstado: service.NuevoEstados(proyectos, historias, repoCriterios),
 		Asignaciones:   service.NuevoAsignaciones(proyectos, sprints, historias, criterios, ahora),
-		Cierres:        service.NuevoCierres(proyectos, sprints, historias, memory.NuevoCierres(sprints, historias), ahora),
+		Cierres:        cierres,
 		Tareas:         service.NuevoTareas(proyectos, historias, integrantes, repoTareas),
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
 		Defectos:       defectos,
 		Horas:          horas,
 		Panel:          service.NuevoPanel(estado, sprints, horas, defectos),
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas, repoDefectos),
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
