@@ -1,0 +1,71 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$proyecto := .Proyecto.ID}}
+{{$quien := .QuienID}}
+{{$tarea := .Datos.TareaID}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}/esfuerzo">Registros de horas</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Corregir</li>
+  </ol>
+</nav>
+
+<div class="mb-4">
+  <h1 class="h3 mb-1">Corregir registro de {{.NombreDe .Registro.IntegranteID}}</h1>
+  <p class="mb-0 text-body-secondary">{{.Historia.Identificador}} · {{.Historia.Titulo}}</p>
+</div>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-corregir">
+  <h2 class="h5 mb-3" id="titulo-corregir">Datos del registro</h2>
+  <form action="/proyectos/{{$proyecto}}/esfuerzo/{{.Registro.ID}}/corregir" method="post" novalidate>
+    <div class="row g-3">
+      <div class="col-md-4">
+        <label class="form-label" for="quien">Quién corrige</label>
+        <select class="form-select{{if index .Errores "quien"}} is-invalid{{end}}" id="quien" name="quien" required>
+          <option value="">Elegí…</option>
+          {{range .Activos}}
+          <option value="{{.ID}}"{{if eq .ID $quien}} selected{{end}}>{{.Nombre}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "quien")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="tarea">Tarea</label>
+        <select class="form-select{{if index .Errores "tarea"}} is-invalid{{end}}" id="tarea" name="tarea">
+          <option value="">Toda la historia</option>
+          {{range .Tareas}}
+          <option value="{{.ID}}"{{if eq .ID $tarea}} selected{{end}}>{{.Titulo}}</option>
+          {{end}}
+        </select>
+        {{template "errorCampo" (index .Errores "tarea")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="fecha">Fecha</label>
+        <input class="form-control{{if index .Errores "fecha"}} is-invalid{{end}}" type="date" id="fecha" name="fecha"
+               value="{{.Datos.Fecha}}" min="{{.Proyecto.FechaInicio.Format "2006-01-02"}}" max="{{.Hoy.Format "2006-01-02"}}" required>
+        {{template "errorCampo" (index .Errores "fecha")}}
+      </div>
+      <div class="col-md-8">
+        <label class="form-label" for="actividad">Actividad</label>
+        <input class="form-control{{if index .Errores "actividad"}} is-invalid{{end}}" id="actividad" name="actividad"
+               value="{{.Datos.Actividad}}" maxlength="200" required>
+        {{template "errorCampo" (index .Errores "actividad")}}
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="horas">Horas</label>
+        <input class="form-control{{if index .Errores "horas"}} is-invalid{{end}}" id="horas" name="horas"
+               value="{{.Datos.Horas}}" inputmode="decimal" required>
+        {{template "errorCampo" (index .Errores "horas")}}
+      </div>
+    </div>
+    <div class="form-text">Cada integrante corrige solo sus registros; el Agile Enabler, todos. Hasta 24 h por día.</div>
+    <div class="mt-3 d-flex gap-2">
+      <button class="btn btn-primary" type="submit">Guardar corrección</button>
+      <a class="btn btn-outline-secondary" href="/proyectos/{{$proyecto}}/esfuerzo">Cancelar</a>
+    </div>
+  </form>
+</section>
+{{end}}
+{{end}}
