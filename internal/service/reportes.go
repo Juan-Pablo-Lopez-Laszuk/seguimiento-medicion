@@ -194,8 +194,8 @@ func (r *Reportes) Sprint(ctx context.Context, proyectoID int64, numero int) (Re
 		return ReporteSprint{}, err
 	}
 	hastaEste := slices.DeleteFunc(slices.Clone(sprints), func(otro sprint.Sprint) bool { return otro.Numero > numero })
-	if rep.Velocidad, err = metrics.CalcularVelocidad(historialDeVelocidad(hastaEste), metrics.VentanaPorDefecto); err != nil {
-		return ReporteSprint{}, fmt.Errorf("calcular la velocidad: %w", err)
+	if rep.Velocidad, err = velocidadDe(hastaEste); err != nil {
+		return ReporteSprint{}, err
 	}
 	return rep, nil
 }

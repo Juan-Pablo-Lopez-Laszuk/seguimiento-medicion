@@ -99,8 +99,8 @@ Con el ejemplo de la sección 6 (Sprint 1 cerrado), el reporte muestra, en este 
   página no pueden dar distinto.
 - **Pantalla nueva** con el layout de siempre: tablas dentro de `table-responsive` para el celular y `@media print`
   para imprimir.
-- **Depende de HU-15 y HU-34:** usa la foto y el cumplimiento de HU-15 (#413, ya en `main`) y el resumen de defectos
-  de HU-34 (#119, `VistaDefectos.Resumen` con `ContarDefectos`). La rama trae la de HU-34 hasta que #119 se mergee.
+- **Depende de HU-15 y HU-34:** usa la foto y el cumplimiento de HU-15 (#413) y el resumen de defectos de HU-34
+  (#119, `VistaDefectos.Resumen` con `ContarDefectos`). Las dos ya están en `main`.
 
 ## 6. Casos límite
 
@@ -143,7 +143,7 @@ Issue: #48 · Feature: `features/hu-37-reporte-sprint.feature` · Pasos BDD: `fe
 | Capa | Código | Tests |
 |---|---|---|
 | Métricas | sin cambios: `CalcularStoryPoints`, `StoryPoints.CumplimientoTexto`, `CalcularPorcentajeCompletadas`, `CalcularVelocidad`, `CalcularDesviacion`, `SumarDesviaciones` y `ContarDefectos` (CA-37.2) | los de cada métrica |
-| Caso de uso | `internal/service/reportes.go` (`Reportes.Sprint`, `ReporteSprint`, `FilaReporte`, `FilaDefecto`); `historialDeVelocidad` en `asignaciones.go`, compartido con el aviso de HU-12 | `internal/service/reportes_test.go` |
+| Caso de uso | `internal/service/reportes.go` (`Reportes.Sprint`, `ReporteSprint`, `FilaReporte`, `FilaDefecto`); la velocidad con `velocidadDe` de HU-35 (`panel.go`) | `internal/service/reportes_test.go` |
 | Repositorios | sin cambios: alcanzan los listados de sprints, historias, foto, tareas, registros y defectos (T2) | — |
 | Pantalla | `internal/server/reportes.go`, `web/templates/paginas/reporte_sprint.html`, botón en `sprint.html` y `d-print-none` en `base.html` | `internal/server/reportes_test.go` |
 | Aplicación | `app/app.go` arma `Reportes` con los cierres, las horas y los defectos | `app/reportes_test.go` (memoria y PostgreSQL) |

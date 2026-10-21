@@ -34,6 +34,8 @@ type Dependencias struct {
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
 	Horas *service.Horas
+	// Panel junta los indicadores del proyecto (HU-35).
+	Panel *service.Panel
 	// Reportes arma el reporte de un sprint (HU-37).
 	Reportes *service.Reportes
 	Estado   *service.EstadoProyectos
@@ -119,6 +121,7 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/defectos", df.registrar)
 	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	r.Get("/proyectos/{id}/horas", horas{casos: dep.Horas}.ver)
+	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
 	return r
 }
 
