@@ -15,12 +15,20 @@ import (
 
 // Historias guarda las historias de todos los proyectos en la tabla historias.
 type Historias struct {
-	pool *pgxpool.Pool
+	pool  *pgxpool.Pool
+	ahora func() time.Time
 }
 
 // NuevoHistorias crea el repositorio sobre un pool de conexiones ya abierto.
 func NuevoHistorias(pool *pgxpool.Pool) *Historias {
-	return &Historias{pool: pool}
+	return &Historias{pool: pool, ahora: time.Now}
+}
+
+// ConReloj cambia el reloj con el que se anota la hora de cada re-estimación (HU-16b): en los tests, uno fijo. Sin
+// llamarlo se usa la hora actual.
+func (r *Historias) ConReloj(ahora func() time.Time) *Historias {
+	r.ahora = ahora
+	return r
 }
 
 // Guardar inserta la historia y la devuelve con el ID que le asignó la base. Los story points sin estimar se
@@ -126,16 +134,59 @@ func (r *Historias) ActualizarCompletada(ctx context.Context, historiaID int64, 
 
 // ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
 // backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza un valor fuera de la escala (CHECK). Es el único lugar
-// donde se escribe la estimación (HU-16): HU-16b lo va a extender para anotar también el historial.
+// donde se escribe la estimación (HU-16): si la historia ya tenía una y el valor es distinto, anota el cambio en el
+// historial (HU-16b, CA-16.3). Todo ocurre en una transacción que bloquea la fila de la historia: si falla una cosa no
+// queda la otra, y dos re-estimaciones a la vez no pierden un valor (cada una parte de donde terminó la anterior).
 func (r *Historias) ActualizarStoryPoints(ctx context.Context, historiaID int64, puntos int) error {
-	etiqueta, err := r.pool.Exec(ctx, `UPDATE historias SET story_points = $1 WHERE id = $2`, puntos, historiaID)
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		var actual *int
+		err := tx.QueryRow(ctx, `SELECT story_points FROM historias WHERE id = $1 FOR UPDATE`, historiaID).Scan(&actual)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return backlog.ErrHistoriaNoEncontrada
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `UPDATE historias SET story_points = $1 WHERE id = $2`, puntos, historiaID); err != nil {
+			return err
+		}
+		cambio, anota := backlog.NuevaReestimacion(actual, puntos, r.ahora())
+		if !anota {
+			return nil
+		}
+		_, err = tx.Exec(ctx,
+			`INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES ($1, $2, $3, $4)`,
+			historiaID, cambio.Anterior, cambio.Nuevo, cambio.CambiadaEn)
+		return err
+	})
+	if errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		return backlog.ErrHistoriaNoEncontrada
+	}
 	if err != nil {
 		return fmt.Errorf("actualizar los story points de la historia %d: %w", historiaID, err)
 	}
-	if etiqueta.RowsAffected() == 0 {
-		return backlog.ErrHistoriaNoEncontrada
-	}
 	return nil
+}
+
+// ListarEstimaciones devuelve el historial de re-estimaciones de la historia, la más reciente primero (HU-16b). Una
+// historia que nunca se re-estimó, o que no existe, tiene el historial vacío.
+func (r *Historias) ListarEstimaciones(ctx context.Context, historiaID int64) ([]backlog.Reestimacion, error) {
+	filas, err := r.pool.Query(ctx,
+		`SELECT valor_anterior, valor_nuevo, cambiada_en FROM estimaciones_historia
+		 WHERE historia_id = $1 ORDER BY id DESC`, historiaID)
+	if err != nil {
+		return nil, fmt.Errorf("listar el historial de estimaciones de la historia %d: %w", historiaID, err)
+	}
+	defer filas.Close()
+	var lista []backlog.Reestimacion
+	for filas.Next() {
+		var e backlog.Reestimacion
+		if err := filas.Scan(&e.Anterior, &e.Nuevo, &e.CambiadaEn); err != nil {
+			return nil, fmt.Errorf("leer una entrada del historial de estimaciones: %w", err)
+		}
+		lista = append(lista, e)
+	}
+	return lista, filas.Err()
 }
 
 // ActualizarDatos guarda el título, la descripción y la prioridad de la historia (HU-06) sin tocar el número, el
@@ -167,6 +218,9 @@ func (r *Historias) Eliminar(ctx context.Context, historiaID int64) error {
 			return err
 		}
 		if _, err := tx.Exec(ctx, `DELETE FROM tareas WHERE historia_id = $1`, historiaID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM estimaciones_historia WHERE historia_id = $1`, historiaID); err != nil {
 			return err
 		}
 		etiqueta, err := tx.Exec(ctx, `DELETE FROM historias WHERE id = $1`, historiaID)

@@ -40,6 +40,17 @@
   </form>
   {{end}}
 
+  <section class="mt-3" aria-labelledby="titulo-historial">
+    <h2 class="h6 mb-2" id="titulo-historial">Historial de estimaciones</h2>
+    {{if .Historial}}
+    <ul class="list-unstyled small mb-0">
+      {{range .Historial}}<li><span class="text-body-secondary">{{fechaHora .CambiadaEn}}</span> · <strong>{{.Anterior}} → {{.Nuevo}}</strong></li>{{end}}
+    </ul>
+    {{else}}
+    <p class="small text-body-secondary mb-0">Todavía no se re-estimó esta historia.</p>
+    {{end}}
+  </section>
+
   <div class="mt-3">
     {{if eq .Historia.Estado "En sprint"}}
     <form action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/estado" method="post" class="d-flex flex-wrap align-items-center gap-2">
