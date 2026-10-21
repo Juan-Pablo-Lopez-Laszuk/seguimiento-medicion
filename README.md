@@ -64,13 +64,19 @@ go run ./cmd/server          # levanta la app en http://localhost:8080 (salud: /
 go test ./...                # tests unitarios + escenarios BDD
 go test ./features/... -v    # solo los escenarios BDD (godog)
 go test -cover ./...         # tests con porcentaje de cobertura
+go test -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/cobertura   # el umbral del CI
 ```
 
-Con `make` instalado también están `make run`, `make test`, `make cover`, `make bdd` y `make lint`.
+Con `make` instalado también están `make run`, `make test`, `make cover`, `make umbral`, `make bdd` y `make lint`.
 
 Cada Pull Request corre el **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): gofmt, go vet, golangci-lint,
 tests con race detector y cobertura, y los escenarios BDD. Si algo falla, el PR no se puede mergear. El reporte de
 cobertura queda en el resumen de la corrida y como artefacto descargable (`cobertura`).
+
+**Umbral de cobertura (TEC-06):** el CI también falla si la cobertura combinada de `internal/domain` (con todos sus
+subpaquetes) e `internal/metrics` baja del **80 %**. Es una meta interna del equipo: la cátedra no fija un porcentaje.
+Se puede comprobar antes de subir el PR con `make umbral` o con el comando de arriba; el informe por paquete queda en el
+resumen de la corrida de GitHub Actions.
 
 ## Estructura
 
@@ -79,10 +85,12 @@ api/index.go          función de Vercel: delega cada pedido al router (a travé
 app/                  puerta de entrada pública al router (Vercel no puede importar internal/)
 cmd/server/           servidor local
 cmd/migrar/           aplica las migraciones a la base (up, status, down)
+cmd/cobertura/        verifica el umbral de cobertura del CI (TEC-06)
 internal/server/      router, handlers y renderizado de páginas
 internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
 internal/service/     casos de uso
 internal/metrics/     cálculos de métricas
+internal/cobertura/   mide la cobertura de los tests a partir del perfil (lo usa cmd/cobertura)
 internal/store/       repositorios: memory (tests) y postgres (Supabase)
 migrations/          migraciones SQL versionadas (goose) del modelo de datos
 web/templates/        layout base (base.html) y una plantilla por página (paginas/)

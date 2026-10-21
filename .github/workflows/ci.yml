@@ -69,6 +69,27 @@ jobs:
       - name: Escenarios BDD (godog)
         run: go test ./features/ -run TestFeatures -v
 
+      # TEC-06: meta interna del equipo (Definition of Done). Falla si la cobertura combinada de internal/domain e
+      # internal/metrics baja del 80 %. El mínimo y los paquetes controlados están en cmd/cobertura. Va antes del resumen
+      # (que corre siempre), así el informe se publica también cuando el umbral falla.
+      - name: Umbral de cobertura (dominio y métricas)
+        run: |
+          salida="$RUNNER_TEMP/umbral-cobertura.txt"
+          go build -o "$RUNNER_TEMP/cobertura" ./cmd/cobertura
+          estado=0
+          "$RUNNER_TEMP/cobertura" -perfil coverage.out > "$salida" 2>&1 || estado=$?
+          cat "$salida"
+          {
+            echo '### Umbral de cobertura (dominio y métricas)'
+            echo '```'
+            cat "$salida"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$estado" -ne 0 ]; then
+            echo "::error title=Umbral de cobertura::$(tail -n 1 "$salida")"
+          fi
+          exit "$estado"
+
       - name: Resumen de cobertura
         if: always()
         run: |

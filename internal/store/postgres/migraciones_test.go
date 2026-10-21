@@ -11,6 +11,7 @@ import (
 var tablas = []string{
 	"proyectos", "integrantes", "sprints", "historias", "criterios_aceptacion", "tareas",
 	"sprint_historias", "sesiones_poker", "rondas_poker", "votos", "registros_esfuerzo", "defectos",
+	"estimaciones_historia",
 }
 
 func TestMigracion_SubeTodasLasTablasConRLS(t *testing.T) {
@@ -130,6 +131,15 @@ func TestMigracion_RestriccionesDelModelo(t *testing.T) {
 		{"foto de cierre con SP fuera de la escala", false, `INSERT INTO sprint_historias (sprint_id, historia_id, story_points) VALUES (1, 1, 7)`},
 		{"tarea con horas negativas", false, `INSERT INTO tareas (historia_id, titulo, horas_estimadas) VALUES (1, 't', -1)`},
 		{"defecto válido", true, `INSERT INTO defectos (proyecto_id, descripcion, severidad, estado, sprint_deteccion_id) VALUES (1, 'd', 'Alta', 'Abierto', 1)`},
+
+		// HU-16b: el historial de estimaciones guarda el valor anterior y el nuevo, de la escala y distintos entre sí
+		{"re-estimación de 5 a 8", true, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 5, 8, now())`},
+		{"re-estimación de 0 a 5, con el 0 como valor", true, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 0, 5, now())`},
+		{"re-estimación al mismo valor", false, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 5, 5, now())`},
+		{"re-estimación desde un valor fuera de la escala", false, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 4, 8, now())`},
+		{"re-estimación hacia un valor fuera de la escala", false, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 5, 34, now())`},
+		{"re-estimación de una historia que no existe", false, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (999, 5, 8, now())`},
+		{"re-estimación sin la hora del cambio", false, `INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES (1, 5, 8, NULL)`},
 
 		// HU-03 (RN6 y RN4): un solo Agile Enabler ACTIVO por proyecto; el email de quien se dio de baja sigue ocupado.
 		{"dar de baja al Agile Enabler", true, `UPDATE integrantes SET activo = false WHERE email = 'jp@x.com'`},

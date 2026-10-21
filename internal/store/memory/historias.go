@@ -23,12 +23,22 @@ type Historias struct {
 	ultimoID     int64
 	dependientes []Dependiente
 	cierres      *Cierres // lo conecta NuevoCierres (HU-14), para EnSprintCerrado
+	// estimaciones es el historial de re-estimaciones de cada historia (HU-16b), de la más antigua a la más reciente.
+	estimaciones map[int64][]backlog.Reestimacion
+	ahora        func() time.Time
 }
 
 // NuevoHistorias crea un repositorio vacío. Los dependientes, si hay, son los repositorios de lo que cuelga de una
 // historia: eliminarla borra también lo suyo en cada uno.
 func NuevoHistorias(dependientes ...Dependiente) *Historias {
-	return &Historias{dependientes: dependientes}
+	return &Historias{dependientes: dependientes, estimaciones: map[int64][]backlog.Reestimacion{}, ahora: time.Now}
+}
+
+// ConReloj cambia el reloj con el que se anota la hora de cada re-estimación (HU-16b): en los tests, uno fijo. Sin
+// llamarlo se usa la hora actual.
+func (r *Historias) ConReloj(ahora func() time.Time) *Historias {
+	r.ahora = ahora
+	return r
 }
 
 // Guardar le asigna el próximo ID a la historia, la guarda y la devuelve con el ID.
@@ -137,18 +147,34 @@ func (r *Historias) ActualizarCompletada(_ context.Context, historiaID int64, es
 }
 
 // ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
-// backlog.ErrHistoriaNoEncontrada si no existe. Es el único lugar donde se escribe la estimación (HU-16): HU-16b lo
-// va a extender para anotar también el historial.
+// backlog.ErrHistoriaNoEncontrada si no existe. Es el único lugar donde se escribe la estimación (HU-16): si la historia
+// ya tenía una y el valor es distinto, anota el cambio en el historial (HU-16b, CA-16.3).
 func (r *Historias) ActualizarStoryPoints(_ context.Context, historiaID int64, puntos int) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i, h := range r.lista {
 		if h.ID == historiaID {
+			if cambio, anota := backlog.NuevaReestimacion(h.StoryPoints, puntos, r.ahora()); anota {
+				r.estimaciones[historiaID] = append(r.estimaciones[historiaID], cambio)
+			}
 			r.lista[i].StoryPoints = &puntos
 			return nil
 		}
 	}
 	return backlog.ErrHistoriaNoEncontrada
+}
+
+// ListarEstimaciones devuelve una copia del historial de re-estimaciones de la historia, la más reciente primero
+// (HU-16b). Una historia que nunca se re-estimó, o que no existe, tiene el historial vacío.
+func (r *Historias) ListarEstimaciones(_ context.Context, historiaID int64) ([]backlog.Reestimacion, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	guardado := r.estimaciones[historiaID]
+	lista := make([]backlog.Reestimacion, len(guardado))
+	for i, e := range guardado {
+		lista[len(guardado)-1-i] = e
+	}
+	return lista, nil
 }
 
 // ActualizarDatos guarda el título, la descripción y la prioridad de la historia (HU-06) sin tocar el número, el estado
@@ -173,6 +199,7 @@ func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	for i, h := range r.lista {
 		if h.ID == historiaID {
 			r.lista = slices.Delete(r.lista, i, i+1)
+			delete(r.estimaciones, historiaID)
 			for _, d := range r.dependientes {
 				d.EliminarDeHistoria(historiaID)
 			}
