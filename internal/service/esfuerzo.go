@@ -17,8 +17,10 @@ type ListadorTareas interface {
 	ListarPorHistoria(ctx context.Context, historiaID int64) ([]effort.Tarea, error)
 }
 
-// RepositorioRegistros es lo que el caso de uso necesita de la base de datos (HU-24).
+// RepositorioRegistros es lo que los casos de uso de esfuerzo necesitan de la base de datos: registrar (HU-24) y
+// consultar y corregir (HU-26).
 type RepositorioRegistros interface {
+	RepositorioCorreccionRegistros
 	// Guardar guarda un registro nuevo y lo devuelve con su ID.
 	Guardar(ctx context.Context, r effort.Registro) (effort.Registro, error)
 	// ListarPorHistoria devuelve los registros de la historia, la fecha más reciente primero.

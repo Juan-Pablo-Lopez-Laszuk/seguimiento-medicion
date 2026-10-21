@@ -57,3 +57,35 @@ func (r *Registros) filtrar(incluir func(effort.Registro) bool) []effort.Registr
 	})
 	return lista
 }
+
+// ListarFiltrados devuelve los registros de esas historias que cumplen el filtro, la fecha más reciente primero
+// (HU-26).
+func (r *Registros) ListarFiltrados(_ context.Context, historiaIDs []int64, f effort.Filtro) ([]effort.Registro, error) {
+	return r.filtrar(func(reg effort.Registro) bool { return slices.Contains(historiaIDs, reg.HistoriaID) && f.Cumple(reg) }), nil
+}
+
+// BuscarPorID devuelve el registro con ese ID, o effort.ErrRegistroNoEncontrado (HU-26).
+func (r *Registros) BuscarPorID(_ context.Context, id int64) (effort.Registro, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, reg := range r.lista {
+		if reg.ID == id {
+			return reg, nil
+		}
+	}
+	return effort.Registro{}, effort.ErrRegistroNoEncontrado
+}
+
+// Actualizar guarda el registro corregido en lugar del que tiene su ID, o devuelve effort.ErrRegistroNoEncontrado
+// (HU-26).
+func (r *Registros) Actualizar(_ context.Context, reg effort.Registro) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.lista {
+		if r.lista[i].ID == reg.ID {
+			r.lista[i] = reg
+			return nil
+		}
+	}
+	return effort.ErrRegistroNoEncontrado
+}

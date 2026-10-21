@@ -30,6 +30,8 @@ type Dependencias struct {
 	Tareas         *service.Tareas
 	// Esfuerzo registra las horas trabajadas en una historia o tarea (HU-24).
 	Esfuerzo *service.Esfuerzo
+	// RegistrosEsfuerzo consulta y corrige los registros de horas de un proyecto (HU-26).
+	RegistrosEsfuerzo *service.RegistrosEsfuerzo
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
@@ -115,6 +117,11 @@ func NewRouter(dep Dependencias) http.Handler {
 	ef := esfuerzo{casos: dep.Esfuerzo}
 	r.Get("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.ver)
 	r.Post("/proyectos/{id}/backlog/{numero}/esfuerzo", ef.registrar)
+
+	re := registrosEsfuerzo{casos: dep.RegistrosEsfuerzo}
+	r.Get("/proyectos/{id}/esfuerzo", re.consultar)
+	r.Get("/proyectos/{id}/esfuerzo/{registro}/corregir", re.verCorreccion)
+	r.Post("/proyectos/{id}/esfuerzo/{registro}/corregir", re.corregir)
 
 	df := defectos{casos: dep.Defectos}
 	r.Get("/proyectos/{id}/defectos", df.ver)
