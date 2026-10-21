@@ -1,6 +1,6 @@
 # Atajos para las tareas habituales. En Windows sin `make`, usar los comandos de cada regla directamente.
 
-.PHONY: run test cover bdd fmt vet lint db-test migrar migrar-estado
+.PHONY: run test cover umbral bdd fmt vet lint db-test migrar migrar-estado
 
 run: ## Levanta el servidor local en http://localhost:8080
 	go run ./cmd/server
@@ -11,6 +11,10 @@ test: ## Tests unitarios y escenarios BDD
 cover: ## Tests con reporte de cobertura (abre coverage.html)
 	go test -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
+
+umbral: ## Tests con cobertura y el mismo umbral del CI: 80 % combinado en internal/domain e internal/metrics
+	go test -covermode=atomic -coverprofile=coverage.out ./...
+	go run ./cmd/cobertura
 
 bdd: ## Solo los escenarios BDD (godog)
 	go test ./features/... -v
