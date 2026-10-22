@@ -139,7 +139,7 @@ func validarNombre(nombre string) error {
 // validarEmail devuelve el primer error del email: falta, tiene formato inválido (RN3) o ya lo usa otro
 // integrante del proyecto, aunque esté dado de baja (RN4).
 func validarEmail(email string, existentes []Integrante) error {
-	if err := validarFormatoEmail(email); err != nil {
+	if err := ValidarFormatoEmail(email); err != nil {
 		return err
 	}
 	for _, e := range existentes {
@@ -150,9 +150,9 @@ func validarEmail(email string, existentes []Integrante) error {
 	return nil
 }
 
-// validarFormatoEmail controla el formato (RN3): una sola dirección, sin nombre delante, con usuario y con
-// un dominio que tenga al menos un punto y no empiece ni termine con punto.
-func validarFormatoEmail(email string) error {
+// ValidarFormatoEmail controla el formato (RN3): una sola dirección, sin nombre delante, con usuario y con un dominio
+// que tenga al menos un punto y no empiece ni termine con punto. También lo usan las cuentas de usuario (TEC-05).
+func ValidarFormatoEmail(email string) error {
 	if email == "" {
 		return ErrEmailObligatorio
 	}
