@@ -83,6 +83,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	horas := service.NuevoHoras(proyectos, sprints, historias, tareas, registros)
 	casosDefectos := service.NuevoDefectos(proyectos, sprints, historias, defectos)
 	casosDeCierre := service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now)
+	panel := service.NuevoPanel(estado, sprints, horas, casosDefectos)
 	return server.NewRouter(server.Dependencias{
 		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
 		Sprints:        service.NuevoSprints(proyectos, sprints),
@@ -96,8 +97,8 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, tareas, registros, time.Now),
 		Defectos:       casosDefectos,
 		Horas:          horas,
-		Panel:          service.NuevoPanel(estado, sprints, horas, casosDefectos),
-		Reportes:       service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos),
+		Panel:          panel,
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos, panel),
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, time.Now),
 		Cierres:        casosDeCierre,

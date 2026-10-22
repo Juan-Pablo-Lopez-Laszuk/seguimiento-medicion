@@ -51,7 +51,9 @@ func registrarPasosHU37(sc *godog.ScenarioContext) {
 	}
 	e.cierres = service.NuevoCierres(e.repoProyectos, e.repoSprints, e.repoHistorias, memory.NuevoCierres(e.repoSprints, e.repoHistorias), func() time.Time { return e.ahora })
 	horas := service.NuevoHoras(e.repoProyectos, e.repoSprints, e.repoHistorias, e.repoTareas, e.repoRegistros)
-	e.reportes = service.NuevoReportes(e.repoProyectos, e.repoSprints, e.repoHistorias, e.cierres, horas, e.repoDefectos)
+	estado := service.NuevoEstadoProyectos(e.repoProyectos, e.repoSprints, e.repoHistorias, func() time.Time { return e.ahora })
+	panel := service.NuevoPanel(estado, e.repoSprints, horas, service.NuevoDefectos(e.repoProyectos, e.repoSprints, e.repoHistorias, e.repoDefectos))
+	e.reportes = service.NuevoReportes(e.repoProyectos, e.repoSprints, e.repoHistorias, e.cierres, horas, e.repoDefectos, panel)
 
 	sc.Step(`^el proyecto "([^"]*)" con estos sprints para el reporte:$`, e.elProyectoConEstosSprints)
 	sc.Step(`^en el Sprint (\d+) estas historias con sus horas:$`, e.enElSprintEstasHistorias)
