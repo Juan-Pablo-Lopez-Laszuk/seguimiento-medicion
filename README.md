@@ -39,6 +39,7 @@ Cada funcionalidad sigue la cadena de trazabilidad:
 | Historias de usuario | Issues + [tablero del proyecto](https://github.com/users/Juan-Pablo-Lopez-Laszuk/projects) |
 | Especificaciones SDD | [`specs/`](specs/) |
 | Escenarios BDD | [`features/`](features/) |
+| Matriz requerimiento → escenarios y tests | [`docs/trazabilidad-requisitos.md`](docs/trazabilidad-requisitos.md) |
 | Ceremonias Scrum y actas | [`docs/scrum/`](docs/scrum/) |
 | Registro de uso de IA | [`docs/ia/registro.md`](docs/ia/registro.md) |
 | Plan de trabajo y guía | [`docs/plan/`](docs/plan/) |

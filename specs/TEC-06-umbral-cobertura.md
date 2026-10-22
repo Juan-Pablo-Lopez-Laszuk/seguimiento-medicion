@@ -1,10 +1,11 @@
 # SPEC-TEC-06 · Umbral de cobertura en el CI
 
-**Tarea:** TEC-06 (#69) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada (parte 1: el umbral; falta la matriz, CA-06.3)
+**Tarea:** TEC-06 (#69) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. TEC-06 tiene cuatro criterios de
-> aceptación y se entrega en **dos PRs**: este (el umbral del CI, CA-06.2) y otro después (la matriz de trazabilidad,
-> CA-06.3). Este PR dice `Refs #69`, no `Closes`: el issue se cierra con la matriz.
+> aceptación y se entregó en **dos PRs**: el primero (#415) puso el umbral del CI (CA-06.2) y el segundo, la matriz de
+> trazabilidad (CA-06.3), que cierra el issue. Esta spec describe el umbral; la matriz tiene su propio documento
+> (`docs/trazabilidad-requisitos.md`) y se explica en la sección *Trazabilidad*.
 
 ## 1. Objetivo
 
@@ -104,6 +105,7 @@ Issue: #69 · Feature: `features/tec-06-umbral-cobertura.feature` · Pasos BDD: 
 | Medición | `internal/cobertura/medir.go` (`Medir`, `Medicion`, `Paquete`) | `internal/cobertura/medir_test.go` |
 | Umbral e informe | `internal/cobertura/verificar.go` (`Verificar`, `Informe`) y `defecto.go` (`MinimoPorDefecto`, `PaquetesPorDefecto`) | `internal/cobertura/verificar_test.go`, `internal/cobertura/defecto_test.go` |
 | Línea de comandos | `cmd/cobertura/main.go` | `cmd/cobertura/main_test.go` |
+| Matriz de trazabilidad (CA-06.3) | `docs/trazabilidad-requisitos.md`: cada requerimiento de la consigna con su historia, sus escenarios BDD y sus tests, y si está cubierto o pendiente | `features/trazabilidad_test.go`: la comprueba en cada corrida (falta un requerimiento, algo cubierto sin escenario ni test, o algo que se nombra y no existe) |
 | CI | paso "Umbral de cobertura (dominio y métricas)" de `.github/workflows/ci.yml`; atajo `make umbral`; `README.md` | Se comprueba en el CI de este PR (ver abajo) |
 
 | Criterio / regla | Escenarios BDD | Tests |
@@ -116,7 +118,7 @@ Issue: #69 · Feature: `features/tec-06-umbral-cobertura.feature` · Pasos BDD: 
 | RN5 (sin sentencias controladas) | El perfil no tiene sentencias de los paquetes controlados | `TestMedir_SinSentenciasControladasDevuelveUnaMedicionVacia`, `TestVerificar_SinSentenciasControladasFalla`, `TestRun_SinSentenciasControladasFalla` |
 | RN6 (perfil ilegible) | El perfil está mal formado | `TestMedir_UnPerfilIlegibleDaError`, `TestMedir_UnErrorDeLecturaSeInformaConElPrefijoDelPerfil`, `TestMedir_AceptaLosTresModosDeCobertura`, `TestMedir_IgnoraLasLineasEnBlanco`, `TestRun_UnPerfilQueNoExisteDaError`, `TestRun_UnPerfilMalFormadoDaError`, `TestRun_SinPerfilUsaCoverageOutDeLaCarpetaActual`, `TestRun_UnaOpcionDesconocidaMuestraLaAyuda`, `TestRun_PedirAyudaLaMuestraYNoFalla` |
 | CA-06.4 (cobertura por paquete disponible) | — | `TestInforme_TieneUnaLineaPorPaqueteYLaCombinada`, `TestInforme_SinPaquetesMuestraSoloLaCombinada`; el paso del CI deja el informe en el resumen de la corrida |
-| CA-06.3 (matriz requerimiento → test) | — | PR siguiente: `docs/trazabilidad-requisitos.md` |
+| CA-06.3 (matriz requerimiento → test) | — | `docs/trazabilidad-requisitos.md` (59 requerimientos de la consigna) y `features/trazabilidad_test.go`: `TestMatrizDeTrazabilidad_NombraTodosLosRequerimientosDeLaConsigna`, `TestMatrizDeTrazabilidad_CadaRequerimientoEstaCubiertoOPendienteConSuHistoria`, `TestMatrizDeTrazabilidad_TodoLoQueNombraExiste` |
 
 **Cómo se comprobó que el CI de verdad falla:** el paso se corrió localmente con las mismas variables que usa GitHub
 Actions, una vez con la cobertura real de `main` (607 de 610 sentencias, 99,5 %: sale con código 0) y otra con un perfil
