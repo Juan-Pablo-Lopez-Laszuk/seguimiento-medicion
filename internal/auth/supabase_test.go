@@ -184,13 +184,15 @@ func TestSupabaseIngresar_TraduceLosErroresDeSupabase(t *testing.T) {
 func TestSupabase_SinConexionOSinRespuestaATiempo_NoDisponible(t *testing.T) {
 	cerrado, _ := supabaseQueResponde(t, http.StatusOK, sesionDeAna)
 	cerrado.Close()
+	liberar := make(chan struct{})
 	lento := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
-		case <-time.After(5 * time.Second):
+		case <-liberar:
 		}
 	}))
 	t.Cleanup(lento.Close)
+	t.Cleanup(func() { close(liberar) }) // corre antes que lento.Close, que espera a que termine el handler
 	conPlazoCorto := auth.ConClienteHTTP(&http.Client{Timeout: 50 * time.Millisecond})
 
 	for nombre, server := range map[string]*httptest.Server{"sin conexión": cerrado, "sin respuesta a tiempo": lento} {
