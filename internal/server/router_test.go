@@ -25,6 +25,12 @@ func nuevoRouter() http.Handler {
 // nuevoRouterConReloj arma la aplicación con repositorios en memoria vacíos; ahora fija "hoy" para la vista del
 // proyecto (HU-04) y para la modificación (HU-02).
 func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
+	return server.NewRouter(dependenciasEnMemoria(ahora))
+}
+
+// dependenciasEnMemoria arma los casos de uso con repositorios en memoria vacíos y sin login. Los tests que necesitan
+// algo más (por ejemplo el login de TEC-05) lo agregan antes de armar el router.
+func dependenciasEnMemoria(ahora func() time.Time) server.Dependencias {
 	proyectos, sprints, historias := memory.NuevoProyectos(), memory.NuevoSprints(), memory.NuevoHistorias()
 	integrantes := memory.NuevoIntegrantes()
 	repoCriterios, repoTareas, repoRegistros := memory.NuevoCriterios(), memory.NuevoTareas(), memory.NuevoRegistros()
@@ -34,7 +40,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora)
 	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
 	defectos := service.NuevoDefectos(proyectos, sprints, historias, repoDefectos)
-	return server.NewRouter(server.Dependencias{
+	return server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
 		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
@@ -53,7 +59,7 @@ func nuevoRouterConReloj(ahora func() time.Time) http.Handler {
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
-	})
+	}
 }
 
 // pedir simula un pedido GET a la aplicación y devuelve la respuesta grabada.
