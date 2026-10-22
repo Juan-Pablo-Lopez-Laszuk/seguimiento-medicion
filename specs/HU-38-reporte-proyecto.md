@@ -6,6 +6,8 @@
 > (HU-35), y el reporte de cada sprint, que ya arma HU-37. Agrega la evolución de la velocidad (CA-38.2), que sale de
 > la velocidad que cada reporte de sprint ya calcula con los sprints cerrados hasta ese (HU-37 RN4). No calcula nada
 > nuevo. Es lo que HU-39 va a pasar a PDF.
+> Revisada por Juan Pablo el 21/10: resumen igual al panel, un bloque por sprint igual a su reporte, evolución solo con
+> los sprints cerrados y en tabla, sin gráfico.
 
 ## 1. Objetivo
 
@@ -81,7 +83,7 @@ Con el ejemplo de la sección 6, el reporte muestra, en este orden:
 - **Pantalla:** el bloque de un sprint se saca de `reporte_sprint.html` a una plantilla compartida
   (`{{define "reporte-sprint"}}`), que usan las dos páginas. `@media print` con `break-before: page` en cada bloque.
 - **Depende de HU-37 (#416):** la rama sale de la de HU-37. Cuando se mergee #416, el PR queda solo con lo de HU-38.
-- **Sin gráfico** [A CONFIRMAR]: la evolución va en tabla, que se imprime y pasa a PDF (HU-39) sin cambios. Si HU-36
+- **Sin gráfico** (confirmado el 21/10): la evolución va en tabla, que se imprime y pasa a PDF (HU-39) sin cambios. Si HU-36
   (Carolina) trae un gráfico de velocidad, se puede sumar después.
 
 ## 6. Casos límite
