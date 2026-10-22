@@ -116,7 +116,9 @@ func (e *escenarioReporte) reportes(historias service.ListadorHistorias) *servic
 func (e *escenarioReporte) reportesCon(historias service.ListadorHistorias, defectos service.ListadorDefectos) *service.Reportes {
 	cierres := service.NuevoCierres(e.proyectos, e.sprints, e.historias, e.cierres, time.Now)
 	horas := service.NuevoHoras(e.proyectos, e.sprints, e.historias, e.tareas, e.registros)
-	return service.NuevoReportes(e.proyectos, e.sprints, historias, cierres, horas, defectos)
+	estado := service.NuevoEstadoProyectos(e.proyectos, e.sprints, e.historias, time.Now)
+	panel := service.NuevoPanel(estado, e.sprints, horas, service.NuevoDefectos(e.proyectos, e.sprints, e.historias, e.defectos))
+	return service.NuevoReportes(e.proyectos, e.sprints, historias, cierres, horas, defectos, panel)
 }
 
 // defecto guarda un defecto de la HU-historia detectado en el Sprint detectado y, si resuelto no es 0, Resuelto en ese
