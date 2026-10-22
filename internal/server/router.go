@@ -36,7 +36,7 @@ type Dependencias struct {
 	Horas *service.Horas
 	// Panel junta los indicadores del proyecto (HU-35).
 	Panel *service.Panel
-	// Reportes arma el reporte de un sprint (HU-37).
+	// Reportes arma el reporte de un sprint (HU-37) y el del proyecto (HU-38).
 	Reportes *service.Reportes
 	Estado   *service.EstadoProyectos
 	Edicion  *service.EdicionProyectos
@@ -73,6 +73,7 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
 
 	r.Get("/proyectos/{id}/sprints/{sprint}/reporte", reportes{casos: dep.Reportes}.sprint)
+	r.Get("/proyectos/{id}/reporte", reportes{casos: dep.Reportes}.proyecto)
 
 	ci := cierres{casos: dep.Cierres}
 	r.Get("/proyectos/{id}/sprints/{sprint}/cerrar", ci.confirmar)
