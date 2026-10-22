@@ -71,7 +71,7 @@ func nuevoSupabaseDeEscenario() *supabaseDeEscenario {
 		case "/auth/v1/.well-known/jwks.json":
 			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []map[string]string{{
 				"kty": "EC", "crv": "P-256", "alg": "ES256", "use": "sig", "kid": "clave-del-escenario",
-				"x": b64(clave.PublicKey.X.FillBytes(make([]byte, 32))), "y": b64(clave.PublicKey.Y.FillBytes(make([]byte, 32))),
+				"x": b64(clave.X.FillBytes(make([]byte, 32))), "y": b64(clave.Y.FillBytes(make([]byte, 32))),
 			}}})
 		case "/auth/v1/signup":
 			if _, existe := s.cuentas[cuerpo.Email]; existe {

@@ -51,7 +51,7 @@ func nuevoSupabaseFalso(t *testing.T) *supabaseFalso {
 		case "/auth/v1/.well-known/jwks.json":
 			_ = json.NewEncoder(w).Encode(map[string]any{"keys": []map[string]string{{
 				"kty": "EC", "crv": "P-256", "alg": "ES256", "use": "sig", "kid": "clave-falsa",
-				"x": b64(clave.PublicKey.X.FillBytes(make([]byte, 32))), "y": b64(clave.PublicKey.Y.FillBytes(make([]byte, 32))),
+				"x": b64(clave.X.FillBytes(make([]byte, 32))), "y": b64(clave.Y.FillBytes(make([]byte, 32))),
 			}}})
 		case "/auth/v1/signup":
 			s.cuentas[cuerpo.Email] = cuerpo.Password
