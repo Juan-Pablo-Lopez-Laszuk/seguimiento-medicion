@@ -70,6 +70,8 @@ var (
 	ErrYaDadoDeBaja = errors.New("el integrante ya está dado de baja")
 	// ErrNoEncontrado lo devuelven los repositorios cuando no hay un integrante con ese ID en el proyecto.
 	ErrNoEncontrado = errors.New("no existe el integrante")
+	// ErrNoEsIntegrante lo devuelve la consulta de quién es un usuario en un proyecto donde no tiene ningún integrante (TEC-05).
+	ErrNoEsIntegrante = errors.New("el usuario no es integrante del proyecto")
 )
 
 // Datos son los campos que carga el usuario para registrar un integrante.
@@ -87,6 +89,9 @@ type Integrante struct {
 	Email      string
 	Rol        Rol
 	Activo     bool
+	// AuthUserID es el UUID del usuario de Supabase Auth vinculado con este integrante (TEC-05); vacío si todavía no
+	// ingresó nadie con su email.
+	AuthUserID string
 }
 
 // Nuevo valida los datos contra los integrantes que ya tiene el proyecto y devuelve el integrante
