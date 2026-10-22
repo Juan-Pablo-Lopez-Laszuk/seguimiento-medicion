@@ -1,6 +1,6 @@
 # SPEC-38 · Reporte de proyecto
 
-**Historia:** HU-38 (#49) · **Responsable:** López, Juan Pablo · **Sprint:** 3 (adelantada del Sprint 4) · **Estado:** Borrador
+**Historia:** HU-38 (#49) · **Responsable:** López, Juan Pablo · **Sprint:** 3 (adelantada del Sprint 4) · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Junta en una página el resumen del proyecto, que ya calcula el panel
 > (HU-35), y el reporte de cada sprint, que ya arma HU-37. Agrega la evolución de la velocidad (CA-38.2), que sale de
@@ -82,7 +82,8 @@ Con el ejemplo de la sección 6, el reporte muestra, en este orden:
   los sprints. El reporte de un sprint sigue dando lo mismo (sus tests no cambian).
 - **Pantalla:** el bloque de un sprint se saca de `reporte_sprint.html` a una plantilla compartida
   (`{{define "reporte-sprint"}}`), que usan las dos páginas. `@media print` con `break-before: page` en cada bloque.
-- **Depende de HU-37 (#416):** la rama sale de la de HU-37. Cuando se mergee #416, el PR queda solo con lo de HU-38.
+- **Depende de HU-37 (#416, ya en `main`):** usa `Reportes.Sprint` y su página. El cuerpo del reporte de un sprint pasó
+  a un bloque compartido (`reporteSprint` en `componentes.html`) que usan las dos páginas.
 - **Sin gráfico** (confirmado el 21/10): la evolución va en tabla, que se imprime y pasa a PDF (HU-39) sin cambios. Si HU-36
   (Carolina) trae un gráfico de velocidad, se puede sumar después.
 
@@ -125,4 +126,15 @@ Crítica de HU-1, detectado y resuelto en el Sprint 1; #2 Media de HU-2, detecta
 
 Issue: #49 · Feature: `features/hu-38-reporte-proyecto.feature` · Pasos BDD: `features/hu38_steps_test.go`
 
-Las tablas por capa y por criterio se completan con el código.
+| Capa | Código | Tests |
+|---|---|---|
+| Métricas | sin cambios: el resumen y los bloques usan las de HU-30, HU-31, HU-33, HU-34 y HU-37 | los de cada métrica |
+| Caso de uso | `internal/service/reportes_proyecto.go` (`Reportes.Proyecto`, `ReporteProyecto`, `Evolucion` y los textos del resumen); `internal/service/reportes.go` parte `Sprint` en `datos` (lee los listados) y `armar` (arma un sprint), y suma `VelocidadPorSprint` | `internal/service/reportes_proyecto_test.go` |
+| Repositorios | sin cambios | — |
+| Pantalla | `internal/server/reportes.go` (`reportes.proyecto`), ruta `GET /proyectos/{id}/reporte` en `router.go`, `web/templates/paginas/reporte_proyecto.html`, bloques `metrica`, `tituloReporte` y `reporteSprint` en `componentes.html` (compartidos con `reporte_sprint.html`) y botón en `proyecto.html` | `internal/server/reportes_proyecto_test.go` |
+| Aplicación | `app/app.go` le pasa el panel a `Reportes` | `app/reportes_test.go` (memoria y PostgreSQL) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-38.1 Consolida todos los sprints con el mismo contenido que el reporte de sprint | El resumen del reporte del proyecto · Un bloque por sprint igual a su reporte · El reporte del proyecto conserva las fotos de los cierres · Reporte de un proyecto sin sprints · Pedir el reporte de un proyecto que no existe | `TestReporteDeProyecto_Resumen`, `TestReporteDeProyecto_UnBloquePorSprint`, `TestReporteDeProyecto_ConservaLasFotos`, `TestReporteDeProyecto_SinSprints`, `TestReporteDeProyecto_SinSprintsCerrados`, `TestReporteDeProyecto_Errores`, `TestReporteDeProyecto_MuestraElReporte`, `TestReporteDeProyecto_SeImprime`, `TestProyecto_EnlazaAlReporte`, `TestReporteDeProyecto_NoExiste`, `TestNewHandlerConBase_SinURLSeVeElReporteDelProyecto`, `TestNewHandlerConBase_ConURLElReporteDelProyectoSobreviveAUnReinicio` |
+| CA-38.2 Incluye la evolución de la velocidad | La evolución de la velocidad · El reporte del proyecto conserva las fotos de los cierres · Reporte de un proyecto sin sprints | `TestReporteDeProyecto_EvolucionDeLaVelocidad`, `TestReporteDeProyecto_ConservaLasFotos`, `TestReporteDeProyecto_SinSprintsCerrados`, `TestReporteDeProyecto_MuestraElReporte` |
