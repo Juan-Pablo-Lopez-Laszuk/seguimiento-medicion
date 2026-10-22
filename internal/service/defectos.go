@@ -20,6 +20,8 @@ type RepositorioDefectos interface {
 	Guardar(ctx context.Context, d defect.Defecto) (defect.Defecto, error)
 	// ListarPorProyecto devuelve los defectos del proyecto, el más nuevo primero.
 	ListarPorProyecto(ctx context.Context, proyectoID int64) ([]defect.Defecto, error)
+	// ListarFiltrados devuelve los defectos del proyecto que cumplen el filtro, el más nuevo primero (HU-29).
+	ListarFiltrados(ctx context.Context, proyectoID int64, f defect.Filtro) ([]defect.Defecto, error)
 	// BuscarPorID devuelve el defecto dentro de su proyecto, o defect.ErrDefectoNoEncontrado (HU-28).
 	BuscarPorID(ctx context.Context, proyectoID, id int64) (defect.Defecto, error)
 	// Actualizar guarda el estado y el sprint de resolución, o devuelve defect.ErrDefectoNoEncontrado (HU-28).
@@ -45,6 +47,28 @@ type VistaDefectos struct {
 	Defectos  []defect.Defecto
 	Sprints   []sprint.Sprint
 	Historias []backlog.Historia
+	Filtro    defect.Filtro    // el de la consulta (HU-29), ya sin valores que no existen
+	Filtrados []defect.Defecto // los que cumplen el filtro; sin filtro, todos
+}
+
+// ConteoSeveridad es la cantidad de defectos de una severidad en la lista filtrada (HU-29, CA-29.2).
+type ConteoSeveridad struct {
+	Severidad defect.Severidad
+	Cantidad  int
+}
+
+// PorSeveridad cuenta los defectos filtrados de cada severidad, en el orden de defect.Severidades, también los 0.
+func (v VistaDefectos) PorSeveridad() []ConteoSeveridad {
+	conteo := make([]ConteoSeveridad, len(defect.Severidades))
+	for i, sev := range defect.Severidades {
+		conteo[i].Severidad = sev
+		for _, d := range v.Filtrados {
+			if d.Severidad == sev {
+				conteo[i].Cantidad++
+			}
+		}
+	}
+	return conteo
 }
 
 // SprintDe devuelve el nombre del sprint con ese ID ("Sprint 1"), o "" si no es del proyecto.
@@ -116,6 +140,30 @@ func (s *Defectos) Ver(ctx context.Context, proyectoID int64) (VistaDefectos, er
 	}
 	if v.Defectos, err = s.repo.ListarPorProyecto(ctx, proyectoID); err != nil {
 		return VistaDefectos{}, fmt.Errorf("listar los defectos del proyecto %d: %w", proyectoID, err)
+	}
+	v.Filtrados = v.Defectos
+	return v, nil
+}
+
+// Consultar devuelve la vista de Ver con la lista filtrada (HU-29). Una severidad o un estado que no existen, o un
+// sprint que no es del proyecto, se ignoran (RN3): no es un error.
+func (s *Defectos) Consultar(ctx context.Context, proyectoID int64, f defect.Filtro) (VistaDefectos, error) {
+	v, err := s.Ver(ctx, proyectoID)
+	if err != nil {
+		return VistaDefectos{}, err
+	}
+	if !slices.Contains(defect.Severidades, f.Severidad) {
+		f.Severidad = ""
+	}
+	if !slices.Contains(defect.Estados, f.Estado) {
+		f.Estado = ""
+	}
+	if !slices.ContainsFunc(v.Sprints, func(sp sprint.Sprint) bool { return sp.ID == f.SprintID }) {
+		f.SprintID = 0
+	}
+	v.Filtro = f
+	if v.Filtrados, err = s.repo.ListarFiltrados(ctx, proyectoID, f); err != nil {
+		return VistaDefectos{}, fmt.Errorf("listar los defectos filtrados del proyecto %d: %w", proyectoID, err)
 	}
 	return v, nil
 }

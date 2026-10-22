@@ -152,3 +152,37 @@ func TestResumenDeDefectos(t *testing.T) {
 		t.Errorf("una severidad desconocida debería mostrar todas: %+v", otra)
 	}
 }
+
+// HU-29 · CA-29.1 y CA-29.2 · Consultar filtra la lista y cuenta por severidad; un valor que no existe se ignora
+func TestConsultarDefectos(t *testing.T) {
+	e := nuevoEscenarioDefectos(t)
+	ctx := context.Background()
+	for _, sev := range []defect.Severidad{defect.SeveridadAlta, defect.SeveridadAlta, defect.SeveridadBaja} {
+		if _, err := e.casos.Registrar(ctx, e.proyectoID, defect.Datos{Descripcion: "Falla", Severidad: sev, SprintID: e.sprint.ID}); err != nil {
+			t.Fatalf("registrar: %v", err)
+		}
+	}
+
+	v, err := e.casos.Consultar(ctx, e.proyectoID, defect.Filtro{Severidad: defect.SeveridadAlta, Estado: defect.EstadoAbierto, SprintID: e.sprint.ID})
+	if err != nil {
+		t.Fatalf("no se esperaba error: %v", err)
+	}
+	if len(v.Filtrados) != 2 || len(v.Defectos) != 3 || v.Filtro.Severidad != defect.SeveridadAlta {
+		t.Errorf("filtrados = %d de %d, filtro %+v", len(v.Filtrados), len(v.Defectos), v.Filtro)
+	}
+	conteo := v.PorSeveridad()
+	if len(conteo) != 4 || conteo[0].Severidad != defect.SeveridadCritica || conteo[0].Cantidad != 0 || conteo[1].Cantidad != 2 || conteo[3].Cantidad != 0 {
+		t.Errorf("por severidad = %+v", conteo)
+	}
+
+	otro, err := e.casos.Consultar(ctx, e.proyectoID, defect.Filtro{Severidad: "Urgente", Estado: "Hecho", SprintID: e.sprint.ID + 99})
+	if err != nil || len(otro.Filtrados) != 3 || otro.Filtro != (defect.Filtro{}) {
+		t.Errorf("los valores que no existen deberían ignorarse: %+v, %v", otro.Filtro, err)
+	}
+	if ver, _ := e.casos.Ver(ctx, e.proyectoID); len(ver.Filtrados) != 3 {
+		t.Errorf("Ver debería traer todos como filtrados, trajo %d", len(ver.Filtrados))
+	}
+	if _, err := e.casos.Consultar(ctx, 99, defect.Filtro{}); !errors.Is(err, project.ErrNoEncontrado) {
+		t.Errorf("proyecto inexistente: %v", err)
+	}
+}

@@ -1,0 +1,115 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$proyecto := .Proyecto.ID}}
+{{$filtro := .Filtro}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Registros de horas</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+
+<h1 class="h3 mb-2">Registros de horas</h1>
+<p class="text-body-secondary mb-4">
+  Las horas que cargó el equipo. Cada integrante corrige solo sus registros; el Agile Enabler, todos.
+</p>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-filtros">
+  <h2 class="h5 mb-3" id="titulo-filtros">Filtros</h2>
+  <form action="/proyectos/{{$proyecto}}/esfuerzo" method="get">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label" for="integrante">Integrante</label>
+        <select class="form-select" id="integrante" name="integrante">
+          <option value="">Todos</option>
+          {{range .Integrantes}}
+          <option value="{{.ID}}"{{if eq .ID $filtro.IntegranteID}} selected{{end}}>{{.Nombre}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label" for="historia">Historia</label>
+        <select class="form-select" id="historia" name="historia">
+          <option value="">Todas</option>
+          {{range .Historias}}
+          <option value="{{.Numero}}"{{if eq .Numero $filtro.Historia}} selected{{end}}>{{.Identificador}} · {{.Titulo}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label" for="sprint">Sprint</label>
+        <select class="form-select" id="sprint" name="sprint">
+          <option value="">Todos</option>
+          {{range .Sprints}}
+          <option value="{{.Numero}}"{{if eq .Numero $filtro.Sprint}} selected{{end}}>Sprint {{.Numero}}</option>
+          {{end}}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Filtrar</button>
+      </div>
+    </div>
+    <div class="form-text">El sprint toma los registros con fecha entre el inicio y el fin del sprint.</div>
+  </form>
+  {{if .Filtrado}}<a class="d-inline-block mt-2" href="/proyectos/{{$proyecto}}/esfuerzo">Quitar filtros</a>{{end}}
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm mb-4" aria-labelledby="titulo-lista">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h2 class="h5 mb-0" id="titulo-lista">Registros</h2>
+    <span>Total de la lista: <strong>{{horas .Total}} h</strong></span>
+  </div>
+  {{if .Registros}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Fecha</th><th scope="col">Integrante</th><th scope="col">Historia</th><th scope="col">Tarea</th><th scope="col">Actividad</th><th scope="col" class="text-end">Horas</th><th scope="col"><span class="visually-hidden">Acciones</span></th></tr></thead>
+      <tbody>
+        {{range .Registros}}
+        <tr>
+          <td class="text-nowrap">{{.Fecha.Format "02/01/2006"}}</td>
+          <td>{{.Integrante}}</td>
+          <td>{{.Historia}}</td>
+          <td>{{with .Tarea}}{{.}}{{else}}<span class="text-body-secondary">Toda la historia</span>{{end}}</td>
+          <td>{{.Actividad}}</td>
+          <td class="text-end text-nowrap">{{horas .Horas}} h</td>
+          <td class="text-end"><a class="btn btn-sm btn-outline-secondary" href="/proyectos/{{$proyecto}}/esfuerzo/{{.ID}}/corregir">Corregir</a></td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else if .Filtrado}}
+  <p class="text-body-secondary mb-0">Ningún registro con esos filtros. <a href="/proyectos/{{$proyecto}}/esfuerzo">Quitar filtros</a></p>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin horas registradas todavía. Se cargan desde la página de esfuerzo de cada historia.</p>
+  {{end}}
+</section>
+
+<section class="p-4 bg-body rounded-3 shadow-sm" aria-labelledby="titulo-por-historia">
+  <h2 class="h5 mb-3" id="titulo-por-historia">Horas estimadas vs reales por historia</h2>
+  {{if .PorHistoria}}
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+      <thead><tr><th scope="col">Historia</th><th scope="col" class="text-end">Estimadas</th><th scope="col" class="text-end">Reales</th><th scope="col" class="text-end">Desviación</th></tr></thead>
+      <tbody>
+        {{range .PorHistoria}}
+        <tr>
+          <td>{{.Nombre}}</td>
+          <td class="text-end text-nowrap">{{horas .Estimadas}} h</td>
+          <td class="text-end text-nowrap">{{horas .Reales}} h</td>
+          <td class="text-end text-nowrap{{if gt .Horas 0.0}} text-danger{{else if lt .Horas 0.0}} text-success{{end}}">{{.HorasTexto}} ({{.PorcentajeTexto}})</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="form-text">Las horas reales cuentan todos los registros de la historia, como en la página de Horas.</div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Sin historias en la lista.</p>
+  {{end}}
+</section>
+{{end}}
+{{end}}

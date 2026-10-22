@@ -30,6 +30,11 @@ type paginaDefectos struct {
 	Filtro      defect.Severidad // severidad del resumen (HU-34); "" = todas
 }
 
+// Estados devuelve los estados de un defecto para el filtro de la lista (HU-29).
+func (paginaDefectos) Estados() []defect.Estado {
+	return defect.Estados
+}
+
 // ResumenFiltrado devuelve el resumen de defectos con el filtro de la página (HU-34).
 func (p paginaDefectos) ResumenFiltrado() service.ResumenDefectos {
 	return p.Resumen(p.Filtro)
@@ -41,7 +46,11 @@ func (h defectos) ver(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	vista, err := h.casos.Ver(r.Context(), proyectoID)
+	// Filtros de la lista (HU-29): un valor que no existe lo ignora el caso de uso.
+	q := r.URL.Query()
+	sprintID, _ := strconv.ParseInt(q.Get("filtro_sprint"), 10, 64)
+	filtro := defect.Filtro{Severidad: defect.Severidad(q.Get("filtro_severidad")), Estado: defect.Estado(q.Get("filtro_estado")), SprintID: sprintID}
+	vista, err := h.casos.Consultar(r.Context(), proyectoID, filtro)
 	if respondeErrorDeTareas(w, err, "ver los defectos") {
 		return
 	}

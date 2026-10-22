@@ -185,3 +185,19 @@ func TestPaginaDeDefectos_MuestraElResumen(t *testing.T) {
 		"El login falla con Google", // la lista de defectos no se filtra
 	)
 }
+
+// HU-29 · CA-29.1 y CA-29.2 · la lista se filtra por severidad, estado y sprint y muestra la cantidad por severidad
+func TestPaginaDeDefectos_FiltrosYCantidadPorSeveridad(t *testing.T) {
+	h := conDefecto(t) // "El login falla con Google": Alta, Abierto, Sprint 1
+	verificarContiene(t, get(h, "/proyectos/1/defectos").Body.String(),
+		`id="filtro-estado"`, `name="filtro_estado"`, `id="filtro-sprint"`, `<option value="En progreso">En progreso</option>`,
+		`data-severidad="Alta">1<`, `data-severidad="Crítica">0<`,
+	)
+	verificarContiene(t, get(h, "/proyectos/1/defectos?filtro_estado=Cerrado&filtro_sprint=1").Body.String(),
+		"Ningún defecto con esos filtros.", `<option value="Cerrado" selected>Cerrado</option>`, `data-severidad="Alta">0<`,
+		`href="/proyectos/1/defectos">Quitar los filtros</a>`,
+	)
+	if html := get(h, "/proyectos/1/defectos?filtro_estado=Abierto&filtro_sprint=1&filtro_severidad=Alta").Body.String(); !strings.Contains(html, "El login falla con Google</td>") {
+		t.Error("con los filtros que cumple, el defecto debería aparecer en la lista")
+	}
+}
