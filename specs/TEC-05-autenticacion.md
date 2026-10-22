@@ -222,8 +222,12 @@ Issue: #68 · Feature: `features/tec-05-autenticacion.feature` · Pasos BDD: `fe
 | CA-05.3 y RN7 (vínculo al ingresar) | Al ingresar la cuenta se vincula con los integrantes de todos los proyectos · Un integrante ya vinculado con otra cuenta no se pisa | `TestIntegrantes_VincularPorEmail_*` (memoria y PostgreSQL), `TestIngresar_CredencialesCorrectas_DevuelveLaSesionYVinculaALosIntegrantes`, `TestNewHandlerDesdeEntorno_ConPostgres_AlIngresarVinculaALosIntegrantes` |
 | CA-05.3 y RN8 (`Quien`) | Saber a qué integrante corresponde el usuario en un proyecto · Me agregan a un proyecto después de haber ingresado · Un usuario que no es integrante del proyecto | `TestQuien_*`, `TestIntegrantes_BuscarPorUsuario` (memoria y PostgreSQL) |
 
-**Cómo se comprobó con Supabase de verdad** (proyecto de desarrollo, sin crear cuentas): el verificador bajó el JWKS real
-(una clave ES256 P-256), encontró la clave por su `kid` y rechazó un token firmado con otra clave; y el servidor local,
-contra ese proyecto, respondió 401 al ingreso con credenciales que no existen (el `invalid_credentials` real de Supabase
-llega como "El email o la contraseña no son correctos."), 401 sin cookie, a una cookie con basura y a una sin firma, y dejó
-abiertas `/health`, `/login` y `/registro`.
+**Cómo se comprobó con Supabase de verdad** (proyecto de desarrollo con *Confirm email* desactivado, el servidor local y
+una base PostgreSQL descartable): se registró una cuenta de prueba, y registrar el mismo email otra vez dio "ya hay una
+cuenta con ese email"; se ingresó con el email en mayúsculas y con espacios y se obtuvo una cookie `HttpOnly` y
+`SameSite=Lax` que vencía a la hora (el *JWT expiry* de ese proyecto); con esa sesión se entró a las páginas, la barra
+mostró el email y el botón Salir, y sin sesión dio 401; un integrante registrado con ese email quedó, al volver a ingresar,
+vinculado con el UUID que trae el `sub` del token; un token real con el payload alterado dio 401; salir borró la cookie
+(el token ya copiado siguió valiendo hasta vencer, como dice RN10); y el log del servidor no tuvo ni la contraseña ni el
+token. Además, el verificador bajó el JWKS real (una clave ES256 P-256) y la encontró por su `kid`, y el `invalid_credentials`
+real de Supabase llega como "El email o la contraseña no son correctos.".
