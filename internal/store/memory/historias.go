@@ -16,12 +16,20 @@ type Dependiente interface {
 	EliminarDeHistoria(historiaID int64)
 }
 
+// ConRegistros es un repositorio con registros que apuntan a una historia (los de esfuerzo, los defectos). Mientras tenga
+// alguno, la historia no se elimina (HU-06, RN10): en PostgreSQL lo impide la clave foránea.
+type ConRegistros interface {
+	// TieneDeHistoria dice si el repositorio tiene algún registro de esa historia.
+	TieneDeHistoria(historiaID int64) bool
+}
+
 // Historias guarda las historias de todos los proyectos en una lista en memoria.
 type Historias struct {
 	mu           sync.Mutex
 	lista        []backlog.Historia
 	ultimoID     int64
 	dependientes []Dependiente
+	asociados    []ConRegistros
 	cierres      *Cierres // lo conecta NuevoCierres (HU-14), para EnSprintCerrado
 	// estimaciones es el historial de re-estimaciones de cada historia (HU-16b), de la más antigua a la más reciente.
 	estimaciones map[int64][]backlog.Reestimacion
@@ -32,6 +40,14 @@ type Historias struct {
 // historia: eliminarla borra también lo suyo en cada uno.
 func NuevoHistorias(dependientes ...Dependiente) *Historias {
 	return &Historias{dependientes: dependientes, estimaciones: map[int64][]backlog.Reestimacion{}, ahora: time.Now}
+}
+
+// ConRegistrosAsociados le dice al repositorio qué otros repositorios tienen registros de una historia (esfuerzo,
+// defectos): una historia con registros ahí no se elimina y Eliminar devuelve backlog.ErrHistoriaConRegistros, como hace
+// PostgreSQL con sus claves foráneas (HU-06, RN10). Sin llamarlo, no hay nada que lo impida.
+func (r *Historias) ConRegistrosAsociados(asociados ...ConRegistros) *Historias {
+	r.asociados = asociados
+	return r
 }
 
 // ConReloj cambia el reloj con el que se anota la hora de cada re-estimación (HU-16b): en los tests, uno fijo. Sin
@@ -192,12 +208,18 @@ func (r *Historias) ActualizarDatos(_ context.Context, h backlog.Historia) error
 }
 
 // Eliminar borra la historia (HU-06) y lo que cuelga de ella en los dependientes, o devuelve
-// backlog.ErrHistoriaNoEncontrada si no existe. Las demás historias conservan su número.
+// backlog.ErrHistoriaNoEncontrada si no existe y backlog.ErrHistoriaConRegistros, sin borrar nada, si tiene registros de
+// esfuerzo o defectos (RN10). Las demás historias conservan su número.
 func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for i, h := range r.lista {
 		if h.ID == historiaID {
+			for _, asociado := range r.asociados {
+				if asociado.TieneDeHistoria(historiaID) {
+					return backlog.ErrHistoriaConRegistros
+				}
+			}
 			r.lista = slices.Delete(r.lista, i, i+1)
 			delete(r.estimaciones, historiaID)
 			for _, d := range r.dependientes {
