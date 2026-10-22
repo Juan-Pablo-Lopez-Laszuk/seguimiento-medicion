@@ -1,0 +1,42 @@
+{{define "contenido"}}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-5">
+    <h1 class="h3 mb-3">Crear cuenta</h1>
+
+    {{with .Datos}}
+    {{template "error" .ErrorGeneral}}
+
+    <form class="p-4 bg-body rounded-3 shadow-sm" action="/registro" method="post" novalidate>
+      <div class="mb-3">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-control{{if index .Errores "email"}} is-invalid{{end}}" type="email" id="email" name="email"
+               value="{{.Email}}" maxlength="254" autocomplete="username" required autofocus>
+        {{template "errorCampo" (index .Errores "email")}}
+        <div class="form-text">Usá el mismo email con el que te registraron como integrante de un proyecto.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="clave">Contraseña</label>
+        <input class="form-control{{if index .Errores "clave"}} is-invalid{{end}}" type="password" id="clave" name="clave"
+               autocomplete="new-password" required>
+        {{template "errorCampo" (index .Errores "clave")}}
+        <div class="form-text">Entre 8 y 72 caracteres.</div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="repeticion">Repetir contraseña</label>
+        <input class="form-control{{if index .Errores "repeticion"}} is-invalid{{end}}" type="password" id="repeticion"
+               name="repeticion" autocomplete="new-password" required>
+        {{template "errorCampo" (index .Errores "repeticion")}}
+      </div>
+
+      <div class="d-grid">
+        <button class="btn btn-primary" type="submit">Crear cuenta</button>
+      </div>
+    </form>
+
+    <p class="mt-3 text-center">¿Ya tenés cuenta? <a href="/login">Iniciá sesión</a></p>
+    {{end}}
+  </div>
+</div>
+{{end}}

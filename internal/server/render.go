@@ -19,6 +19,9 @@ import (
 type Pagina struct {
 	Titulo string
 	Datos  any
+	// Usuario es el email del usuario con sesión, para la barra de navegación (TEC-05). render lo completa; está vacío si
+	// el login no está configurado.
+	Usuario string
 }
 
 // funciones son las funciones que pueden usar las plantillas.
@@ -70,6 +73,9 @@ func render(w http.ResponseWriter, codigo int, pagina string, datos Pagina) {
 		log.Printf("render: no existe la plantilla %q", pagina)
 		http.Error(w, "error al mostrar la página", http.StatusInternalServerError)
 		return
+	}
+	if r, ok := w.(respuestaConUsuario); ok {
+		datos.Usuario = r.email
 	}
 	var buf bytes.Buffer
 	if err := t.ExecuteTemplate(&buf, "base", datos); err != nil {
