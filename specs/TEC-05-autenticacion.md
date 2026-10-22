@@ -1,6 +1,6 @@
 # SPEC-TEC-05 · Autenticación de usuarios con Supabase Auth
 
-**Tarea:** TEC-05 (#68) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 (adelantada del Sprint 4) · **Estado:** Borrador
+**Tarea:** TEC-05 (#68) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 (adelantada del Sprint 4) · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. Parte del spike
 > `docs/spike-supabase-auth.md` (#66) y de la Guía de desarrollo, sección 6.2. Depende de HU-03 (el email de los
@@ -51,7 +51,9 @@ historias queda fuera (sección 5).
   (`SUPABASE_URL/auth/v1/.well-known/jwks.json`, la clave se elige por el `kid` del header), su algoritmo es **ES256 o
   RS256** (se rechazan HS256 y `none`), **no venció**, el emisor (`iss`) es `SUPABASE_URL/auth/v1`, la audiencia (`aud`) es
   `authenticated` y trae un `sub` que es un UUID. Se verifica **localmente**: Supabase solo se consulta para registrar
-  e ingresar, y el JWKS se baja una vez y se reutiliza mientras la función siga activa.
+  e ingresar, y el JWKS se baja una vez (con un plazo de 5 segundos) y se reutiliza mientras la función siga activa; se
+  vuelve a bajar cada hora y cuando llega un token con un `kid` que no se conoce, como mucho una vez por minuto (así un
+  token inventado no hace que se le pida el JWKS a Supabase a cada rato).
 - RN3: **Sin sesión válida el pedido se rechaza con 401** y no llega a ningún handler. Vale para la cookie ausente,
   mal formada, con la firma de otra clave, con otro algoritmo, de otro emisor o audiencia, o vencida. La respuesta es la
   página de login (para que el navegador muestre el formulario) con "Iniciá sesión para continuar." o, si el token
@@ -67,12 +69,14 @@ historias queda fuera (sección 5).
   (la spec de HU-01 pide que cualquier usuario con sesión pueda crear un proyecto); estar o no en un proyecto se resuelve
   con el vínculo (RN7).
 - RN6: **Ingreso.** Con las credenciales correctas guarda la cookie y vincula (RN7). Con credenciales incorrectas
-  responde **401** "El email o la contraseña no son correctos." sin decir cuál de los dos, y no guarda ninguna cookie. Si
+  responde **401** "El email o la contraseña no son correctos." sin decir cuál de los dos, y no guarda ninguna cookie; si
+  falta el email o la contraseña es lo mismo y ni siquiera se consulta a Supabase. Si
   Supabase exige confirmar el email y todavía no se confirmó: "Confirmá tu email antes de iniciar sesión.".
 - RN7: **Vínculo con los integrantes** (decisión 1 de `docs/modelo-datos.md`). Al ingresar, el usuario (`sub`) se vincula
   con **todos** los integrantes, de cualquier proyecto, cuyo email es el de su cuenta y que **todavía no tienen un
   usuario**. Un integrante ya vinculado con otro usuario no se pisa; uno ya vinculado con este mismo usuario no cambia. Los
-  dados de baja también se vinculan. Un usuario puede quedar vinculado con un integrante por proyecto.
+  dados de baja también se vinculan. Un usuario puede quedar vinculado con un integrante por proyecto. Si no se puede vincular (la base no responde), el
+  ingreso igual funciona: `Quien` lo reintenta (RN8).
 - RN8: **`Quien(proyecto)`** devuelve el integrante del proyecto vinculado con el usuario. Si no hay uno vinculado pero hay
   un integrante del proyecto con su email (lo registraron **después** de que ingresó), lo vincula en ese momento. Si el
   usuario no es integrante del proyecto, el error es `ErrNoEsIntegrante`. Quien lo use decide qué hacer con uno dado de
@@ -86,7 +90,8 @@ historias queda fuera (sección 5).
 - RN12: **Si el servicio de login no responde** (sin conexión, error 5xx o más de 5 segundos) el registro y el ingreso
   responden **503** "No pudimos conectar con el servicio de inicio de sesión. Probá de nuevo en unos minutos."; si
   Supabase limita los intentos (429): "Demasiados intentos. Esperá un momento y volvé a probar.". Si no se puede bajar el
-  JWKS, los pedidos con cookie se rechazan con 401 (falla cerrada) y el motivo va al log.
+  JWKS, los pedidos con cookie se rechazan con 401 (falla cerrada) y el motivo va al log; la aplicación igual arranca y,
+  cuando Supabase vuelve, se recupera sola a lo sumo un minuto después.
 
 ## 5. Restricciones
 
@@ -95,8 +100,11 @@ historias queda fuera (sección 5).
 - **Capas.** La validación de email y contraseña es dominio puro (`internal/domain/account`). El token y el cliente de
   Supabase van en `internal/auth`, detrás de interfaces (`Verificador` y `ServicioDeCuentas`), así los tests no usan red:
   firman un JWT ES256 con una clave propia, sirven el JWKS con `httptest` y reemplazan Supabase con un servidor falso.
-  El caso de uso `Cuentas` (`Registrar`, `Ingresar`, `Quien`) está en `internal/service`; las pantallas y el middleware
-  en `internal/server`; el armado en `app/app.go`.
+  El caso de uso `Cuentas` (`Registrar`, `Ingresar`, `Quien`) está en `internal/service` y le pide al repositorio de
+  integrantes `service.RepositorioVinculos`; las pantallas y el middleware, en `internal/server`; el armado, en `app/app.go`
+  (`NewHandlerDesdeEntorno` lee las variables y `ConLogin` activa el login con el verificador y el servicio de cuentas que
+  se le den). El middleware le pasa el usuario a la barra de navegación sin que cada handler lo repita: la respuesta lleva
+  el email y `render` lo lee.
 - **Repositorios de integrantes** (memoria y PostgreSQL): `Integrante` suma `AuthUserID` y los repositorios suman
   `VincularPorEmail` y `BuscarPorUsuario`. **Sin migración nueva**: la columna `auth_user_id uuid` ya existe.
 - **Los tests y el CI no necesitan variables ni red**: sin ellas la aplicación no pide login (RN1). Las dos variables
@@ -125,6 +133,12 @@ historias queda fuera (sección 5).
 | Integrante ya vinculado con otro usuario | No se pisa |
 | Integrante registrado después del ingreso | `Quien` lo vincula en ese momento (RN8) |
 | `siguiente=https://malo.com`, `//malo.com` o `/\malo.com` | Se ignora: va a `/` |
+| `siguiente` con tabulador o salto de línea (`/<TAB>/malo.com`) | Se ignora: el navegador los descarta y quedaría `//malo.com` |
+| Ingreso sin email o sin contraseña | "El email o la contraseña no son correctos." y no se consulta a Supabase |
+| No se puede vincular al ingresar (la base no responde) | El ingreso funciona; `Quien` lo vuelve a intentar |
+| Supabase caído al arrancar la aplicación | Arranca; los pedidos con cookie dan 401 hasta que se puedan bajar las claves |
+| Supabase rechaza el email (por ejemplo, un dominio que no existe) | "el email no tiene un formato válido" debajo del campo |
+| Supabase rechaza la contraseña por débil | "la contraseña es demasiado débil" debajo del campo |
 | `/health` con el login activo y sin cookie | 200 |
 | Sin variables de Supabase | No se pide login (RN1) |
 
@@ -138,6 +152,9 @@ historias queda fuera (sección 5).
 | Email sin confirmar | 401 | "Confirmá tu email antes de iniciar sesión." |
 | Datos del registro inválidos | 422 | El error de cada campo, debajo del campo |
 | Email ya registrado | 422 | "ya hay una cuenta con ese email" |
+| Supabase rechaza el email | 422 | "el email no tiene un formato válido" |
+| Supabase rechaza la contraseña por débil | 422 | "la contraseña es demasiado débil" |
+| Cualquier otro error de la aplicación | 500 | "No se pudo completar la operación. Probá de nuevo en unos minutos." |
 | Supabase no responde o falla | 503 | "No pudimos conectar con el servicio de inicio de sesión. Probá de nuevo en unos minutos." |
 | Demasiados intentos | 429 | "Demasiados intentos. Esperá un momento y volvé a probar." |
 | Solo una de las dos variables | no arranca | "falta SUPABASE_URL" o "falta SUPABASE_ANON_KEY" |
@@ -148,10 +165,10 @@ historias queda fuera (sección 5).
 - CA-05.2: El middleware de Go valida el JWT y rechaza con 401 si es inválido o expiró.
 - CA-05.3: Cada usuario se vincula con un integrante del proyecto.
 
-## Decisiones a confirmar (antes de programar)
+## Decisiones (confirmadas por Mariano el 21/10/2026, antes de programar)
 
 1. **401 con la página de login** en lugar de redirigir con 303 como dice la Guía. El criterio del issue pide 401; la
-   página de login en el cuerpo hace que el navegador igual muestre el formulario. *Recomendado.*
+   página de login en el cuerpo hace que el navegador igual muestre el formulario.
 2. **Registro abierto** a cualquier email y vínculo por email al ingresar (la spec de HU-01 y la decisión 1 de
    `modelo-datos.md` van en ese sentido). Riesgo aceptado: sin confirmación de email, quien conozca el email de un
    integrante podría registrarse antes que él. Si Supabase tiene *Confirm email* activado, el ingreso exige haberlo
@@ -167,6 +184,9 @@ historias queda fuera (sección 5).
 
 - **Supabase Auth, en el proyecto de producción** (y en el de desarrollo si se prueba ahí): *Allow new users to sign up*
   activado; *Confirm email* según la decisión 2; *JWT expiry* en 28800 segundos (decisión 3); contraseña mínima de 6 o más.
+  Las claves de firma son asimétricas (ES256), como se comprobó en el spike: `<SUPABASE_URL>/auth/v1/.well-known/jwks.json`
+  tiene que devolver una clave. Si devolviera `{"keys":[]}` el proyecto firma con el secreto heredado (HS256), que se rechaza
+  a propósito, y nadie podría entrar.
 - **Vercel, solo Production:** `SUPABASE_URL` (`https://<ref>.supabase.co`) y `SUPABASE_ANON_KEY` (la clave pública
   *anon/publishable*), **el mismo día del merge**; después un Redeploy. Hasta entonces la app sigue sin login.
 - No hace falta cargar nada en el CI ni en Preview.
@@ -175,4 +195,35 @@ historias queda fuera (sección 5).
 
 Issue: #68 · Feature: `features/tec-05-autenticacion.feature` · Pasos BDD: `features/tec05_steps_test.go`
 
-Las columnas de código y tests se completan al implementar.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio de la cuenta | `internal/domain/account/account.go` (`NuevoRegistro`, `Ingreso`); `member.ValidarFormatoEmail` | `internal/domain/account/account_test.go` |
+| Integrante vinculado | `member.Integrante.AuthUserID`, `member.ErrNoEsIntegrante`; `VincularPorEmail` y `BuscarPorUsuario` en `internal/store/memory/integrantes.go` y `internal/store/postgres/integrantes.go` | `internal/store/memory/integrantes_vinculo_test.go`, `internal/store/postgres/integrantes_vinculo_test.go` |
+| Configuración e identidad | `internal/auth/config.go` (`ConfigDesdeEntorno`, `Identidad`) | `internal/auth/config_test.go` |
+| Verificación del token | `internal/auth/verificador.go` (`NuevoVerificador`) | `internal/auth/verificador_test.go` |
+| Cliente de Supabase | `internal/auth/supabase.go` (`Supabase`, `ServicioDeCuentas`) | `internal/auth/supabase_test.go` |
+| Caso de uso | `internal/service/cuentas.go` (`Cuentas`: `Registrar`, `Ingresar`, `Quien`) | `internal/service/cuentas_test.go` |
+| Middleware y pantallas | `internal/server/cuentas.go`, `internal/server/router.go`, `web/templates/paginas/login.html` y `registro.html`, barra de navegación en `base.html` | `internal/server/cuentas_test.go` |
+| Armado | `app/app.go` (`NewHandlerDesdeEntorno`, `ConLogin`) | `app/login_test.go` (con Supabase de mentira y, con `TEST_DATABASE_URL`, PostgreSQL) |
+| Documentación | `docs/deploy.md` (variables y cómo activarlo), `README.md`, `.env.example` | — |
+
+| Criterio / regla | Escenarios BDD | Tests |
+|---|---|---|
+| CA-05.1 y RN5 (registro) | Registrarse con datos válidos · Registrarse cuando el servicio pide confirmar el email · Datos de registro inválidos · Largos válidos de contraseña · Registrarse con un email que ya tiene cuenta | `TestNuevoRegistro_*`, `TestRegistrarCuenta_*`, `TestSupabaseRegistrar_*`, `TestFormularioDeRegistro_MuestraLosCampos`, `TestRegistrar_*` |
+| CA-05.1 y RN6 (ingreso) | Iniciar sesión con las credenciales correctas · Iniciar sesión con credenciales incorrectas | `TestIngreso_*`, `TestIngresar_*` (servicio y servidor), `TestSupabaseIngresar_*`, `TestFormularioDeLogin_MuestraLosCamposYLosAvisos` |
+| RN4 (cookie) | Iniciar sesión con las credenciales correctas (HttpOnly y SameSite=Lax) | `TestIngresar_CredencialesCorrectas_GuardaLaCookieYVaAlInicio`, `TestIngresar_PorHTTPS_LaCookieEsSecure` |
+| CA-05.2 y RN2 (el token se valida localmente) | Con una sesión válida se accede a la aplicación | `TestVerificar_*`, `TestConLogin_SesionValida_AccedeYMuestraElUsuario` |
+| CA-05.2 y RN3 (401 sin sesión válida) | Un pedido sin una sesión válida se rechaza (9 casos) · Un POST sin sesión no ejecuta nada | `TestVerificar_TokensQueNoValen_DevuelvenErrTokenInvalido`, `TestVerificar_TokenVencido_DevuelveErrTokenVencido`, `TestConLogin_SinSesionValida_Responde401ConLaPaginaDeLogin`, `TestConLogin_PostSinSesion_NoEjecutaNada`, `TestConLogin_SinSesion_LaPaginaDeLoginRecuerdaAdondeIba` |
+| RN1 (se activa por configuración) | Rutas abiertas con el login activado · Sin configuración la aplicación no pide login · Configuración incompleta | `TestConfigDesdeEntorno_*`, `TestSinLogin_NoPideSesionNiTieneLasPantallasDeCuentas`, `TestConLogin_RutasAbiertas`, `TestNewHandlerDesdeEntorno_SinVariablesDeSupabase_NoPideLogin`, `TestNewHandlerDesdeEntorno_ConfiguracionIncompleta_NoArranca` |
+| RN9 (`siguiente`) | Volver a donde se estaba después de ingresar (5 casos) | `TestIngresar_Siguiente_SoloAceptaRutasInternas` |
+| RN10 (salir) | Cerrar sesión | `TestSalir_BorraLaCookieYVuelveAlLogin` |
+| RN11 (nada sensible) | — | `TestSupabase_LosErroresNoFiltranDatosSensibles`, `TestIngresar_Errores` (no devuelve la contraseña), `TestRegistrar_DatosInvalidos_MuestraLosErroresYConservaElEmail` |
+| RN12 (Supabase caído o limitado) | El servicio de login no responde | `TestSupabase_SinConexionOSinRespuestaATiempo_NoDisponible`, `TestVerificar_ConElJWKSCaido_RechazaYSeRecuperaSolo`, `TestRegistrarEIngresar_ServicioCaidoOLimitado_DevuelvenElError`, `TestRegistrar_ServicioCaidoOLimitado` |
+| CA-05.3 y RN7 (vínculo al ingresar) | Al ingresar la cuenta se vincula con los integrantes de todos los proyectos · Un integrante ya vinculado con otra cuenta no se pisa | `TestIntegrantes_VincularPorEmail_*` (memoria y PostgreSQL), `TestIngresar_CredencialesCorrectas_DevuelveLaSesionYVinculaALosIntegrantes`, `TestNewHandlerDesdeEntorno_ConPostgres_AlIngresarVinculaALosIntegrantes` |
+| CA-05.3 y RN8 (`Quien`) | Saber a qué integrante corresponde el usuario en un proyecto · Me agregan a un proyecto después de haber ingresado · Un usuario que no es integrante del proyecto | `TestQuien_*`, `TestIntegrantes_BuscarPorUsuario` (memoria y PostgreSQL) |
+
+**Cómo se comprobó con Supabase de verdad** (proyecto de desarrollo, sin crear cuentas): el verificador bajó el JWKS real
+(una clave ES256 P-256), encontró la clave por su `kid` y rechazó un token firmado con otra clave; y el servidor local,
+contra ese proyecto, respondió 401 al ingreso con credenciales que no existen (el `invalid_credentials` real de Supabase
+llega como "El email o la contraseña no son correctos."), 401 sin cookie, a una cookie con basura y a una sin firma, y dejó
+abiertas `/health`, `/login` y `/registro`.
