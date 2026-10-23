@@ -100,15 +100,17 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 	if url == "" {
 		proyectos, integrantes = memory.NuevoProyectos(), memory.NuevoIntegrantes()
 		// Eliminar una historia borra también sus criterios y sus tareas (HU-06): en memoria, el repositorio de
-		// historias conoce a los otros dos.
+		// historias conoce a los otros dos. Y no se elimina si tiene horas registradas o defectos (RN10), como hacen las
+		// claves foráneas de PostgreSQL: por eso también conoce a esos dos.
 		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
-		historiasEnMemoria, sprintsEnMemoria := memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria), memory.NuevoSprints()
+		registrosEnMemoria, defectosEnMemoria := memory.NuevoRegistros(), memory.NuevoDefectos()
+		historiasEnMemoria := memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria).ConRegistrosAsociados(registrosEnMemoria, defectosEnMemoria)
+		sprintsEnMemoria := memory.NuevoSprints()
 		historias, criterios, tareas, sprints = historiasEnMemoria, criteriosEnMemoria, tareasEnMemoria, sprintsEnMemoria
 		// El cierre de un sprint (HU-14) cambia sprints e historias juntos, y le avisa al de historias qué sprints se
 		// cerraron (para HU-06).
 		cierres = memory.NuevoCierres(sprintsEnMemoria, historiasEnMemoria)
-		registros = memory.NuevoRegistros()
-		defectos = memory.NuevoDefectos()
+		registros, defectos = registrosEnMemoria, defectosEnMemoria
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
