@@ -148,6 +148,9 @@ func (r historiasQueFallan) ListarPorProyecto(context.Context, int64) ([]backlog
 func (r historiasQueFallan) Guardar(_ context.Context, h backlog.Historia) (backlog.Historia, error) {
 	return h, r.errGuardar
 }
+func (r historiasQueFallan) ActualizarOrden(context.Context, int64, map[int64]int) error {
+	return r.errGuardar
+}
 
 // Un error del repositorio no es de validación: se devuelve para que la pantalla muestre un error general.
 func TestCrearHistoria_ErrorDelRepositorio_SeDevuelve(t *testing.T) {
