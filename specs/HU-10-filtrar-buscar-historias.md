@@ -1,6 +1,6 @@
 # SPEC-10 · Filtrar y buscar historias
 
-**Historia:** HU-10 (#23) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-10 (#23) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. Filtra la página del backlog
 > de HU-09 (ordenada por prioridad, con las Hechas aparte) y sigue las convenciones de los filtros de HU-29 (defectos):
@@ -55,8 +55,8 @@ búsqueda se puede recargar y compartir.
   el orden de la lista que recibe (RN3). Sin base de datos ni HTTP.
 - **Se filtra en memoria después de leer el backlog**, igual en memoria y en PostgreSQL: el backlog de un proyecto tiene
   decenas de historias y así no hace falta otra consulta ni índices. **Sin migración.**
-- **Caso de uso:** `Historias.Backlog` recibe el filtro y la vista suma el total de historias del proyecto, para la
-  cantidad "3 de 10".
+- **Caso de uso:** `Historias.Buscar` recibe el filtro y la vista suma el filtro usado y el total de historias del
+  proyecto, para la cantidad "3 de 10". `Historias.Backlog` (HU-09) queda como `Buscar` sin filtros, así HU-09 no cambia.
 - **Pantalla:** formulario `GET` sin JavaScript, con los componentes de TEC-07.
 - La búsqueda sin tildes se hace con una tabla propia de equivalencias (á→a, é→e, í→i, ó→o, ú→u, ü→u), **sin
   dependencias nuevas**.
@@ -91,21 +91,31 @@ Los filtros en sí no tienen errores: un valor desconocido se ignora (RN4).
 - CA-10.1: Filtros por estado, prioridad y texto del título, combinables.
 - CA-10.2: Sin resultados se muestra un mensaje claro.
 
-## Decisiones a confirmar (antes de programar)
+## Decisiones (confirmadas por Mariano el 22/10)
 
-1. **La rama sale de HU-09 (#421)**, que todavía no está mergeada, porque filtra su página. El PR de HU-10 apunta a la
-   rama de HU-09 y, cuando se mergee #421, GitHub lo pasa solo a `main`. La alternativa es esperar el merge de #421, y el
-   viernes 23/10 no llegaría a estar en revisión. *Recomendado: apilarla.*
-2. **Un solo valor por filtro** (desplegables), y no varios estados a la vez. Es lo que pide el criterio y lo que hizo
-   HU-29. *Recomendado.*
-3. **La búsqueda ignora mayúsculas y tildes** y busca solo en el título, como dice el criterio. *Recomendado.*
-4. **Con filtros no se muestran Subir y Bajar** (RN5). La alternativa es dejarlos, pero una historia "subiría" por
-   encima de otra que no se ve. *Recomendado: ocultarlos.*
-5. **Un valor desconocido se ignora** (RN4), igual que en HU-29.
+1. **La rama sale de HU-09 (#421)**, que filtra su página: el PR apunta a la rama de HU-09 y pasa a `main` cuando se
+   mergee #421.
+2. **Un solo valor por filtro** (desplegables), como en HU-29.
+3. **La búsqueda ignora mayúsculas y tildes** y busca solo en el título.
+4. **Con filtros no se muestran Subir y Bajar** (RN5).
+5. **Un valor desconocido se ignora** (RN4), como en HU-29.
 6. **Filtrar en memoria, sin consultas nuevas ni migración.**
 
 ## Trazabilidad
 
 Issue: #23 · Feature: `features/hu-10-filtrar-buscar-historias.feature` · Pasos BDD: `features/hu10_steps_test.go`
 
-Las columnas de código y tests se completan al implementar.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/filtrar.go` (`Filtro`, `NuevoFiltro`, `Filtro.Activo`, `Filtrar`) | `internal/domain/backlog/filtrar_test.go` |
+| Caso de uso | `Historias.Buscar` y `VistaBacklog.Filtro` y `Total` (`internal/service/historias.go`) | `internal/service/filtrar_test.go` |
+| Pantalla | `historias.listar` y `mostrarBacklog` (`internal/server/historias.go`) y el formulario de `web/templates/paginas/backlog.html` | `internal/server/filtrar_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-10.1 Filtros combinables | Sin filtros se ven todas las historias · Filtrar por estado o por prioridad · Buscar por texto en el título · Combinar los tres filtros · Un estado que no existe se ignora · Con filtros no se ofrecen Subir ni Bajar | `TestFiltrar`, `TestFiltrar_BusquedaSinMayusculasNiTildes`, `TestNuevoFiltro_IgnoraLosValoresQueNoExisten`, `TestFiltro_Activo`, `TestNuevoFiltro_GuardaLosValoresLimpios`, `TestFiltrar_NoCambiaLaListaQueRecibe`, `TestBuscar_FiltraLasDosSeccionesYCuentaElTotal`, `TestBuscar_SinFiltrosEsElBacklogCompleto`, `TestBuscar_ProyectoInexistente`, `TestBacklog_TieneElFormularioDeFiltros`, `TestBacklog_FiltrarPorPrioridad`, `TestBacklog_BuscarPorTexto`, `TestBacklog_FiltrarLasHechas`, `TestBacklog_FiltrosQueNoExistenSeIgnoran`, `TestBacklog_ElTextoBuscadoSeMuestraEscapado` |
+| CA-10.2 Mensaje sin resultados | Ninguna historia coincide | `TestBacklog_FiltrosSinResultados`, `TestBacklog_VacioConFiltros` |
+
+Los pasos BDD piden la página del backlog a la aplicación armada con repositorios en memoria y leen el HTML: prueban el
+filtro de punta a punta, mensajes incluidos. El filtro se aplica después de leer el backlog, así que es el mismo con
+PostgreSQL (cuyo `ListarPorProyecto` ya prueban los tests del repositorio).
