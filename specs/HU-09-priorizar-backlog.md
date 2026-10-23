@@ -1,6 +1,6 @@
 # SPEC-09 · Priorizar el backlog
 
-**Historia:** HU-09 (#22) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Borrador
+**Historia:** HU-09 (#22) · **Responsable:** Piastrellini, Mariano · **Sprint:** 3 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa la plantilla `specs/_plantilla.md`. Parte de HU-05 (la prioridad de
 > cada historia y su número) y de HU-06 (editar la prioridad). La columna `historias.orden` existe desde TEC-03, "para el
@@ -26,7 +26,9 @@ El orden queda guardado y las historias Hechas se muestran aparte.
   1. **Pendientes y en curso**: las historias que no están Hechas, ordenadas por prioridad (Alta, Media, Baja) y, dentro de
      cada prioridad, por el orden manual. Cada fila tiene el botón **Subir**, salvo la primera de su prioridad, y el botón
      **Bajar**, salvo la última.
-  2. **Hechas**, debajo y sin botones: las historias Hechas, la que se completó más recientemente primero.
+  2. **Hechas**, debajo y sin botones: las historias Hechas, la que se completó más recientemente primero, con su
+     fecha de completado. Si no hay ninguna, la sección no aparece; si todas están Hechas, la primera sección dice "No
+     queda ninguna historia pendiente.".
 - **Subir o bajar** (`POST /proyectos/{id}/backlog/{numero}/subir` o `…/bajar`) mueve la historia un lugar dentro de su
   prioridad y vuelve (303) al backlog con el aviso "HU-3 subió un lugar." o "HU-3 bajó un lugar.".
 - **La lista de candidatas** de la página de un sprint (HU-12) usa el mismo orden que el backlog (RN9).
@@ -105,24 +107,32 @@ El orden queda guardado y las historias Hechas se muestran aparte.
 - CA-09.2: El orden se persiste.
 - CA-09.3: Las historias Hechas se muestran aparte.
 
-## Decisiones a confirmar (antes de programar)
+## Decisiones (confirmadas por Mariano el 22/10)
 
-1. **Subir y bajar con botones**, un lugar por vez, y no arrastrar y soltar. Es lo que dice la tarea T4 del issue ("subir y
-   bajar una historia"), no necesita JavaScript y se prueba con los tests de siempre. *Recomendado.*
-2. **Orden por defecto: por número de historia** (la más antigua primero) dentro de cada prioridad, y una historia nueva va
-   **al final** de su prioridad. Así el backlog de hoy se ve igual hasta que alguien reordena.
-3. **Cambiar la prioridad (HU-06) conserva el orden de la historia.** Si una historia vieja pasa de Baja a Alta aparece entre
-   las de Alta según su antigüedad (puede quedar arriba de otras más nuevas). La alternativa es mandarla al final de la nueva
-   prioridad, pero eso obliga a cambiar la edición de HU-06 y no aporta mucho: después se sube o se baja. *Recomendado:
-   conservarlo.*
+1. **Subir y bajar con botones**, un lugar por vez, y no arrastrar y soltar: es lo que dice la tarea T4 del issue, no
+   necesita JavaScript y se prueba con los tests de siempre.
+2. **Orden por defecto: por número de historia** dentro de cada prioridad, y una historia nueva va **al final** de su
+   prioridad. El backlog que ya existía se ve igual hasta que alguien reordena.
+3. **Cambiar la prioridad (HU-06) conserva el orden de la historia** (RN7). La alternativa, mandarla al final de la nueva
+   prioridad, obligaba a cambiar la edición de HU-06; después se sube o se baja.
 4. **Las Hechas aparte**, en una sección debajo del backlog, con la completada más recientemente primero y sin botones.
-5. **Las candidatas de la página del sprint (HU-12) usan el mismo orden.** Es el motivo de la historia ("decidir qué entra en
-   el próximo sprint") y es un cambio chico en `Asignaciones.Ver`; hoy se ven por número. Si preferís dejar HU-12 como está,
-   se saca la RN9 y su escenario. *Recomendado: incluirlo.*
+5. **Las candidatas de la página del sprint (HU-12) usan el mismo orden** (RN9).
 6. **Sin migración y sin roles:** la columna `orden` ya existe y reordenar lo puede hacer cualquier usuario con sesión.
 
 ## Trazabilidad
 
 Issue: #22 · Feature: `features/hu-09-priorizar-backlog.feature` · Pasos BDD: `features/hu09_steps_test.go`
 
-Las columnas de código y tests se completan al implementar.
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | `internal/domain/backlog/priorizar.go` (`Ordenar`, `Mover`, `Movimiento`, `ErrYaEsLaPrimera`, `ErrYaEsLaUltima`, `ErrHechaNoSeReordena`, `ErrMovimientoInvalido`) y `Historia.Orden` con el orden de una nueva en `Nueva` (`backlog.go`) | `internal/domain/backlog/priorizar_test.go` |
+| Repositorio en memoria | `ActualizarOrden` en `internal/store/memory/historias.go` (`Guardar` y `ListarPorProyecto` ya copiaban el orden) | `internal/store/memory/historias_orden_test.go` |
+| Repositorio PostgreSQL | `Guardar`, `ListarPorProyecto` y `BuscarPorNumero` con la columna `orden`; `ActualizarOrden` en una transacción (`internal/store/postgres/historias.go`) | `internal/store/postgres/historias_orden_test.go` |
+| Caso de uso | `Historias.Backlog` y `Historias.Mover` (`internal/service/historias.go`); las candidatas ordenadas en `Asignaciones.Ver` (`asignaciones.go`) | `internal/service/priorizar_test.go` |
+| Pantalla | `historias.listar`, `mostrarBacklog` y `mover` (`internal/server/historias.go`), las rutas `…/subir` y `…/bajar` (`router.go`) y `web/templates/paginas/backlog.html` | `internal/server/priorizar_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-09.1 Orden por prioridad y orden manual | El backlog se ordena por prioridad · Subir una historia · Bajar una historia · Subir varias veces · No se sube la primera ni se baja la última de su prioridad · Cambiar la prioridad conserva el orden de la historia · Una historia de un sprint se reordena igual · Mover una historia que no existe · Las candidatas de un sprint siguen el orden del backlog | `TestOrdenar_PorPrioridadDespuesPorOrdenYDespuesPorNumero`, `TestOrdenar_NoCambiaLaListaQueRecibe`, `TestMover_SubirIntercambiaConLaDeArribaYNumeraLasDeSuPrioridad`, `TestMover_BajarIntercambiaConLaDeAbajo`, `TestMover_LaPrimeraNoSubeYLaUltimaNoBaja`, `TestMover_UnaHistoriaDeUnSprintSeReordena`, `TestMover_UnaHistoriaQueNoExiste`, `TestMover_UnMovimientoQueNoEsSubirNiBajar`, `TestHistorias_ActualizarDatos_ConservaElOrden` (memoria y PostgreSQL), `TestBacklog_OrdenadoPorPrioridadConLasHechasAparte`, `TestMover_GuardaElOrdenNuevo`, `TestMover_LaPrimeraNoSubeYNoCambiaNada`, `TestMover_HistoriaOProyectoInexistente`, `TestVerSprint_LasCandidatasSiguenElOrdenDelBacklog`, `TestBacklog_OrdenadoPorPrioridadConSubirYBajar`, `TestBacklog_SubirVuelveConElAvisoYElOrdenNuevo`, `TestBacklog_BajarVuelveConElAviso`, `TestBacklog_MovimientoQueNoSePuede`, `TestBacklog_MoverAlgoQueNoExiste` |
+| CA-09.2 El orden se persiste | El orden manual se guarda · Una historia nueva va al final de su prioridad | `TestHistorias_GuardanYDevuelvenElOrden`, `TestHistorias_ActualizarOrden`, `TestHistorias_ActualizarOrden_ConUnaHistoriaDeOtroProyecto_NoGuardaNada` (memoria y PostgreSQL), `TestNueva_VaAlFinalDeSuPrioridad`, `TestMover_UnaNuevaDespuesDeReordenarVaAlFinal`, `TestMover_FallaAlGuardar`, `TestBacklog_FallaAlGuardarElOrden` |
+| CA-09.3 Las Hechas aparte | Las historias Hechas se muestran aparte · Una historia Hecha no se reordena | `TestOrdenar_LasHechasVanAparteLaMasRecientePrimero`, `TestMover_UnaHechaNoSeReordena`, `TestMover_SaltaLasHechasDeSuPrioridad`, `TestBacklog_LasHechasVanAparte`, `TestBacklog_TodasHechas` |
