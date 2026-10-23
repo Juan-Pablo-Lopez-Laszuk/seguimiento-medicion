@@ -28,6 +28,13 @@ type listaHistorias struct {
 	Eliminada int                // número de la historia recién eliminada, para el aviso "Historia HU-N eliminada"; 0 si no hay (HU-06)
 	Movida    string             // aviso de un movimiento hecho, "HU-4 subió un lugar." (HU-09); vacío si no hay
 	Error     string             // por qué no se pudo mover una historia (HU-09); vacío si no hay
+	// Filtro son los filtros que se están usando (HU-10); Mostradas, cuántas historias los cumplen, y Total, cuántas
+	// tiene el proyecto. Estados y Prioridades son las opciones de los desplegables.
+	Filtro      backlog.Filtro
+	Mostradas   int
+	Total       int
+	Estados     []backlog.Estado
+	Prioridades []backlog.Prioridad
 	// Progresos tiene el progreso de los criterios de cada historia, por su ID (HU-07).
 	Progresos map[int64]backlog.Progreso
 }
@@ -39,13 +46,14 @@ type filaBacklog struct {
 	Subir, Bajar bool
 }
 
-// filasDelBacklog arma las filas de las historias pendientes, que ya vienen en el orden del backlog.
-func filasDelBacklog(pendientes []backlog.Historia) []filaBacklog {
+// filasDelBacklog arma las filas de las historias pendientes, que ya vienen en el orden del backlog. Con reordenable en
+// false (hay filtros puestos, HU-10 RN5) ninguna tiene Subir ni Bajar.
+func filasDelBacklog(pendientes []backlog.Historia, reordenable bool) []filaBacklog {
 	filas := make([]filaBacklog, len(pendientes))
 	for i, h := range pendientes {
 		filas[i] = filaBacklog{Historia: h,
-			Subir: i > 0 && pendientes[i-1].Prioridad == h.Prioridad,
-			Bajar: i < len(pendientes)-1 && pendientes[i+1].Prioridad == h.Prioridad,
+			Subir: reordenable && i > 0 && pendientes[i-1].Prioridad == h.Prioridad,
+			Bajar: reordenable && i < len(pendientes)-1 && pendientes[i+1].Prioridad == h.Prioridad,
 		}
 	}
 	return filas
@@ -70,7 +78,8 @@ func formVacio(p project.Proyecto) formHistoria {
 	return formHistoria{Proyecto: p, Prioridades: backlog.Prioridades, Escala: backlog.EscalaStoryPoints}
 }
 
-// listar muestra el proyecto y su backlog ordenado, con las Hechas aparte (HU-09).
+// listar muestra el proyecto y su backlog ordenado, con las Hechas aparte (HU-09), filtrado con los filtros de la URL
+// (HU-10).
 func (h historias) listar(w http.ResponseWriter, r *http.Request) {
 	id, ok := idDeProyecto(w, r)
 	if !ok {
@@ -79,7 +88,8 @@ func (h historias) listar(w http.ResponseWriter, r *http.Request) {
 	consulta := r.URL.Query()
 	creada, _ := strconv.Atoi(consulta.Get("creada"))
 	eliminada, _ := strconv.Atoi(consulta.Get("eliminada"))
-	datos := listaHistorias{Creada: max(creada, 0), Eliminada: max(eliminada, 0)}
+	datos := listaHistorias{Creada: max(creada, 0), Eliminada: max(eliminada, 0),
+		Filtro: backlog.NuevoFiltro(consulta.Get("estado"), consulta.Get("prioridad"), consulta.Get("texto"))}
 	if n, _ := strconv.Atoi(consulta.Get("subio")); n > 0 {
 		datos.Movida = fmt.Sprintf("HU-%d subió un lugar.", n)
 	} else if n, _ := strconv.Atoi(consulta.Get("bajo")); n > 0 {
@@ -88,9 +98,10 @@ func (h historias) listar(w http.ResponseWriter, r *http.Request) {
 	h.mostrarBacklog(w, r, id, http.StatusOK, datos)
 }
 
-// mostrarBacklog completa los datos de la página con el backlog del proyecto y la muestra con ese código.
+// mostrarBacklog completa los datos de la página con el backlog del proyecto, filtrado con datos.Filtro, y la muestra
+// con ese código.
 func (h historias) mostrarBacklog(w http.ResponseWriter, r *http.Request, id int64, codigo int, datos listaHistorias) {
-	v, err := h.casos.Backlog(r.Context(), id)
+	v, err := h.casos.Buscar(r.Context(), id, datos.Filtro)
 	switch {
 	case errors.Is(err, project.ErrNoEncontrado):
 		proyectoNoEncontrado(w)
@@ -106,7 +117,9 @@ func (h historias) mostrarBacklog(w http.ResponseWriter, r *http.Request, id int
 		http.Error(w, "No se pudo cargar el backlog. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
 		return
 	}
-	datos.Proyecto, datos.Historias, datos.Hechas, datos.Progresos = v.Proyecto, filasDelBacklog(v.Pendientes), v.Hechas, progresos
+	datos.Proyecto, datos.Historias, datos.Hechas, datos.Progresos = v.Proyecto, filasDelBacklog(v.Pendientes, !datos.Filtro.Activo()), v.Hechas, progresos
+	datos.Mostradas, datos.Total = len(v.Pendientes)+len(v.Hechas), v.Total
+	datos.Estados, datos.Prioridades = backlog.Estados, backlog.Prioridades
 	render(w, codigo, "backlog.html", Pagina{Titulo: "Backlog", Datos: datos})
 }
 
