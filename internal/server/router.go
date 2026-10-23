@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
 
@@ -90,6 +91,8 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Get("/proyectos/{id}/backlog", hs.listar)
 	r.Get("/proyectos/{id}/backlog/nuevo", hs.nueva)
 	r.Post("/proyectos/{id}/backlog", hs.crear)
+	r.Post("/proyectos/{id}/backlog/{numero}/subir", hs.mover(backlog.Subir))
+	r.Post("/proyectos/{id}/backlog/{numero}/bajar", hs.mover(backlog.Bajar))
 
 	cr := criterios{casos: dep.Criterios}
 	r.Get("/proyectos/{id}/backlog/{numero}", cr.ver)
