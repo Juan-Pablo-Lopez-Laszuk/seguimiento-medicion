@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/auth"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
 
@@ -44,12 +45,42 @@ type Dependencias struct {
 	Edicion  *service.EdicionProyectos
 	// Base es la base de datos que chequea /health; nil si la app guarda en memoria (TEC-04).
 	Base VerificadorBase
+
+	// Verificador valida la sesión de cada pedido (TEC-05). Si es nil el login no está configurado y la aplicación no pide
+	// sesión; si no, hace falta Cuentas.
+	Verificador auth.Verificador
+	// Cuentas registra e ingresa cuentas de usuario (TEC-05).
+	Cuentas *service.Cuentas
 }
 
-// NewRouter arma el router con todas las rutas de la aplicación.
+// NewRouter arma el router con todas las rutas de la aplicación. /health queda siempre abierto. Con el login activado
+// (dep.Verificador) también quedan abiertas /login, /registro y /salir, y todas las demás rutas piden una sesión válida;
+// sin login no se pide nada (TEC-05, RN1).
 func NewRouter(dep Dependencias) http.Handler {
 	r := chi.NewRouter()
 	r.Get("/health", health(dep.Base))
+	if dep.Verificador == nil {
+		rutas(r, dep)
+		return r
+	}
+	if dep.Cuentas == nil {
+		panic("server: el login activado necesita Dependencias.Cuentas")
+	}
+	c := cuentas{casos: dep.Cuentas}
+	r.Get("/login", c.formularioDeLogin)
+	r.Post("/login", c.ingresar)
+	r.Get("/registro", c.formularioDeRegistro)
+	r.Post("/registro", c.registrar)
+	r.Post("/salir", c.salir)
+	r.Group(func(r chi.Router) {
+		r.Use(requiereSesion(dep.Verificador))
+		rutas(r, dep)
+	})
+	return r
+}
+
+// rutas registra las rutas de las historias de usuario: todas menos /health y las de las cuentas.
+func rutas(r chi.Router, dep Dependencias) {
 	r.Get("/", inicio)
 
 	p := proyectos{casos: dep.Proyectos, estado: dep.Estado}
@@ -129,7 +160,6 @@ func NewRouter(dep Dependencias) http.Handler {
 	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	r.Get("/proyectos/{id}/horas", horas{casos: dep.Horas}.ver)
 	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
-	return r
 }
 
 // inicio muestra la página principal.

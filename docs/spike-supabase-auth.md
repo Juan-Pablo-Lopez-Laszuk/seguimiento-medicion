@@ -3,6 +3,10 @@
 Investigación para TEC-05 (Autenticación, Sprint 2). No es código de producción: es la base
 para no arrancar de cero cuando llegue esa historia.
 
+> **Ya implementado en TEC-05:** la spec y lo que se decidió están en `specs/TEC-05-autenticacion.md` y el código en
+> `internal/auth/`. Se aparta de este boceto en dos cosas: sin sesión responde **401 con la página de login** (no redirige
+> con 303), y el `Keyfunc` se arma una sola vez al iniciar la app y se reutiliza (pendiente 1 de más abajo).
+
 ## Cómo funciona el login (confirma lo que dice la Guía, sección 6.2)
 
 1. El navegador manda email + contraseña a nuestro backend Go.

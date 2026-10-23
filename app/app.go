@@ -7,11 +7,13 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/auth"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/server"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
@@ -19,19 +21,56 @@ import (
 )
 
 // NewHandler arma la aplicación completa: repositorios, casos de uso y router. Guarda en la base de
-// DATABASE_URL; si esa variable no está, guarda en memoria. Si la URL no sirve, corta el arranque con un
-// mensaje claro en lugar de seguir con datos que se perderían.
+// DATABASE_URL; si esa variable no está, guarda en memoria. Pide login si están SUPABASE_URL y SUPABASE_ANON_KEY
+// (TEC-05). Si la base o la configuración del login no sirven, corta el arranque con un mensaje claro en lugar de
+// seguir con datos que se perderían o con un login a medio configurar.
 func NewHandler() http.Handler {
-	h, err := NewHandlerConBase(os.Getenv("DATABASE_URL"))
+	h, err := NewHandlerDesdeEntorno(os.Getenv)
 	if err != nil {
-		log.Fatalf("no se pudo preparar la base de datos: %v", err)
+		log.Fatalf("no se pudo preparar la aplicación: %v", err)
 	}
 	return h
 }
 
+// NewHandlerDesdeEntorno arma la aplicación con las variables DATABASE_URL, SUPABASE_URL y SUPABASE_ANON_KEY que devuelve
+// getenv. Sin las dos de Supabase no hay login; con una sola devuelve un error que dice cuál falta (TEC-05, RN1).
+func NewHandlerDesdeEntorno(getenv func(string) string) (http.Handler, error) {
+	cfg, loginActivo, err := auth.ConfigDesdeEntorno(getenv)
+	if err != nil {
+		return nil, fmt.Errorf("configuración del login: %w", err)
+	}
+	var opciones []Opcion
+	if loginActivo {
+		verificador, err := auth.NuevoVerificador(context.Background(), cfg)
+		if err != nil {
+			return nil, fmt.Errorf("preparar el login: %w", err)
+		}
+		opciones = append(opciones, ConLogin(verificador, auth.NuevoSupabase(cfg)))
+	}
+	return NewHandlerConBase(getenv("DATABASE_URL"), opciones...)
+}
+
+// Opcion cambia algo de cómo NewHandlerConBase arma la aplicación.
+type Opcion func(*opciones)
+
+type opciones struct {
+	verificador auth.Verificador
+	cuentas     auth.ServicioDeCuentas
+}
+
+// ConLogin activa el login (TEC-05): todas las rutas piden una sesión que el verificador acepte, y las cuentas se crean y se
+// abren con el servicio de cuentas.
+func ConLogin(verificador auth.Verificador, cuentas auth.ServicioDeCuentas) Opcion {
+	return func(o *opciones) { o.verificador, o.cuentas = verificador, cuentas }
+}
+
 // NewHandlerConBase arma la aplicación con los repositorios de PostgreSQL si url no está vacía, o con los
 // de memoria si lo está. Abrir el pool no conecta todavía: la primera conexión se hace en el primer pedido.
-func NewHandlerConBase(url string) (http.Handler, error) {
+func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, error) {
+	var o opciones
+	for _, opcion := range opcionesDeArmado {
+		opcion(&o)
+	}
 	var (
 		proyectos interface {
 			service.RepositorioProyectos
@@ -39,8 +78,11 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 			service.RepositorioEdicionProyectos
 		}
 		sprints     service.RepositorioSprints
-		integrantes service.RepositorioIntegrantes
-		historias   interface {
+		integrantes interface {
+			service.RepositorioIntegrantes
+			service.RepositorioVinculos // quién es cada usuario en cada proyecto (TEC-05)
+		}
+		historias interface {
 			service.RepositorioHistorias
 			service.RepositorioEstados
 			service.RepositorioAsignaciones
@@ -83,7 +125,7 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 	horas := service.NuevoHoras(proyectos, sprints, historias, tareas, registros)
 	casosDefectos := service.NuevoDefectos(proyectos, sprints, historias, defectos)
 	casosDeCierre := service.NuevoCierres(proyectos, sprints, historias, cierres, time.Now)
-	return server.NewRouter(server.Dependencias{
+	dep := server.Dependencias{
 		Proyectos:      service.NuevoProyectos(proyectos, time.Now),
 		Sprints:        service.NuevoSprints(proyectos, sprints),
 		Integrantes:    service.NuevoIntegrantes(proyectos, integrantes),
@@ -108,5 +150,9 @@ func NewHandlerConBase(url string) (http.Handler, error) {
 
 		// Consultar y corregir los registros de horas (HU-26).
 		RegistrosEsfuerzo: service.NuevoRegistrosEsfuerzo(proyectos, sprints, historias, integrantes, tareas, registros, horas, time.Now),
-	}), nil
+	}
+	if o.verificador != nil {
+		dep.Verificador, dep.Cuentas = o.verificador, service.NuevoCuentas(o.cuentas, integrantes)
+	}
+	return server.NewRouter(dep), nil
 }
