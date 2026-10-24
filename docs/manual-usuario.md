@@ -10,7 +10,115 @@ Entregable 12 de la consigna. Una sección por épica, con los pasos para usar c
 
 ## 2. Proyectos, sprints y reportes
 
-> Sección a cargo de Juan Pablo.
+### 2.1 Crear un proyecto
+
+1. En **Proyectos** tocá **Nuevo proyecto** (o **Crear el primero** si todavía no hay ninguno).
+2. Completá el **Nombre**, la **Descripción** (opcional) y las **fechas de inicio y de finalización**.
+3. Tocá **Crear proyecto**.
+
+Reglas:
+- El nombre no se puede repetir y no importan las mayúsculas: "Metrics" y "metrics" cuentan como el mismo.
+- La fecha de finalización tiene que ser posterior a la de inicio.
+- Si algo está mal, la página marca todos los errores juntos, cada uno al lado de su campo, sin borrar lo que cargaste.
+
+### 2.2 La vista del proyecto
+
+Al entrar a un proyecto ves:
+- su **estado**, que la aplicación calcula sola:
+  - *Planificado* mientras no tenga sprints o no haya empezado el primero;
+  - *En curso* desde que empieza el primer sprint;
+  - *Finalizado* después de la fecha de fin;
+- los **días restantes**, el **sprint activo** y los **story points completados**.
+
+Desde ahí se llega a todo lo demás: **Backlog**, **Sprints**, **Integrantes**, **Horas**, **Registros de horas**,
+**Defectos**, **Panel** y **Reporte del proyecto**.
+
+Para cambiar los datos tocá **Modificar** y **Guardar cambios**. Valen las mismas reglas que al crear, y además:
+- la fecha de fin no puede quedar antes del fin del último sprint;
+- la fecha de inicio no puede quedar después del inicio del primero;
+- un proyecto *Finalizado* ya no se modifica.
+
+### 2.3 Registrar integrantes
+
+1. En **Integrantes** tocá **Nuevo integrante**.
+2. Completá el **Nombre**, el **Email** y el **Rol**: *Agile Enabler* o *Product Builder*.
+3. Tocá **Registrar integrante**.
+
+Reglas:
+- El email no se repite dentro del proyecto.
+- Hay un solo Agile Enabler activo por proyecto.
+- El email tiene que ser el mismo con el que la persona entra a la aplicación. Así su cuenta queda vinculada a su
+  integrante (sección 1).
+
+Un integrante no se borra: con **Dar de baja** queda inactivo y se conserva todo lo que registró, como sus horas.
+
+### 2.4 Crear un sprint y armar el Sprint Backlog
+
+1. En **Sprints** tocá **Nuevo sprint**.
+2. Completá el **Sprint Goal** (el objetivo, hasta 500 caracteres) y las fechas.
+3. Tocá **Crear sprint**.
+
+Reglas:
+- El sprint tiene que quedar dentro de las fechas del proyecto.
+- Uno nuevo empieza después de que termina el anterior.
+- El número lo pone la aplicación: Sprint 1, Sprint 2, etc.
+
+El **sprint activo** es el primero sin cerrar cuya fecha de inicio ya llegó.
+
+En la vista del sprint, **Historias del backlog para asignar** muestra las historias listas para entrar al sprint.
+Tocá **Asignar** en cada una que quieras sumar. Una historia está lista cuando:
+- está estimada (sección 3);
+- tiene al menos un criterio de aceptación;
+- está *Pendiente* y no está en otro sprint.
+
+Si los story points del sprint superan la velocidad del equipo, la página avisa, pero no lo impide. Con **Quitar**, una
+historia vuelve al backlog mientras no haya empezado.
+
+### 2.5 Durante el sprint y al cerrarlo
+
+En el sprint activo, cada historia avanza con dos botones:
+- **Empezar**: pasa a *En progreso*.
+- **Completar**: pasa a *Hecho*. Para completarla tiene que tener todos sus criterios de aceptación cumplidos, que se
+  marcan en la historia. La fecha de completado es la del día y no se deshace.
+
+Para cerrar el sprint:
+1. Tocá **Cerrar sprint**.
+2. Confirmá en la página que sigue. Si todavía no llegó la fecha de fin, te avisa cuántos días faltan.
+
+Al cerrar:
+- Se guarda la **foto del cierre**: qué historias tenía el sprint, con sus story points, y cuáles se completaron. Esos
+  valores quedan fijos aunque después se re-estime una historia.
+- Las historias que no se completaron vuelven al backlog como *Pendientes*.
+- Un sprint cerrado no se reabre ni se modifica.
+
+La lista de **Sprints** muestra, para cada sprint cerrado, los SP completados y el **cumplimiento**: los SP completados
+sobre los planificados. Al entrar a un sprint cerrado, la foto del cierre está en **Historias al cerrar**.
+
+### 2.6 Reportes del sprint y del proyecto
+
+**Reporte de un sprint:** en la vista de un sprint, tocá **Reporte del sprint**. Muestra:
+- las métricas del sprint: SP planificados y completados, cumplimiento, historias completadas, velocidad, horas,
+  desviación y defectos;
+- la tabla de historias con sus horas;
+- la tabla de defectos.
+
+Si el sprint está cerrado, el reporte usa la foto del cierre. Si sigue abierto, muestra cómo va hasta hoy y lo avisa
+arriba.
+
+**Reporte del proyecto:** en la vista del proyecto, tocá **Reporte del proyecto**. Muestra:
+- el resumen del proyecto, con los mismos valores del panel (sección 6.1);
+- la evolución de la velocidad, sprint por sprint;
+- un bloque por sprint, igual a su reporte.
+
+### 2.7 Imprimir o descargar en PDF
+
+Los dos reportes tienen dos botones:
+- **Imprimir** usa la impresión del navegador. Se oculta la navegación y cada sprint arranca en una hoja nueva.
+- **Descargar PDF** baja un archivo con el mismo contenido que la pantalla. El nombre lleva el proyecto, el sprint y la
+  fecha, por ejemplo `software-metrics-sprint-2-2026-10-29.pdf`. El del proyecto no lleva el sprint:
+  `software-metrics-2026-10-29.pdf`.
+
+El PDF no puede mostrar emojis ni flechas, y en su lugar aparece un `?`. Las tildes y la ñ salen bien.
 
 ## 3. Backlog y estimación (Planning Poker)
 
