@@ -3,6 +3,7 @@ module github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion
 go 1.24
 
 require (
+	codeberg.org/go-pdf/fpdf v0.11.1
 	github.com/MicahParks/jwkset v0.8.0
 	github.com/MicahParks/keyfunc/v3 v3.3.10
 	github.com/cucumber/godog v0.16.0
@@ -10,6 +11,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/pressly/goose/v3 v3.24.3
+	golang.org/x/text v0.25.0
 	golang.org/x/time v0.9.0
 )
 
@@ -29,5 +31,4 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/sync v0.14.0 // indirect
-	golang.org/x/text v0.25.0 // indirect
 )
