@@ -54,9 +54,9 @@ Se hace en **producción** (https://seguimiento-medicion.vercel.app) con el proy
 9. **Reportes** (HU-37 a HU-39). Juan Pablo abre el reporte del proyecto, la evolución de la velocidad y descarga el
    PDF.
 
-**Plan B:** si producción no responde, la misma demo en la app local (`go run ./cmd/server`, en modo memoria). El modo
-memoria arranca vacío y el repo no tiene un script de datos de ejemplo. [A CONFIRMAR] Armar uno que cargue el proyecto de
-ejemplo por la misma interfaz y dejarlo probado en las tres computadoras.
+**Plan B:** si producción no responde, la misma demo en la app local: `go run ./cmd/ejemplo` levanta la app en memoria
+con el proyecto de ejemplo ya cargado (2 sprints cerrados, el 3 activo, horas y defectos). No necesita internet ni base.
+[A CONFIRMAR] Dejarlo probado en las tres computadoras.
 
 ## 3. Recorrido de trazabilidad (ensayar una historia cada uno)
 
@@ -81,8 +81,9 @@ Para la historia que elijan los profesores, se muestra en este orden:
 
 ## 4. Preparación (antes del 02/11)
 
-- [ ] Proyecto de ejemplo cargado en producción con 3 sprints (2 cerrados), historias con horas y defectos, para que el
-      panel, los gráficos y los reportes tengan datos. [A CONFIRMAR] Quién lo carga y cuándo.
+- [ ] Proyecto de ejemplo cargado en producción con `go run ./cmd/ejemplo -base -emails <los tres emails>` (lo corre
+      Juan Pablo con la `DATABASE_URL` de producción). Las fechas salen del día en que se carga: conviene cargarlo el
+      domingo 01/11, así el lunes el Sprint 3 sigue activo.
 - [ ] Cuentas de los profesores creadas en Supabase (el registro está cerrado), por si quieren probar.
 - [ ] Los tres con su cuenta vinculada a su integrante en el proyecto de ejemplo, para votar en Planning Poker.
 - [ ] Pestañas abiertas: tablero, el PR de la historia de trazabilidad, la spec, el `.feature` y la matriz.
