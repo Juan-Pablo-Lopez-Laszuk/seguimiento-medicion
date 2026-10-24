@@ -52,7 +52,7 @@ Para poder trabajar en paralelo, Mariano escribe el lunes **un modelo común** p
 los nombres de las tablas. Lo pone en la spec de HU-17 y los demás construyen sobre esa base. La escala de votación es
 la de HU-16.
 
-[A CONFIRMAR] El reparto. La alternativa es que Mariano haga las cuatro y que HU-19 y HU-22 queden como "si sobra".
+Reparto aprobado por Juan Pablo el 24/10, para no cargar a Mariano y trabajar en paralelo. [A CONFIRMAR] Mariano y Carolina.
 
 ## Historias del sprint
 
@@ -65,8 +65,8 @@ la de HU-16.
 | 1 | HU-36 · Gráficos de métricas (#14) | 5 | 16,5 | Carolina | HU-35 (hecha) | No depende de nadie: arranca el lunes |
 | 1 | HU-39 · Exportar reporte a PDF (#50) | 5 | 15 | Juan Pablo | HU-38 | El spike de la librería (T1, #375) se puede hacer el lunes mientras se revisa HU-38 |
 | 2 | HU-18 · Votar de forma oculta (#26) | 5 | 16 | Mariano | HU-17 | Es la más grande: conviene que su spec esté revisada el martes |
-| 2 | HU-22 · Registrar la estimación acordada (#30) | 2 | 7,5 | Juan Pablo [A CONFIRMAR] | HU-17, HU-16 (hecha) | Solo necesita la sesión: va en paralelo con HU-18 |
-| 3 | HU-19 · Revelar estimaciones (#27) | 3 | 9,5 | Carolina [A CONFIRMAR] | HU-18 | Necesita los votos. Se puede escribir sobre el modelo de la spec de HU-18 y mergear cuando HU-18 esté en `main` |
+| 2 | HU-22 · Registrar la estimación acordada (#30) | 2 | 7,5 | Juan Pablo | HU-17, HU-16 (hecha) | Solo necesita la sesión: va en paralelo con HU-18 |
+| 3 | HU-19 · Revelar estimaciones (#27) | 3 | 9,5 | Carolina | HU-18 | Necesita los votos. Se puede escribir sobre el modelo de la spec de HU-18 y mergear cuando HU-18 esté en `main` |
 
 **Total comprometido: 23 SP** (26 si HU-38 pasa al Sprint 4) · Mariano 8 · Carolina 8 · Juan Pablo 7.
 
@@ -123,15 +123,14 @@ evidencias de TDD y software funcionando) ya están en el repositorio y en el ta
 
 ## Antes de arrancar (pendientes del Sprint 3)
 
-- **Cerrar las tareas de historias ya mergeadas:** #255 (HU-09), #260 (HU-10), #369 (HU-37) y, cuando se mergee HU-38,
-  #370 a #374. Lo hace cada responsable.
-- **Tablero:** pasar HU-17 a HU-22 y HU-36 de "Sprint 3" a "Sprint 4 · Cierre", y ponerle sprint y SP a TEC-07b. Si se
-  confirma el reparto, cambiar el responsable de HU-19, HU-22 y sus tareas (#283 a #289 y #303 a #309).
-- **Dailies:** copiar las del issue #115 a [`../sprint-3/dailies.md`](../sprint-3/dailies.md), cerrar #115 y abrir
-  "Sprint 4 · Dailies".
+- **Cerrar las tareas de historias ya mergeadas:** #255 (HU-09), #260 (HU-10) y #369 (HU-37) se cerraron el 24/10.
+  Cuando se mergee HU-38 se cierran #370 a #374.
+- **Tablero:** pasar HU-17 a HU-22 y HU-36 de "Sprint 3" a "Sprint 4 · Cierre", y ponerle sprint y SP a TEC-07b.
+  Cambiar el responsable de HU-19 (Carolina), HU-22 (Juan Pablo) y sus tareas (#283 a #289 y #303 a #309).
+- **Dailies:** copiar las del issue #115 a [`../sprint-3/dailies.md`](../sprint-3/dailies.md) y cerrar #115. El de
+  este sprint ya está abierto: #424.
 - **Review y Retro del Sprint 3:** [A CONFIRMAR] la fecha con el profesor.
-- **Producción:** cargar a Carolina y Mariano como integrantes con el mail con el que se registraron, así pueden votar
-  en Planning Poker.
+- **Producción:** Carolina y Mariano ya están cargados como integrantes (24/10), así pueden votar en Planning Poker.
 
 ## Acciones que siguen
 
@@ -160,5 +159,5 @@ evidencias de TDD y software funcionando) ya están en el repositorio y en el ta
 
 ## Dailies
 
-Lunes a viernes, como comentario en el issue "Sprint 4 · Dailies". Al cerrar el sprint se copian a
+Lunes a viernes, como comentario en el issue "Sprint 4 · Dailies" (#424). Al cerrar el sprint se copian a
 [`dailies.md`](dailies.md).
