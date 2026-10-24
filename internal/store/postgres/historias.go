@@ -31,14 +31,14 @@ func (r *Historias) ConReloj(ahora func() time.Time) *Historias {
 	return r
 }
 
-// Guardar inserta la historia y la devuelve con el ID que le asignó la base. Los story points sin estimar se
-// guardan como NULL. La base rechaza un número repetido dentro del proyecto (restricción única), un proyecto que
+// Guardar inserta la historia, con su orden (HU-09), y la devuelve con el ID que le asignó la base. Los story points
+// sin estimar se guardan como NULL. La base rechaza un número repetido dentro del proyecto (restricción única), un proyecto que
 // no existe (clave foránea) y una prioridad o unos story points fuera de lo permitido (CHECK).
 func (r *Historias) Guardar(ctx context.Context, h backlog.Historia) (backlog.Historia, error) {
 	err := r.pool.QueryRow(ctx,
-		`INSERT INTO historias (proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points)
-		 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-		h.ProyectoID, h.Numero, h.Titulo, h.Descripcion, string(h.Prioridad), string(h.Estado), h.StoryPoints,
+		`INSERT INTO historias (proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, orden)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+		h.ProyectoID, h.Numero, h.Titulo, h.Descripcion, string(h.Prioridad), string(h.Estado), h.StoryPoints, h.Orden,
 	).Scan(&h.ID)
 	if err != nil {
 		return backlog.Historia{}, fmt.Errorf("guardar la historia: %w", err)
@@ -49,7 +49,7 @@ func (r *Historias) Guardar(ctx context.Context, h backlog.Historia) (backlog.Hi
 // ListarPorProyecto devuelve las historias del proyecto en el orden en que se crearon.
 func (r *Historias) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]backlog.Historia, error) {
 	filas, err := r.pool.Query(ctx,
-		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en
+		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en, orden
 		 FROM historias WHERE proyecto_id = $1 ORDER BY numero`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar las historias del proyecto: %w", err)
@@ -60,7 +60,7 @@ func (r *Historias) ListarPorProyecto(ctx context.Context, proyectoID int64) ([]
 	for filas.Next() {
 		var h backlog.Historia
 		var prioridad, estado string
-		if err := filas.Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn); err != nil {
+		if err := filas.Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn, &h.Orden); err != nil {
 			return nil, fmt.Errorf("leer una historia: %w", err)
 		}
 		h.Prioridad, h.Estado = backlog.Prioridad(prioridad), backlog.Estado(estado)
@@ -77,9 +77,9 @@ func (r *Historias) BuscarPorNumero(ctx context.Context, proyectoID int64, numer
 	var h backlog.Historia
 	var prioridad, estado string
 	err := r.pool.QueryRow(ctx,
-		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en
+		`SELECT id, proyecto_id, numero, titulo, descripcion, prioridad, estado, story_points, sprint_id, completada_en, orden
 		 FROM historias WHERE proyecto_id = $1 AND numero = $2`, proyectoID, numero,
-	).Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn)
+	).Scan(&h.ID, &h.ProyectoID, &h.Numero, &h.Titulo, &h.Descripcion, &prioridad, &estado, &h.StoryPoints, &h.SprintID, &h.CompletadaEn, &h.Orden)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return backlog.Historia{}, backlog.ErrHistoriaNoEncontrada
 	}
@@ -244,6 +244,30 @@ func (r *Historias) Eliminar(ctx context.Context, historiaID int64) error {
 	default:
 		return fmt.Errorf("eliminar la historia %d: %w", historiaID, err)
 	}
+}
+
+// ActualizarOrden guarda el orden de cada historia (por ID) sin tocar los demás datos (HU-09, RN5), todo en una
+// transacción: si alguna no existe en el proyecto devuelve backlog.ErrHistoriaNoEncontrada y no se guarda ninguno.
+func (r *Historias) ActualizarOrden(ctx context.Context, proyectoID int64, ordenes map[int64]int) error {
+	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
+		for id, orden := range ordenes {
+			etiqueta, err := tx.Exec(ctx, `UPDATE historias SET orden = $1 WHERE id = $2 AND proyecto_id = $3`, orden, id, proyectoID)
+			if err != nil {
+				return err
+			}
+			if etiqueta.RowsAffected() == 0 {
+				return backlog.ErrHistoriaNoEncontrada
+			}
+		}
+		return nil
+	})
+	if errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	if err != nil {
+		return fmt.Errorf("actualizar el orden de las historias del proyecto %d: %w", proyectoID, err)
+	}
+	return nil
 }
 
 // EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6): si ese es su sprint actual

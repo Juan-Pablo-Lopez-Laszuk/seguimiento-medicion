@@ -231,6 +231,26 @@ func (r *Historias) Eliminar(_ context.Context, historiaID int64) error {
 	return backlog.ErrHistoriaNoEncontrada
 }
 
+// ActualizarOrden guarda el orden de cada historia (por ID) sin tocar los demás datos (HU-09, RN5). Son todas del
+// proyecto o no se guarda ninguna: si alguna no existe en él, devuelve backlog.ErrHistoriaNoEncontrada.
+func (r *Historias) ActualizarOrden(_ context.Context, proyectoID int64, ordenes map[int64]int) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	posiciones := make(map[int64]int, len(ordenes))
+	for i, h := range r.lista {
+		if _, esta := ordenes[h.ID]; esta && h.ProyectoID == proyectoID {
+			posiciones[h.ID] = i
+		}
+	}
+	if len(posiciones) != len(ordenes) {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	for id, orden := range ordenes {
+		r.lista[posiciones[id]].Orden = orden
+	}
+	return nil
+}
+
 // EnSprintCerrado dice si la historia es de un sprint cerrado (HU-06, RN6): si su sprint está cerrado o si aparece en
 // la foto del cierre de uno (HU-14), igual que en PostgreSQL. Sin el repositorio de cierres, ningún sprint se cerró.
 func (r *Historias) EnSprintCerrado(_ context.Context, historiaID int64) (bool, error) {

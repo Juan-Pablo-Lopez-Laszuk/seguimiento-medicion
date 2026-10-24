@@ -13,7 +13,7 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 )
 
-// historias agrupa los handlers del Product Backlog (HU-05).
+// historias agrupa los handlers del Product Backlog (HU-05) y de su orden (HU-09).
 type historias struct {
 	casos     *service.Historias
 	criterios *service.Criterios // para mostrar el progreso de cada historia en la lista (HU-07)
@@ -22,11 +22,33 @@ type historias struct {
 // listaHistorias son los datos de la página backlog.html.
 type listaHistorias struct {
 	Proyecto  project.Proyecto
-	Historias []backlog.Historia
-	Creada    int // número de la historia recién creada, para el aviso "Historia HU-N creada"; 0 si no hay
-	Eliminada int // número de la historia recién eliminada, para el aviso "Historia HU-N eliminada"; 0 si no hay (HU-06)
+	Historias []filaBacklog      // las que no están Hechas, en el orden del backlog (HU-09)
+	Hechas    []backlog.Historia // las Hechas, la más reciente primero (HU-09 RN4)
+	Creada    int                // número de la historia recién creada, para el aviso "Historia HU-N creada"; 0 si no hay
+	Eliminada int                // número de la historia recién eliminada, para el aviso "Historia HU-N eliminada"; 0 si no hay (HU-06)
+	Movida    string             // aviso de un movimiento hecho, "HU-4 subió un lugar." (HU-09); vacío si no hay
+	Error     string             // por qué no se pudo mover una historia (HU-09); vacío si no hay
 	// Progresos tiene el progreso de los criterios de cada historia, por su ID (HU-07).
 	Progresos map[int64]backlog.Progreso
+}
+
+// filaBacklog es una historia del backlog con los botones que le corresponden: Subir si no es la primera de su
+// prioridad y Bajar si no es la última (HU-09 RN3).
+type filaBacklog struct {
+	backlog.Historia
+	Subir, Bajar bool
+}
+
+// filasDelBacklog arma las filas de las historias pendientes, que ya vienen en el orden del backlog.
+func filasDelBacklog(pendientes []backlog.Historia) []filaBacklog {
+	filas := make([]filaBacklog, len(pendientes))
+	for i, h := range pendientes {
+		filas[i] = filaBacklog{Historia: h,
+			Subir: i > 0 && pendientes[i-1].Prioridad == h.Prioridad,
+			Bajar: i < len(pendientes)-1 && pendientes[i+1].Prioridad == h.Prioridad,
+		}
+	}
+	return filas
 }
 
 // formHistoria son los datos de la página historia_nueva.html: el proyecto (para el título y los enlaces), lo que
@@ -48,24 +70,74 @@ func formVacio(p project.Proyecto) formHistoria {
 	return formHistoria{Proyecto: p, Prioridades: backlog.Prioridades, Escala: backlog.EscalaStoryPoints}
 }
 
-// listar muestra el proyecto y las historias de su backlog.
+// listar muestra el proyecto y su backlog ordenado, con las Hechas aparte (HU-09).
 func (h historias) listar(w http.ResponseWriter, r *http.Request) {
-	p, lista, ok := h.cargar(w, r)
+	id, ok := idDeProyecto(w, r)
 	if !ok {
 		return
 	}
-	progresos, err := h.criterios.Progresos(r.Context(), lista)
-	if err != nil {
-		log.Printf("progreso de las historias del proyecto %d: %v", p.ID, err)
+	consulta := r.URL.Query()
+	creada, _ := strconv.Atoi(consulta.Get("creada"))
+	eliminada, _ := strconv.Atoi(consulta.Get("eliminada"))
+	datos := listaHistorias{Creada: max(creada, 0), Eliminada: max(eliminada, 0)}
+	if n, _ := strconv.Atoi(consulta.Get("subio")); n > 0 {
+		datos.Movida = fmt.Sprintf("HU-%d subió un lugar.", n)
+	} else if n, _ := strconv.Atoi(consulta.Get("bajo")); n > 0 {
+		datos.Movida = fmt.Sprintf("HU-%d bajó un lugar.", n)
+	}
+	h.mostrarBacklog(w, r, id, http.StatusOK, datos)
+}
+
+// mostrarBacklog completa los datos de la página con el backlog del proyecto y la muestra con ese código.
+func (h historias) mostrarBacklog(w http.ResponseWriter, r *http.Request, id int64, codigo int, datos listaHistorias) {
+	v, err := h.casos.Backlog(r.Context(), id)
+	switch {
+	case errors.Is(err, project.ErrNoEncontrado):
+		proyectoNoEncontrado(w)
+		return
+	case err != nil:
+		log.Printf("listar historias del proyecto %d: %v", id, err)
 		http.Error(w, "No se pudo cargar el backlog. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
 		return
 	}
-	creada, _ := strconv.Atoi(r.URL.Query().Get("creada"))
-	eliminada, _ := strconv.Atoi(r.URL.Query().Get("eliminada"))
-	render(w, http.StatusOK, "backlog.html", Pagina{
-		Titulo: "Backlog",
-		Datos:  listaHistorias{Proyecto: p, Historias: lista, Creada: max(creada, 0), Eliminada: max(eliminada, 0), Progresos: progresos},
-	})
+	progresos, err := h.criterios.Progresos(r.Context(), append(append([]backlog.Historia{}, v.Pendientes...), v.Hechas...))
+	if err != nil {
+		log.Printf("progreso de las historias del proyecto %d: %v", id, err)
+		http.Error(w, "No se pudo cargar el backlog. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
+		return
+	}
+	datos.Proyecto, datos.Historias, datos.Hechas, datos.Progresos = v.Proyecto, filasDelBacklog(v.Pendientes), v.Hechas, progresos
+	render(w, codigo, "backlog.html", Pagina{Titulo: "Backlog", Datos: datos})
+}
+
+// mover sube o baja la historia un lugar dentro de su prioridad (HU-09) y vuelve al backlog (redirección 303) con el
+// aviso. Si la regla no lo deja, muestra el backlog sin cambios con el motivo (409).
+func (h historias) mover(m backlog.Movimiento) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		proyectoID, numero, ok := idsDeHistoria(w, r)
+		if !ok {
+			return
+		}
+		_, err := h.casos.Mover(r.Context(), proyectoID, numero, m)
+
+		switch {
+		case err == nil:
+			aviso := "subio"
+			if m == backlog.Bajar {
+				aviso = "bajo"
+			}
+			http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog?%s=%d", proyectoID, aviso, numero), http.StatusSeeOther)
+		case errors.Is(err, backlog.ErrYaEsLaPrimera), errors.Is(err, backlog.ErrYaEsLaUltima), errors.Is(err, backlog.ErrHechaNoSeReordena):
+			h.mostrarBacklog(w, r, proyectoID, http.StatusConflict, listaHistorias{Error: err.Error()})
+		case errors.Is(err, project.ErrNoEncontrado):
+			proyectoNoEncontrado(w)
+		case errors.Is(err, backlog.ErrHistoriaNoEncontrada):
+			http.Error(w, err.Error(), http.StatusNotFound) // "no existe la historia HU-99"
+		default:
+			log.Printf("mover la historia HU-%d del proyecto %d: %v", numero, proyectoID, err)
+			http.Error(w, "No se pudo guardar el orden. Probá de nuevo en unos minutos.", http.StatusInternalServerError)
+		}
+	}
 }
 
 // nueva muestra el formulario vacío.

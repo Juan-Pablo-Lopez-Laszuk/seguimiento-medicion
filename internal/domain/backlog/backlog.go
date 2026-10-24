@@ -80,7 +80,8 @@ type Datos struct {
 }
 
 // Historia es una historia ya validada. StoryPoints es nil mientras no esté estimada, SprintID mientras no esté
-// asignada a un sprint (HU-12) y CompletadaEn mientras no esté Hecha (HU-13).
+// asignada a un sprint (HU-12) y CompletadaEn mientras no esté Hecha (HU-13). Orden es su lugar dentro de su prioridad
+// en el backlog, de menor a mayor (HU-09).
 type Historia struct {
 	ID           int64
 	ProyectoID   int64
@@ -92,6 +93,7 @@ type Historia struct {
 	StoryPoints  *int
 	SprintID     *int64
 	CompletadaEn *time.Time
+	Orden        int
 }
 
 // Identificador devuelve el número como se muestra en pantalla: "HU-3".
@@ -118,6 +120,7 @@ func Nueva(d Datos, proyectoID int64, existentes []Historia) (Historia, error) {
 		Prioridad:   d.Prioridad,
 		Estado:      EstadoPendiente,
 		StoryPoints: puntos,
+		Orden:       siguienteOrden(existentes),
 	}, nil
 }
 

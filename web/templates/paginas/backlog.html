@@ -22,8 +22,12 @@
 {{if .Eliminada}}
 <div class="alert alert-success" role="status">Historia HU-{{.Eliminada}} eliminada.</div>
 {{end}}
+{{template "exito" .Movida}}
+{{template "error" .Error}}
 
+{{if or .Historias .Hechas}}
 {{if .Historias}}
+<p class="small text-body-secondary mb-2">Ordenado por prioridad. Dentro de cada prioridad, usá Subir y Bajar para decidir qué va primero.</p>
 <div class="table-responsive bg-body rounded-3 shadow-sm">
   <table class="table table-hover align-middle mb-0">
     <thead>
@@ -34,6 +38,7 @@
         <th scope="col">Estado</th>
         <th scope="col">Story points</th>
         <th scope="col">Criterios</th>
+        <th scope="col"><span class="visually-hidden">Orden</span></th>
       </tr>
     </thead>
     <tbody>
@@ -51,11 +56,50 @@
         <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
         {{$progreso := index $datos.Progresos .ID}}
         <td class="text-nowrap">{{if $progreso.TieneCriterios}}{{$progreso.Texto}}{{else}}<span class="text-body-secondary">Sin criterios</span>{{end}}</td>
+        <td class="text-nowrap text-end">
+          {{if .Subir}}<form class="d-inline" method="post" action="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}/subir"><button class="btn btn-sm btn-outline-secondary" type="submit" title="Subir {{.Identificador}} un lugar" aria-label="Subir {{.Identificador}} un lugar">↑ Subir</button></form>{{end}}
+          {{if .Bajar}}<form class="d-inline" method="post" action="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}/bajar"><button class="btn btn-sm btn-outline-secondary" type="submit" title="Bajar {{.Identificador}} un lugar" aria-label="Bajar {{.Identificador}} un lugar">↓ Bajar</button></form>{{end}}
+        </td>
       </tr>
       {{end}}
     </tbody>
   </table>
 </div>
+{{else}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-0 text-body-secondary">No queda ninguna historia pendiente.</p>
+</div>
+{{end}}
+
+{{if .Hechas}}
+<h2 class="h5 mt-4 mb-2">Hechas</h2>
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Título</th>
+        <th scope="col">Prioridad</th>
+        <th scope="col">Estado</th>
+        <th scope="col">Story points</th>
+        <th scope="col">Completada</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Hechas}}
+      <tr>
+        <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
+        <td><a class="text-reset text-decoration-none" href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Titulo}}</a></td>
+        <td>{{.Prioridad}}</td>
+        <td>{{template "estadoHistoria" .Estado}}</td>
+        <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
+        <td class="text-nowrap">{{with .CompletadaEn}}{{.Format "02/01/2006"}}{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
 {{else}}
 <div class="p-4 bg-body rounded-3 shadow-sm text-center">
   <p class="mb-3 text-body-secondary">Todavía no hay historias en este proyecto.</p>
