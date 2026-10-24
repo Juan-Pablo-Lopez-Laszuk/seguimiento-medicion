@@ -1,0 +1,86 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$p := .Resumen.Proyecto}}
+<nav aria-label="breadcrumb" class="d-print-none">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$p.ID}}">{{$p.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Reporte</li>
+  </ol>
+</nav>
+
+<div class="mb-4 d-flex flex-wrap justify-content-between align-items-start gap-2">
+  <div>
+    <h1 class="h3 mb-1">Reporte del proyecto · {{$p.Nombre}}</h1>
+    {{with $p.Descripcion}}<p class="mb-1">{{.}}</p>{{end}}
+    <div class="small text-body-secondary">
+      Del {{$p.FechaInicio.Format "02/01/2006"}} al {{$p.FechaFin.Format "02/01/2006"}}
+      · {{with .Resumen.Estado}}<span class="badge {{if eq . "En curso"}}text-bg-primary{{else if eq . "Finalizado"}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.}}</span>{{end}}
+    </div>
+  </div>
+  <button type="button" class="btn btn-outline-primary d-print-none" onclick="window.print()">Imprimir</button>
+</div>
+
+<section class="mb-4" aria-labelledby="titulo-resumen">
+  <h2 class="h5 mb-3" id="titulo-resumen">Resumen del proyecto</h2>
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3">
+    {{template "metrica" dict "nombre" "Sprints" "valor" .SprintsTexto}}
+    {{template "metrica" dict "nombre" "SP completados" "valor" .SPTexto}}
+    {{template "metrica" dict "nombre" "Velocidad del equipo" "valor" .VelocidadTexto}}
+    {{template "metrica" dict "nombre" "Horas estimadas y reales" "valor" .HorasTexto}}
+    {{template "metrica" dict "nombre" "Desviación" "valor" .DesviacionTexto}}
+    {{template "metrica" dict "nombre" "Defectos" "valor" .DefectosTexto}}
+  </div>
+</section>
+
+<section class="mb-4" aria-labelledby="titulo-evolucion">
+  <h2 class="h5 mb-3" id="titulo-evolucion">Evolución de la velocidad</h2>
+  {{with .Evolucion}}
+  <div class="table-responsive bg-body rounded-3 shadow-sm">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr>
+          <th scope="col">Sprint</th>
+          <th scope="col" class="text-end">SP planificados</th>
+          <th scope="col" class="text-end">SP completados</th>
+          <th scope="col" class="text-end">Cumplimiento</th>
+          <th scope="col" class="text-end">Velocidad hasta ese sprint</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .}}
+        <tr>
+          <td class="fw-semibold text-nowrap">Sprint {{.Sprint.Numero}}</td>
+          <td class="text-end">{{.SP.Planificados}}</td>
+          <td class="text-end">{{.SP.Completados}}</td>
+          <td class="text-end text-nowrap">{{.CumplimientoTexto}}</td>
+          <td class="text-end text-nowrap">{{.VelocidadPorSprint}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  {{else}}
+  <p class="text-body-secondary mb-0">Aún no hay sprints cerrados</p>
+  {{end}}
+</section>
+
+{{range .Sprints}}
+<section class="mb-5" id="sprint-{{.Sprint.Numero}}" style="break-before: page" aria-labelledby="titulo-sprint-{{.Sprint.Numero}}">
+  <div class="mb-3 d-flex flex-wrap justify-content-between align-items-start gap-2 border-top pt-3">
+    <div>
+      <h2 class="h4 mb-1" id="titulo-sprint-{{.Sprint.Numero}}">Sprint {{.Sprint.Numero}} · {{.Sprint.Objetivo}}</h2>
+      <div class="small text-body-secondary">
+        Del {{.Sprint.FechaInicio.Format "02/01/2006"}} al {{.Sprint.FechaFin.Format "02/01/2006"}}
+        · <span class="badge {{if .Cerrado}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Sprint.Estado}}</span>
+      </div>
+    </div>
+    <a class="btn btn-sm btn-outline-primary d-print-none" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/reporte">Reporte del sprint</a>
+  </div>
+  {{template "reporteSprint" (dict "R" . "Anidado" true)}}
+</section>
+{{else}}
+<p class="text-body-secondary">Todavía no hay sprints en este proyecto.</p>
+{{end}}
+{{end}}
+{{end}}

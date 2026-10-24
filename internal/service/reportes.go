@@ -19,8 +19,9 @@ type ListadorDefectos interface {
 	ListarPorProyecto(ctx context.Context, proyectoID int64) ([]defect.Defecto, error)
 }
 
-// Reportes arma el reporte de un sprint para la Sprint Review (spec: specs/HU-37-reporte-sprint.md). No calcula nada
-// propio: junta los datos y usa las funciones de internal/metrics (CA-37.2). Solo lee: no cambia nada (RN7).
+// Reportes arma el reporte de un sprint para la Sprint Review (spec: specs/HU-37-reporte-sprint.md) y el del proyecto
+// para el cliente (specs/HU-38-reporte-proyecto.md). No calcula nada propio: junta los datos y usa las funciones de
+// internal/metrics (CA-37.2). Solo lee: no cambia nada (HU-37 RN7, HU-38 RN6).
 type Reportes struct {
 	proyectos BuscadorProyectos
 	sprints   ListadorSprints
@@ -28,11 +29,12 @@ type Reportes struct {
 	cierres   *Cierres // la foto del cierre (HU-15)
 	horas     *Horas   // las horas de cada historia, como la página de horas (HU-33)
 	defectos  ListadorDefectos
+	panel     *Panel // el resumen del reporte del proyecto (HU-38 RN2)
 }
 
 // NuevoReportes arma el caso de uso.
-func NuevoReportes(proyectos BuscadorProyectos, sprints ListadorSprints, historias ListadorHistorias, cierres *Cierres, horas *Horas, defectos ListadorDefectos) *Reportes {
-	return &Reportes{proyectos: proyectos, sprints: sprints, historias: historias, cierres: cierres, horas: horas, defectos: defectos}
+func NuevoReportes(proyectos BuscadorProyectos, sprints ListadorSprints, historias ListadorHistorias, cierres *Cierres, horas *Horas, defectos ListadorDefectos, panel *Panel) *Reportes {
+	return &Reportes{proyectos: proyectos, sprints: sprints, historias: historias, cierres: cierres, horas: horas, defectos: defectos, panel: panel}
 }
 
 // ReporteSprint es todo lo que muestra el reporte de un sprint. HU-38 arma el del proyecto con uno por sprint y HU-39
@@ -88,11 +90,20 @@ func (r ReporteSprint) VelocidadTexto() string {
 	if aviso := r.Velocidad.Mensaje(); aviso != "" {
 		return aviso
 	}
+	return velocidadTexto(r.Velocidad)
+}
+
+// VelocidadPorSprint devuelve solo el valor de la velocidad ("5,0 SP por sprint"), para la evolución de HU-38.
+func (r ReporteSprint) VelocidadPorSprint() string {
+	return unDecimal(r.Velocidad.Valor) + " SP por sprint"
+}
+
+func velocidadTexto(v metrics.Velocidad) string {
 	sprints := "1 sprint cerrado"
-	if r.Velocidad.SprintsUsados != 1 {
-		sprints = fmt.Sprintf("%d sprints cerrados", r.Velocidad.SprintsUsados)
+	if v.SprintsUsados != 1 {
+		sprints = fmt.Sprintf("%d sprints cerrados", v.SprintsUsados)
 	}
-	return fmt.Sprintf("%s SP por sprint (%s)", unDecimal(r.Velocidad.Valor), sprints)
+	return fmt.Sprintf("%s SP por sprint (%s)", unDecimal(v.Valor), sprints)
 }
 
 // HorasTexto devuelve "10 h estimadas · 11 h reales".
@@ -158,11 +169,38 @@ func (r *Reportes) Sprint(ctx context.Context, proyectoID int64, numero int) (Re
 	if err != nil {
 		return ReporteSprint{}, err
 	}
-	historias, err := r.historias.ListarPorProyecto(ctx, proyectoID)
+	d, err := r.datos(ctx, p, sprints)
 	if err != nil {
-		return ReporteSprint{}, fmt.Errorf("listar las historias del proyecto %d: %w", proyectoID, err)
+		return ReporteSprint{}, err
 	}
-	rep := ReporteSprint{Proyecto: p, Sprint: s}
+	return r.armar(ctx, d, s)
+}
+
+// datosReporte son los listados del proyecto que usa el reporte de cualquiera de sus sprints. El reporte del proyecto
+// los lee una sola vez para todos los sprints.
+type datosReporte struct {
+	proyecto  project.Proyecto
+	sprints   []sprint.Sprint
+	historias []backlog.Historia
+	defectos  []defect.Defecto
+}
+
+func (r *Reportes) datos(ctx context.Context, p project.Proyecto, sprints []sprint.Sprint) (datosReporte, error) {
+	historias, err := r.historias.ListarPorProyecto(ctx, p.ID)
+	if err != nil {
+		return datosReporte{}, fmt.Errorf("listar las historias del proyecto %d: %w", p.ID, err)
+	}
+	defectos, err := r.defectos.ListarPorProyecto(ctx, p.ID)
+	if err != nil {
+		return datosReporte{}, fmt.Errorf("listar los defectos del proyecto %d: %w", p.ID, err)
+	}
+	return datosReporte{proyecto: p, sprints: sprints, historias: historias, defectos: defectos}, nil
+}
+
+// armar arma el reporte del sprint s con los listados del proyecto.
+func (r *Reportes) armar(ctx context.Context, d datosReporte, s sprint.Sprint) (ReporteSprint, error) {
+	historias, numero := d.historias, s.Numero
+	rep := ReporteSprint{Proyecto: d.proyecto, Sprint: s}
 	filas, err := r.filas(ctx, &rep, historias)
 	if err != nil {
 		return ReporteSprint{}, err
@@ -190,10 +228,8 @@ func (r *Reportes) Sprint(ctx context.Context, proyectoID int64, numero int) (Re
 			return ReporteSprint{}, fmt.Errorf("calcular los SP del Sprint %d: %w", numero, err)
 		}
 	}
-	if err := r.conDefectos(ctx, &rep, sprints, historias); err != nil {
-		return ReporteSprint{}, err
-	}
-	hastaEste := slices.DeleteFunc(slices.Clone(sprints), func(otro sprint.Sprint) bool { return otro.Numero > numero })
+	conDefectos(&rep, d)
+	hastaEste := slices.DeleteFunc(slices.Clone(d.sprints), func(otro sprint.Sprint) bool { return otro.Numero > numero })
 	if rep.Velocidad, err = velocidadDe(hastaEste); err != nil {
 		return ReporteSprint{}, err
 	}
@@ -224,30 +260,25 @@ func (r *Reportes) filas(ctx context.Context, rep *ReporteSprint, historias []ba
 
 // conDefectos cuenta los defectos detectados y resueltos en el sprint con el resumen de HU-34 (M8 y M9) y arma la
 // tabla con los que se detectaron o se resolvieron en él (RN6).
-func (r *Reportes) conDefectos(ctx context.Context, rep *ReporteSprint, sprints []sprint.Sprint, historias []backlog.Historia) error {
-	defectos, err := r.defectos.ListarPorProyecto(ctx, rep.Proyecto.ID)
-	if err != nil {
-		return fmt.Errorf("listar los defectos del proyecto %d: %w", rep.Proyecto.ID, err)
-	}
-	vista := VistaDefectos{Proyecto: rep.Proyecto, Defectos: defectos, Sprints: sprints, Historias: historias}
+func conDefectos(rep *ReporteSprint, d datosReporte) {
+	vista := VistaDefectos{Proyecto: rep.Proyecto, Defectos: d.defectos, Sprints: d.sprints, Historias: d.historias}
 	resumen := vista.Resumen("")
-	for i, s := range sprints {
+	for i, s := range d.sprints {
 		if s.ID == rep.Sprint.ID {
 			rep.Conteo = resumen.Sprints[i].ConteoSprint
 		}
 	}
-	for _, d := range defectos {
-		if d.SprintDeteccionID != rep.Sprint.ID && d.SprintResolucionID != rep.Sprint.ID {
+	for _, def := range d.defectos {
+		if def.SprintDeteccionID != rep.Sprint.ID && def.SprintResolucionID != rep.Sprint.ID {
 			continue
 		}
-		f := FilaDefecto{Defecto: d, Historia: vista.HistoriaDe(d.HistoriaID), DetectadoEn: vista.SprintDe(d.SprintDeteccionID), ResueltoEn: sinResultado}
-		if d.SprintResolucionID != 0 {
-			f.ResueltoEn = vista.SprintDe(d.SprintResolucionID)
+		f := FilaDefecto{Defecto: def, Historia: vista.HistoriaDe(def.HistoriaID), DetectadoEn: vista.SprintDe(def.SprintDeteccionID), ResueltoEn: sinResultado}
+		if def.SprintResolucionID != 0 {
+			f.ResueltoEn = vista.SprintDe(def.SprintResolucionID)
 		}
 		rep.Defectos = append(rep.Defectos, f)
 	}
 	slices.SortFunc(rep.Defectos, func(a, b FilaDefecto) int { return int(a.ID - b.ID) })
-	return nil
 }
 
 // historiaParaMetricas pasa una fila del reporte a lo que necesitan M1, M2 y M7.

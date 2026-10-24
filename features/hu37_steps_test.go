@@ -42,8 +42,8 @@ type hu37 struct {
 	pagina        string // la página del reporte, sin los escapes de HTML
 }
 
-// registrarPasosHU37 conecta cada frase de features/hu-37-reporte-sprint.feature con una función de Go.
-func registrarPasosHU37(sc *godog.ScenarioContext) {
+// nuevoHU37 arma los repositorios en memoria y los casos de uso del reporte. Lo usa también HU-38.
+func nuevoHU37() *hu37 {
 	e := &hu37{
 		repoProyectos: memory.NuevoProyectos(), repoSprints: memory.NuevoSprints(), repoHistorias: memory.NuevoHistorias(),
 		repoTareas: memory.NuevoTareas(), repoRegistros: memory.NuevoRegistros(), repoDefectos: memory.NuevoDefectos(),
@@ -51,7 +51,15 @@ func registrarPasosHU37(sc *godog.ScenarioContext) {
 	}
 	e.cierres = service.NuevoCierres(e.repoProyectos, e.repoSprints, e.repoHistorias, memory.NuevoCierres(e.repoSprints, e.repoHistorias), func() time.Time { return e.ahora })
 	horas := service.NuevoHoras(e.repoProyectos, e.repoSprints, e.repoHistorias, e.repoTareas, e.repoRegistros)
-	e.reportes = service.NuevoReportes(e.repoProyectos, e.repoSprints, e.repoHistorias, e.cierres, horas, e.repoDefectos)
+	estado := service.NuevoEstadoProyectos(e.repoProyectos, e.repoSprints, e.repoHistorias, func() time.Time { return e.ahora })
+	panel := service.NuevoPanel(estado, e.repoSprints, horas, service.NuevoDefectos(e.repoProyectos, e.repoSprints, e.repoHistorias, e.repoDefectos))
+	e.reportes = service.NuevoReportes(e.repoProyectos, e.repoSprints, e.repoHistorias, e.cierres, horas, e.repoDefectos, panel)
+	return e
+}
+
+// registrarPasosHU37 conecta cada frase de features/hu-37-reporte-sprint.feature con una función de Go.
+func registrarPasosHU37(sc *godog.ScenarioContext) {
+	e := nuevoHU37()
 
 	sc.Step(`^el proyecto "([^"]*)" con estos sprints para el reporte:$`, e.elProyectoConEstosSprints)
 	sc.Step(`^en el Sprint (\d+) estas historias con sus horas:$`, e.enElSprintEstasHistorias)

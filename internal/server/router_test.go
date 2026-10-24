@@ -40,6 +40,7 @@ func dependenciasEnMemoria(ahora func() time.Time) server.Dependencias {
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, ahora)
 	horas := service.NuevoHoras(proyectos, sprints, historias, repoTareas, repoRegistros)
 	defectos := service.NuevoDefectos(proyectos, sprints, historias, repoDefectos)
+	panel := service.NuevoPanel(estado, sprints, horas, defectos)
 	return server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Sprints:     service.NuevoSprints(proyectos, sprints),
@@ -54,8 +55,8 @@ func dependenciasEnMemoria(ahora func() time.Time) server.Dependencias {
 		Esfuerzo:       service.NuevoEsfuerzo(proyectos, historias, integrantes, repoTareas, repoRegistros, ahora),
 		Defectos:       defectos,
 		Horas:          horas,
-		Panel:          service.NuevoPanel(estado, sprints, horas, defectos),
-		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas, repoDefectos),
+		Panel:          panel,
+		Reportes:       service.NuevoReportes(proyectos, sprints, historias, cierres, horas, repoDefectos, panel),
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
