@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"slices"
 	"sync"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
@@ -27,6 +28,14 @@ func (r *Defectos) Guardar(_ context.Context, d defect.Defecto) (defect.Defecto,
 	d.ID = r.ultimoID
 	r.lista = append(r.lista, d)
 	return d, nil
+}
+
+// TieneDeHistoria dice si hay algún defecto de esa historia (HU-06, RN10: con defectos no se elimina). Los defectos sin
+// historia no son de ninguna.
+func (r *Defectos) TieneDeHistoria(historiaID int64) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return historiaID != 0 && slices.ContainsFunc(r.lista, func(d defect.Defecto) bool { return d.HistoriaID == historiaID })
 }
 
 // ListarPorProyecto devuelve los defectos del proyecto, el más nuevo primero.

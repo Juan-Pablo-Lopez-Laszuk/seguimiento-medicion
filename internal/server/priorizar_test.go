@@ -211,3 +211,14 @@ func TestBacklog_FallaAlGuardarElOrden(t *testing.T) {
 	}
 	verificarContiene(t, rec.Body.String(), "No se pudo guardar el orden. Probá de nuevo en unos minutos.")
 }
+
+// TEC-05 RN3 · con el login activado, subir y bajar piden sesión como el resto de la aplicación
+func TestBacklog_ConLogin_SubirYBajarPidenSesion(t *testing.T) {
+	h := routerConLogin(&servicioDeLoginSimulado{})
+
+	for _, ruta := range []string{"/proyectos/1/backlog/1/subir", "/proyectos/1/backlog/1/bajar"} {
+		if rec := post(h, ruta, nil); rec.Code != http.StatusUnauthorized {
+			t.Errorf("%s sin sesión: código = %d, se esperaba %d", ruta, rec.Code, http.StatusUnauthorized)
+		}
+	}
+}
