@@ -2,6 +2,8 @@ package memory
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"sync"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/member"
@@ -60,8 +62,41 @@ func (r *Integrantes) Actualizar(_ context.Context, i member.Integrante) error {
 	if pos < 0 {
 		return member.ErrNoEncontrado
 	}
+	i.AuthUserID = r.lista[pos].AuthUserID // el vínculo con el usuario no se cambia desde acá
 	r.lista[pos] = i
 	return nil
+}
+
+// VincularPorEmail vincula al usuario con todos los integrantes de cualquier proyecto que tienen ese email y todavía no
+// tienen un usuario. Devuelve cuántos vinculó (TEC-05, RN7).
+func (r *Integrantes) VincularPorEmail(_ context.Context, email, usuarioID string) (int, error) {
+	if usuarioID == "" {
+		return 0, errors.New("vincular integrantes: falta el usuario")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	vinculados := 0
+	for pos := range r.lista {
+		if i := &r.lista[pos]; i.AuthUserID == "" && strings.EqualFold(i.Email, email) {
+			i.AuthUserID = usuarioID
+			vinculados++
+		}
+	}
+	return vinculados, nil
+}
+
+// BuscarPorUsuario devuelve el integrante del proyecto vinculado con el usuario, o member.ErrNoEncontrado.
+func (r *Integrantes) BuscarPorUsuario(_ context.Context, proyectoID int64, usuarioID string) (member.Integrante, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if usuarioID != "" {
+		for _, i := range r.lista {
+			if i.ProyectoID == proyectoID && i.AuthUserID == usuarioID {
+				return i, nil
+			}
+		}
+	}
+	return member.Integrante{}, member.ErrNoEncontrado
 }
 
 // posicion devuelve dónde está el integrante en la lista, o -1. Se llama con el mutex tomado.

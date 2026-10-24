@@ -39,6 +39,7 @@ Cada funcionalidad sigue la cadena de trazabilidad:
 | Historias de usuario | Issues + [tablero del proyecto](https://github.com/users/Juan-Pablo-Lopez-Laszuk/projects) |
 | Especificaciones SDD | [`specs/`](specs/) |
 | Escenarios BDD | [`features/`](features/) |
+| Matriz requerimiento → escenarios y tests | [`docs/trazabilidad-requisitos.md`](docs/trazabilidad-requisitos.md) |
 | Ceremonias Scrum y actas | [`docs/scrum/`](docs/scrum/) |
 | Registro de uso de IA | [`docs/ia/registro.md`](docs/ia/registro.md) |
 | Plan de trabajo y guía | [`docs/plan/`](docs/plan/) |
@@ -69,6 +70,11 @@ go test -covermode=atomic -coverprofile=coverage.out ./... && go run ./cmd/cober
 
 Con `make` instalado también están `make run`, `make test`, `make cover`, `make umbral`, `make bdd` y `make lint`.
 
+**Login (TEC-05):** si el `.env` tiene `SUPABASE_URL` y `SUPABASE_ANON_KEY` (las dos o ninguna), la app pide iniciar sesión
+con una cuenta de Supabase Auth: hay pantallas de registro y de ingreso, y todo lo demás responde 401 sin una sesión válida.
+Sin esas variables funciona abierta, como hasta ahora (es lo que usan los tests, el CI y los previews). Spec:
+[`specs/TEC-05-autenticacion.md`](specs/TEC-05-autenticacion.md).
+
 Cada Pull Request corre el **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): gofmt, go vet, golangci-lint,
 tests con race detector y cobertura, y los escenarios BDD. Si algo falla, el PR no se puede mergear. El reporte de
 cobertura queda en el resumen de la corrida y como artefacto descargable (`cobertura`).
@@ -86,6 +92,7 @@ app/                  puerta de entrada pública al router (Vercel no puede impo
 cmd/server/           servidor local
 cmd/migrar/           aplica las migraciones a la base (up, status, down)
 cmd/cobertura/        verifica el umbral de cobertura del CI (TEC-06)
+internal/auth/        login con Supabase Auth: configuración, verificación del token y cliente (TEC-05)
 internal/server/      router, handlers y renderizado de páginas
 internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
 internal/service/     casos de uso

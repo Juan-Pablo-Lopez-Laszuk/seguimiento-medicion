@@ -21,7 +21,7 @@ func NuevoIntegrantes(pool *pgxpool.Pool) *Integrantes {
 	return &Integrantes{pool: pool}
 }
 
-const columnasIntegrante = "id, proyecto_id, nombre, email, rol, activo"
+const columnasIntegrante = "id, proyecto_id, nombre, email, rol, activo, COALESCE(auth_user_id::text, '')"
 
 // Guardar inserta el integrante y lo devuelve con el ID que le asignó la base. La base rechaza el email repetido
 // dentro del proyecto (también el de alguien dado de baja), un segundo Agile Enabler activo y un proyecto que no existe.
@@ -88,11 +88,41 @@ func (r *Integrantes) Actualizar(ctx context.Context, i member.Integrante) error
 	return nil
 }
 
+// VincularPorEmail vincula al usuario con todos los integrantes de cualquier proyecto que tienen ese email y todavía no
+// tienen un usuario. Devuelve cuántos vinculó (TEC-05, RN7). Un integrante ya vinculado, con este usuario o con otro,
+// no se toca.
+func (r *Integrantes) VincularPorEmail(ctx context.Context, email, usuarioID string) (int, error) {
+	res, err := r.pool.Exec(ctx,
+		`UPDATE integrantes SET auth_user_id = $1::uuid WHERE lower(email) = lower($2) AND auth_user_id IS NULL`,
+		usuarioID, email)
+	if err != nil {
+		return 0, fmt.Errorf("vincular los integrantes con el usuario: %w", err)
+	}
+	return int(res.RowsAffected()), nil
+}
+
+// BuscarPorUsuario devuelve el integrante del proyecto vinculado con el usuario, o member.ErrNoEncontrado.
+func (r *Integrantes) BuscarPorUsuario(ctx context.Context, proyectoID int64, usuarioID string) (member.Integrante, error) {
+	if usuarioID == "" {
+		return member.Integrante{}, member.ErrNoEncontrado
+	}
+	i, err := leerIntegrante(r.pool.QueryRow(ctx,
+		`SELECT `+columnasIntegrante+` FROM integrantes WHERE proyecto_id = $1 AND auth_user_id = $2::uuid ORDER BY id LIMIT 1`,
+		proyectoID, usuarioID))
+	if errors.Is(err, pgx.ErrNoRows) {
+		return member.Integrante{}, member.ErrNoEncontrado
+	}
+	if err != nil {
+		return member.Integrante{}, fmt.Errorf("buscar el integrante del usuario: %w", err)
+	}
+	return i, nil
+}
+
 // leerIntegrante lee una fila con las columnas de columnasIntegrante, en ese orden.
 func leerIntegrante(fila pgx.Row) (member.Integrante, error) {
 	var i member.Integrante
 	var rol string
-	if err := fila.Scan(&i.ID, &i.ProyectoID, &i.Nombre, &i.Email, &rol, &i.Activo); err != nil {
+	if err := fila.Scan(&i.ID, &i.ProyectoID, &i.Nombre, &i.Email, &rol, &i.Activo, &i.AuthUserID); err != nil {
 		return member.Integrante{}, err
 	}
 	i.Rol = member.Rol(rol)
