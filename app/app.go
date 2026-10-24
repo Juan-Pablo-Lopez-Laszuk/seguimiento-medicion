@@ -67,6 +67,16 @@ func ConLogin(verificador auth.Verificador, cuentas auth.ServicioDeCuentas) Opci
 // NewHandlerConBase arma la aplicación con los repositorios de PostgreSQL si url no está vacía, o con los
 // de memoria si lo está. Abrir el pool no conecta todavía: la primera conexión se hace en el primer pedido.
 func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, error) {
+	dep, err := DependenciasConBase(url, opcionesDeArmado...)
+	if err != nil {
+		return nil, err
+	}
+	return server.NewRouter(dep), nil
+}
+
+// DependenciasConBase arma los casos de uso de la aplicación, igual que NewHandlerConBase, sin el router. Lo usa
+// cmd/ejemplo para cargar el proyecto de ejemplo con los mismos casos de uso que las pantallas.
+func DependenciasConBase(url string, opcionesDeArmado ...Opcion) (server.Dependencias, error) {
 	var o opciones
 	for _, opcion := range opcionesDeArmado {
 		opcion(&o)
@@ -123,7 +133,7 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
-			return nil, err
+			return server.Dependencias{}, err
 		}
 		proyectos, sprints, integrantes = postgres.NuevoProyectos(pool), postgres.NuevoSprints(pool), postgres.NuevoIntegrantes(pool)
 		historias, criterios, tareas = postgres.NuevoHistorias(pool), postgres.NuevoCriterios(pool), postgres.NuevoTareas(pool)
@@ -177,5 +187,5 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 	if o.verificador != nil {
 		dep.Verificador, dep.Cuentas = o.verificador, service.NuevoCuentas(o.cuentas, integrantes)
 	}
-	return server.NewRouter(dep), nil
+	return dep, nil
 }
