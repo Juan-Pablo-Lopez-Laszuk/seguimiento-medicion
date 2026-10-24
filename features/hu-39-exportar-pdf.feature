@@ -19,7 +19,7 @@ Característica: Exportar reporte a PDF
     Y que para el PDF el Sprint 1 se cerró con "HU-1, HU-2, HU-3" y completó "HU-1"
     Y que para el PDF el Sprint 2 se cerró con "HU-2, HU-3" y completó "HU-2"
     Y que para el PDF "HU-3" está en el Sprint 3
-    Y que hoy es 29/10/2026
+    Y que el PDF se genera el 29/10/2026
 
   # Caso NORMAL: el PDF de un sprint se descarga con el nombre del proyecto, el sprint y la fecha (CA-39.1)
   @CA-39.1
@@ -57,9 +57,9 @@ Característica: Exportar reporte a PDF
   # Caso LÍMITE: caracteres que las fuentes del PDF no tienen (RN4)
   @CA-39.2
   Escenario: Un título con caracteres que el PDF no puede mostrar
-    Dado que "HU-1" se llama "Login 🔐 → OAuth"
-    Cuando descargo el PDF del reporte del Sprint 1
-    Entonces el PDF muestra la historia "Login ? ? OAuth"
+    Dado que "HU-3" se llama "Perfil 🔐 → OAuth"
+    Cuando descargo el PDF del reporte del Sprint 3
+    Entonces el PDF muestra la historia "Perfil ? ? OAuth"
 
   # Caso de ERROR: el sprint no existe
   @CA-39.1
