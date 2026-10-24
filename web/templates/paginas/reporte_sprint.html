@@ -19,7 +19,10 @@
       · <span class="badge {{if .Cerrado}}text-bg-dark{{else}}text-bg-secondary{{end}}">{{.Sprint.Estado}}</span>
     </div>
   </div>
-  <button type="button" class="btn btn-outline-primary d-print-none" onclick="window.print()">Imprimir</button>
+  <div class="d-flex gap-2 d-print-none">
+    <a class="btn btn-primary d-print-none" href="/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.Numero}}/reporte.pdf">Descargar PDF</a>
+    <button type="button" class="btn btn-outline-primary" onclick="window.print()">Imprimir</button>
+  </div>
 </div>
 
 {{template "reporteSprint" (dict "R" . "Anidado" false)}}
