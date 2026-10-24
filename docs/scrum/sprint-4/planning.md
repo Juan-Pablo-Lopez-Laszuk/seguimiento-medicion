@@ -118,15 +118,16 @@ evidencias de TDD y software funcionando) ya están en el repositorio y en el ta
 | 2 | HU-39: cómo se genera el PDF | En el servidor, con una librería de Go sin dependencias externas, porque CA-39.1 pide descargar un archivo con nombre y CA-39.3 pide menos de 10 s en Vercel. Lo confirma el spike (#375) | [A CONFIRMAR] Juan Pablo, en el spike |
 | 3 | HU-39: qué se exporta | El reporte de un sprint (`proyecto-sprint-fecha.pdf`, CA-39.1) y, si entra, el del proyecto. El contenido es el de HU-37 y HU-38 sin cambios (CA-39.2) | [A CONFIRMAR] Juan Pablo, en la spec |
 | 4 | HU-36: librería de gráficos | Una librería de JavaScript cargada por CDN, sin paso de build, con los datos de un endpoint JSON con tests (CA-36.2). El burndown usa la fecha en que se completó cada historia (HU-13) | [A CONFIRMAR] Carolina, en la spec |
-| 5 | Quién puede entrar a la app | Una vez registrados el equipo y los profesores, se cierra el registro de cuentas nuevas en Supabase. En la Review se presenta como limitación conocida que cualquier cuenta registrada ve todos los proyectos (lo planteó Mariano) | [A CONFIRMAR] Juan Pablo |
+| 5 | Quién puede entrar a la app | Se cierra el registro de cuentas nuevas en Supabase y solo entra el equipo (lo planteó Mariano: cualquier cuenta registrada ve todos los proyectos) | Sí (Juan Pablo, 24/10) |
 | 6 | Congelamiento | Después del jueves 29/10 solo entran arreglos de bugs y documentación | Viene del plan del Sprint 3 |
 
 ## Antes de arrancar (pendientes del Sprint 3)
 
 - **Cerrar las tareas de historias ya mergeadas:** #255 (HU-09), #260 (HU-10) y #369 (HU-37) se cerraron el 24/10.
   Cuando se mergee HU-38 se cierran #370 a #374.
-- **Tablero:** pasar HU-17 a HU-22 y HU-36 de "Sprint 3" a "Sprint 4 · Cierre", y ponerle sprint y SP a TEC-07b.
-  Cambiar el responsable de HU-19 (Carolina), HU-22 (Juan Pablo) y sus tareas (#283 a #289 y #303 a #309).
+- **Tablero (hecho el 24/10):** HU-17 a HU-22, HU-36 y TEC-07b pasaron a "Sprint 4 · Cierre"; las comprometidas
+  están en *Sprint Backlog* y las de "si sobra" en *Product Backlog*. HU-19 y sus tareas (#283 a #289) pasaron a
+  Carolina, y HU-22 y las suyas (#303 a #309) a Juan Pablo.
 - **Dailies:** copiar las del issue #115 a [`../sprint-3/dailies.md`](../sprint-3/dailies.md) y cerrar #115. El de
   este sprint ya está abierto: #424.
 - **Review y Retro del Sprint 3:** [A CONFIRMAR] la fecha con el profesor.
