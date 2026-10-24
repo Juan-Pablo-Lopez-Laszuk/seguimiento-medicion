@@ -1,6 +1,6 @@
 # SPEC-39 · Exportar reporte a PDF
 
-**Historia:** HU-39 (#50) · **Responsable:** López, Juan Pablo · **Sprint:** 4 · **Estado:** Revisada
+**Historia:** HU-39 (#50) · **Responsable:** López, Juan Pablo · **Sprint:** 4 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Pasa a PDF los dos reportes que ya existen: el de un sprint (HU-37) y
 > el del proyecto (HU-38). No calcula nada nuevo: el PDF se arma con los mismos datos y los mismos textos que la
@@ -128,6 +128,20 @@ Sprint 2 cerrado (3 de 8 SP) y el Sprint 3 abierto; tres historias con horas y t
 
 ## Trazabilidad
 
-Issue: #50 · Feature: `features/hu-39-exportar-pdf.feature` · Pasos BDD: `features/hu39_steps_test.go`
+Issue: #50 · Feature: `features/hu-39-exportar-pdf.feature` · Pasos BDD: `features/hu39_steps_test.go` (bajan el PDF de
+la aplicación, lo descomprimen y comparan sus textos con los de la página)
 
-Las tablas por capa y por criterio se completan con el código.
+| Capa | Código | Tests |
+|---|---|---|
+| Métricas y caso de uso | sin cambios: `Reportes.Sprint` (HU-37) y `Reportes.Proyecto` (HU-38) | los de HU-37 y HU-38 |
+| Presentación del PDF | `internal/reportepdf`: `documento.go` (`Documento`, `DocumentoSprint`, `DocumentoProyecto`, `Textos`), `nombre.go` (`NombreArchivo`) y `pdf.go` (`Escribir`, con fpdf y el texto en Windows-1252) | `internal/reportepdf/documento_test.go`, `nombre_test.go` y `pdf_test.go` |
+| Pantalla | `internal/server/reportes.go` (`sprintPDF`, `proyectoPDF`), rutas `reporte.pdf` y `Dependencias.Ahora` en `router.go`, botón Descargar PDF en `reporte_sprint.html` y `reporte_proyecto.html` | `internal/server/reportes_pdf_test.go` |
+| Aplicación | sin cambios (sin `Ahora`, usa `time.Now`) | `app/reportes_pdf_test.go` (memoria y PostgreSQL) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-39.1 Descarga un .pdf llamado proyecto-sprint-fecha.pdf | Descargar el PDF del reporte de un sprint · Descargar el PDF del reporte del proyecto · Pedir el PDF de un sprint que no existe | `TestNombreArchivo`, `TestEscribir_GeneraUnPDF`, `TestPDFDelSprint_SeDescarga`, `TestPDFDelProyecto_SeDescarga`, `TestPDFDelProyecto_SinSprints`, `TestPDF_NoExiste`, `TestReportes_EnlazanAlPDF`, `TestNewHandlerConBase_SinURLSeDescarganLosPDF`, `TestNewHandlerConBase_ConURLLosPDFSobrevivenAUnReinicio` |
+| CA-39.2 El contenido coincide con el reporte en pantalla | El PDF de un sprint coincide con su reporte · El PDF de un sprint abierto avisa que es parcial · Descargar el PDF del reporte del proyecto · Un título con caracteres que el PDF no puede mostrar | `TestDocumentoSprint_*`, `TestDocumentoProyecto_*`, `TestDocumento_Textos`, `TestEscribir_TieneLosTextos`, `TestEscribir_PieDeHoja`, `TestEscribir_SaltoDeHoja`, `TestEscribir_TablaLargaSigueEnOtraHoja`, `TestEscribir_TextoLargoSeParteEnLineas`, `TestEscribir_CaracteresQueNoEstan` |
+| CA-39.3 Se genera en menos de 10 segundos | El PDF de un proyecto grande se genera a tiempo | `TestEscribir_ProyectoGrandeEnMenosDeUnSegundo` |
+
+Falta medirlo en Vercel (T7, #381): se prueba en el preview del PR.

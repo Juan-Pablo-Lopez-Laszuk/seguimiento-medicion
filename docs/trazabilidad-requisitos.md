@@ -31,8 +31,8 @@ Esta matriz la comprueba `features/trazabilidad_test.go`, que corre con `go test
 Cuando una historia pendiente se mergea, se pasa su fila a **Cubierto** con sus escenarios y tests. Un requerimiento nuevo se
 suma a la lista del test y a la matriz.
 
-**Estado al 24/10/2026: 51 de 59 requerimientos cubiertos.** Los 8 pendientes son de Sprint 3 y 4: Planning Poker
-(HU-17 a HU-22), los gráficos del dashboard (HU-36) y la exportación a PDF (HU-39).
+**Estado al 24/10/2026: 52 de 59 requerimientos cubiertos.** Los 7 pendientes son del Sprint 4: Planning Poker
+(HU-17 a HU-22) y los gráficos del dashboard (HU-36).
 
 > Lo que no es un requerimiento de la consigna (el login de TEC-05, el deploy de TEC-04, el umbral de cobertura de TEC-06
 > y el diseño base de TEC-07) se traza en su propia especificación.
@@ -135,7 +135,7 @@ suma a la lista del test y a la matriz.
 | Reportes · Esfuerzo registrado | HU-37 | `hu-37-reporte-sprint.feature` «Las historias del reporte con sus horas» | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_MuestraElReporte` | Cubierto |
 | Reportes · Métricas | HU-37 | `hu-37-reporte-sprint.feature` «Las métricas del reporte de un sprint cerrado» | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_VelocidadHastaEseSprint` | Cubierto |
 | Reportes · Defectos | HU-37 | `hu-37-reporte-sprint.feature` «Las métricas del reporte de un sprint cerrado» · «Reporte de un sprint sin historias ni defectos» | `TestReporteDeSprint_Defectos`, `TestReporteDeSprint_MuestraLosDefectos`, `TestReporteDeSprint_SinDefectos` | Cubierto |
-| Reportes · Exportar el informe a PDF | HU-39 | — | — | Pendiente: HU-39, Sprint 4 |
+| Reportes · Exportar el informe a PDF | HU-39 | `hu-39-exportar-pdf.feature` «Descargar el PDF del reporte de un sprint» · «El PDF de un sprint coincide con su reporte» · «Descargar el PDF del reporte del proyecto» | `TestPDFDelSprint_SeDescarga`, `TestPDFDelProyecto_SeDescarga`, `TestDocumentoSprint_Metricas`, `TestEscribir_TieneLosTextos` | Cubierto |
 
 ## 10. Mínimo de pruebas unitarias que pide la consigna (TDD)
 
