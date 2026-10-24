@@ -22,8 +22,42 @@
 {{if .Eliminada}}
 <div class="alert alert-success" role="status">Historia HU-{{.Eliminada}} eliminada.</div>
 {{end}}
+{{template "exito" .Movida}}
+{{template "error" .Error}}
 
+{{if .Total}}
+{{$f := .Filtro}}
+<form class="row g-2 align-items-end mb-3" action="/proyectos/{{.Proyecto.ID}}/backlog" method="get" role="search" aria-label="Filtrar historias">
+  <div class="col-sm-4 col-lg-3">
+    <label class="form-label mb-1" for="filtro-estado">Estado</label>
+    <select class="form-select form-select-sm" id="filtro-estado" name="estado">
+      <option value="">Todos</option>
+      {{range .Estados}}<option value="{{.}}"{{if eq . $f.Estado}} selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </div>
+  <div class="col-sm-4 col-lg-3">
+    <label class="form-label mb-1" for="filtro-prioridad">Prioridad</label>
+    <select class="form-select form-select-sm" id="filtro-prioridad" name="prioridad">
+      <option value="">Todas</option>
+      {{range .Prioridades}}<option value="{{.}}"{{if eq . $f.Prioridad}} selected{{end}}>{{.}}</option>{{end}}
+    </select>
+  </div>
+  <div class="col-sm-4 col-lg-3">
+    <label class="form-label mb-1" for="filtro-texto">Buscar en el título</label>
+    <input class="form-control form-control-sm" type="search" id="filtro-texto" name="texto" value="{{$f.Texto}}">
+  </div>
+  <div class="col-auto"><button class="btn btn-sm btn-outline-primary" type="submit">Filtrar</button></div>
+</form>
+{{if $f.Activo}}
+<p class="small text-body-secondary mb-2">{{.Mostradas}} de {{.Total}} historias · Para cambiar el orden, quitá los filtros. · <a href="/proyectos/{{.Proyecto.ID}}/backlog">Quitar filtros</a></p>
+{{end}}
+{{end}}
+
+{{if or .Historias .Hechas}}
 {{if .Historias}}
+{{if not .Filtro.Activo}}
+<p class="small text-body-secondary mb-2">Ordenado por prioridad. Dentro de cada prioridad, usá Subir y Bajar para decidir qué va primero.</p>
+{{end}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">
   <table class="table table-hover align-middle mb-0">
     <thead>
@@ -34,6 +68,7 @@
         <th scope="col">Estado</th>
         <th scope="col">Story points</th>
         <th scope="col">Criterios</th>
+        <th scope="col"><span class="visually-hidden">Orden</span></th>
       </tr>
     </thead>
     <tbody>
@@ -51,10 +86,54 @@
         <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
         {{$progreso := index $datos.Progresos .ID}}
         <td class="text-nowrap">{{if $progreso.TieneCriterios}}{{$progreso.Texto}}{{else}}<span class="text-body-secondary">Sin criterios</span>{{end}}</td>
+        <td class="text-nowrap text-end">
+          {{if .Subir}}<form class="d-inline" method="post" action="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}/subir"><button class="btn btn-sm btn-outline-secondary" type="submit" title="Subir {{.Identificador}} un lugar" aria-label="Subir {{.Identificador}} un lugar">↑ Subir</button></form>{{end}}
+          {{if .Bajar}}<form class="d-inline" method="post" action="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}/bajar"><button class="btn btn-sm btn-outline-secondary" type="submit" title="Bajar {{.Identificador}} un lugar" aria-label="Bajar {{.Identificador}} un lugar">↓ Bajar</button></form>{{end}}
+        </td>
       </tr>
       {{end}}
     </tbody>
   </table>
+</div>
+{{else if not .Filtro.Activo}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-0 text-body-secondary">No queda ninguna historia pendiente.</p>
+</div>
+{{end}}
+
+{{if .Hechas}}
+<h2 class="h5 mt-4 mb-2">Hechas</h2>
+<div class="table-responsive bg-body rounded-3 shadow-sm">
+  <table class="table align-middle mb-0">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Título</th>
+        <th scope="col">Prioridad</th>
+        <th scope="col">Estado</th>
+        <th scope="col">Story points</th>
+        <th scope="col">Completada</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Hechas}}
+      <tr>
+        <td class="fw-semibold text-nowrap"><a href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Identificador}}</a></td>
+        <td><a class="text-reset text-decoration-none" href="/proyectos/{{.ProyectoID}}/backlog/{{.Numero}}">{{.Titulo}}</a></td>
+        <td>{{.Prioridad}}</td>
+        <td>{{template "estadoHistoria" .Estado}}</td>
+        <td class="text-nowrap">{{with .StoryPoints}}{{.}}{{else}}<span class="text-body-secondary">Sin estimar</span>{{end}}</td>
+        <td class="text-nowrap">{{with .CompletadaEn}}{{.Format "02/01/2006"}}{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+</div>
+{{end}}
+{{else if .Total}}
+<div class="p-4 bg-body rounded-3 shadow-sm text-center">
+  <p class="mb-3 text-body-secondary">Ninguna historia coincide con los filtros.</p>
+  <a class="btn btn-outline-primary" href="/proyectos/{{.Proyecto.ID}}/backlog">Quitar filtros</a>
 </div>
 {{else}}
 <div class="p-4 bg-body rounded-3 shadow-sm text-center">

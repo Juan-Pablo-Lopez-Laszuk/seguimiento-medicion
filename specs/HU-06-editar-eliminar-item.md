@@ -66,9 +66,10 @@ Los story points y el estado **no se editan acá**: se cambian con HU-16 y HU-08
 - RN9: Al eliminar una historia se eliminan **también sus criterios de aceptación y sus tareas**, en **una sola
   operación**: o se borra todo o no se borra nada. No se pueden eliminar de a uno (HU-07 y HU-25 los dejaron fuera de
   alcance), así que bloquear la eliminación de una historia con criterios o tareas la dejaría imposible de eliminar.
-- RN10: Si la base rechaza el borrado porque la historia tiene **otros registros asociados** (sesiones de Planning
-  Poker, esfuerzo registrado o defectos: funcionalidades que todavía no existen), no se elimina nada, ni siquiera sus
-  criterios y tareas, y se informa que tiene registros asociados.
+- RN10: Si la historia tiene **otros registros asociados** (sesiones de Planning Poker, esfuerzo registrado o defectos),
+  no se elimina nada, ni siquiera sus criterios y tareas, y se informa que tiene registros asociados. Con PostgreSQL lo
+  rechaza la base (clave foránea); sin base (modo memoria, el de los previews) lo hace el repositorio en memoria, con el
+  mismo resultado: la historia con horas o con defectos nunca se borra dejando los registros sueltos.
 - RN11: **Numeración.** Las demás historias **conservan su número**. La siguiente historia toma el número más alto
   existente más uno (HU-05, RN5): un hueco en el medio no se reutiliza, pero si se elimina la **última**, su número
   queda libre y lo toma la próxima historia. Esto corrige la RN5 de HU-05, que decía que un número nunca se reutiliza.
@@ -85,7 +86,10 @@ Los story points y el estado **no se editan acá**: se cambian con HU-16 y HU-08
   - En **PostgreSQL**, `Eliminar` borra los criterios, las tareas y la historia en **una transacción**; una violación de
     clave foránea (`23503`) vuelve atrás todo y devuelve `backlog.ErrHistoriaConRegistros` (RN10).
   - En **memoria**, `memory.NuevoHistorias` acepta los repositorios que dependen de la historia (criterios y tareas) y
-    les pide que borren lo suyo; sin argumentos funciona igual que hasta ahora.
+    les pide que borren lo suyo; sin argumentos funciona igual que hasta ahora. Además, `ConRegistrosAsociados(registros,
+    defectos)` le dice qué repositorios guardan registros de esfuerzo y defectos de una historia (`TieneDeHistoria`): si
+    alguno tiene, `Eliminar` devuelve `backlog.ErrHistoriaConRegistros` sin borrar nada, como la clave foránea de PostgreSQL
+    (RN10). `app` los conecta. Antes, en memoria, esa historia se eliminaba y dejaba los registros huérfanos.
   - `EnSprintCerrado` en memoria devuelve `false` mientras HU-12 no esté en `main`: hoy en memoria no se puede
     asignar una historia a un sprint. Quien integre HU-12 con esta historia tiene que hacer que consulte el estado del
     sprint (queda anotado en el PR).
@@ -157,7 +161,7 @@ Issue: #19 · Feature: `features/hu-06-editar-eliminar-item.feature` · Pasos BD
 | Capa | Código | Tests |
 |---|---|---|
 | Dominio | `internal/domain/backlog/edicion.go` (`Historia.Editar`, `Cambios`) y `eliminar.go` (`Historia.PuedeEliminarse`, `ErrEliminarHistoriaHecha`, `ErrEliminarEnSprintCerrado`, `ErrHistoriaConRegistros`) | `internal/domain/backlog/edicion_test.go`, `eliminar_test.go` |
-| Repositorio en memoria | `ActualizarDatos`, `Eliminar`, `EnSprintCerrado` y los dependientes (`NuevoHistorias(criterios, tareas)`) en `internal/store/memory/historias.go`; `EliminarDeHistoria` en `criterios.go` y `tareas.go` | `internal/store/memory/historias_test.go` |
+| Repositorio en memoria | `ActualizarDatos`, `Eliminar`, `EnSprintCerrado` y los dependientes (`NuevoHistorias(criterios, tareas)`) en `internal/store/memory/historias.go`; `EliminarDeHistoria` en `criterios.go` y `tareas.go`; `ConRegistrosAsociados` en `historias.go` y `TieneDeHistoria` en `registros.go` y `defectos.go` | `internal/store/memory/historias_test.go` |
 | Repositorio PostgreSQL | `ActualizarDatos`, `Eliminar` (transacción) y `EnSprintCerrado` en `internal/store/postgres/historias.go` | `internal/store/postgres/historias_test.go` |
 | Caso de uso | `internal/service/edicion_historias.go` (`EdicionHistorias`: `Buscar`, `Editar`, `PedirEliminacion`, `Eliminar`) | `internal/service/edicion_historias_test.go` |
 | Pantallas | `internal/server/edicion_historias.go`, `historia_editar.html`, `historia_eliminar.html`, los enlaces de `historia.html` y el aviso de `backlog.html` | `internal/server/edicion_historias_test.go` |
@@ -169,7 +173,7 @@ Issue: #19 · Feature: `features/hu-06-editar-eliminar-item.feature` · Pasos BD
 | CA-06.2 No se eliminan historias Hechas ni de un sprint cerrado | Eliminar según el estado de la historia · Una historia de un sprint cerrado no se elimina · La confirmación explica por qué no se puede eliminar | `TestPuedeEliminarse_PendienteEnSprintOEnProgreso_Vale`, `TestPuedeEliminarse_HistoriaHecha_NoSeElimina`, `TestPuedeEliminarse_DeUnSprintCerrado_NoSeElimina`, `TestPuedeEliminarse_HechaYDeUnSprintCerrado_InformaQueEstaHecha`, `TestHistorias_EnSprintCerrado` (PostgreSQL), `TestPedirEliminacion_HistoriaHecha_InformaElImpedimento`, `TestPedirEliminacion_DeUnSprintCerrado_InformaElImpedimento`, `TestEliminarHistoria_PendienteEnSprintOEnProgreso_Vale`, `TestEliminarHistoria_HistoriaHecha_NoSeElimina`, `TestEliminarHistoria_DeUnSprintCerrado_NoSeElimina`, `TestPantallaDeEliminar_HistoriaHecha_ExplicaPorQueNoSePuede`, `TestEliminarHistoria_HistoriaHecha_Responde409YNoBorraNada` |
 | CA-06.3 Eliminar pide confirmación | Eliminar pide confirmación · Confirmar elimina la historia con sus criterios y sus tareas | `TestPedirEliminacion_CuentaLosCriteriosYLasTareas_YNoEliminaNada`, `TestPantallaDeEliminar_PideConfirmacionYDiceQueSePierde`, `TestPantallaDeEliminar_DiceLaCantidadEnSingularOEnPlural`, `TestEliminarHistoria_Confirmado_EliminaYVuelveAlBacklog`, `TestListaDelBacklog_Eliminada_SoloMuestraUnNumeroValido` |
 | RN9 Criterios y tareas se eliminan con la historia | Confirmar elimina la historia con sus criterios y sus tareas | `TestHistorias_Eliminar_BorraTambienLosCriteriosYLasTareas` (memoria), `TestHistorias_Eliminar_BorraLaHistoriaConSusCriteriosYSusTareas`, `TestHistorias_Eliminar_NoTocaLosCriteriosNiLasTareasDeLasDemas` (PostgreSQL), `TestEliminarHistoria_Valido_EliminaLaHistoriaConSusCriteriosYTareas` |
-| RN10 Registros asociados | — (la base lo rechaza: se prueba con PostgreSQL) | `TestHistorias_Eliminar_ConRegistrosAsociados_NoBorraNada`, `TestErrHistoriaConRegistros_Mensaje`, `TestEliminarHistoria_ConRegistrosAsociados_DevuelveElError`, `TestEliminarHistoria_ConRegistrosAsociados_Responde409` |
+| RN10 Registros asociados | — (se prueba en los repositorios y en la aplicación, con y sin base) | `TestHistorias_Eliminar_ConEsfuerzoRegistrado_DevuelveErrHistoriaConRegistrosYNoBorraNada`, `TestHistorias_Eliminar_ConUnDefecto_DevuelveErrHistoriaConRegistrosYNoBorraNada`, `TestHistorias_Eliminar_ConRegistrosDeOtraHistoria_Elimina`, `TestRegistros_TieneDeHistoria`, `TestDefectos_TieneDeHistoria` (memoria), `TestNewHandlerConBase_SinURLNoSeEliminaUnaHistoriaConHorasRegistradas`, `TestNewHandlerConBase_SinURLNoSeEliminaUnaHistoriaConUnDefecto`, `TestNewHandlerConBase_ConURLNoSeEliminaUnaHistoriaConHorasRegistradas`, `TestNewHandlerConBase_ConURLNoSeEliminaUnaHistoriaConUnDefecto`, `TestHistorias_Eliminar_ConRegistrosAsociados_NoBorraNada`, `TestErrHistoriaConRegistros_Mensaje`, `TestEliminarHistoria_ConRegistrosAsociados_DevuelveElError`, `TestEliminarHistoria_ConRegistrosAsociados_Responde409` |
 | RN11 Numeración | Eliminar una historia del medio no renumera las demás · Eliminar la última historia libera su número | `TestHistorias_Eliminar_BorraLaHistoriaYLasDemasConservanSuNumero`, `TestEliminarHistoria_LasDemasConservanSuNumero`, `TestEliminarHistoria_LaUltima_LiberaSuNumero` |
 | Se guarda en la base | — | `TestHistorias_ActualizarDatos`, `TestHistorias_Eliminar_BorraLaHistoriaConSusCriteriosYSusTareas`, `TestNewHandlerConBase_SinURLSePuedeEditarYEliminarUnaHistoria`, `TestNewHandlerConBase_ConURLLaEdicionYLaEliminacionSobrevivenAUnReinicio` |
 | Proyecto o historia inexistente (sección 7) | — | `TestEdicionDeHistorias_ProyectoOHistoriaInexistente_DevuelveNoEncontrado`, `TestEliminarHistoria_ProyectoOHistoriaInexistente_DevuelveNoEncontrado`, `TestEditarHistoria_ProyectoOHistoriaInexistente_Responde404`, `TestEliminarHistoria_ProyectoOHistoriaInexistente_Responde404` |

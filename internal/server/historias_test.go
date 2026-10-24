@@ -176,6 +176,9 @@ func (historiasCaidas) ListarPorProyecto(context.Context, int64) ([]backlog.Hist
 func (historiasCaidas) Guardar(_ context.Context, h backlog.Historia) (backlog.Historia, error) {
 	return h, errBaseCaida
 }
+func (historiasCaidas) ActualizarOrden(context.Context, int64, map[int64]int) error {
+	return errBaseCaida
+}
 
 // Si falla la base se muestra un mensaje general, sin detalles internos.
 func TestHistorias_ErrorDeLaBase_MuestraUnMensajeGeneral(t *testing.T) {

@@ -52,7 +52,7 @@ type VistaSprint struct {
 	Asignadas     []Asignada  // las del sprint, en el orden del backlog
 	Comprometidos int         // SP de las asignadas
 	Completados   int         // SP de las asignadas Hechas (HU-13)
-	Candidatas    []Candidata // las del backlog en Pendiente y sin sprint
+	Candidatas    []Candidata // las del backlog en Pendiente y sin sprint, en el orden del backlog (HU-09 RN9)
 	Aviso         string      // aviso por velocidad (HU-12 RN5), vacío si no supera
 }
 
@@ -114,6 +114,7 @@ func (s *Asignaciones) Ver(ctx context.Context, proyectoID int64, numeroSprint i
 			v.Completados += *h.StoryPoints
 		}
 	}
+	candidatas, _ = backlog.Ordenar(candidatas) // todas son Pendiente: el orden del backlog (HU-09 RN9)
 	abierto := datosDe(destino)
 	abierto.Cerrado = false // el motivo es el de la historia, aunque el sprint esté cerrado
 	for _, h := range candidatas {

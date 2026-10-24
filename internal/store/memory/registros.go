@@ -30,6 +30,13 @@ func (r *Registros) Guardar(_ context.Context, reg effort.Registro) (effort.Regi
 	return reg, nil
 }
 
+// TieneDeHistoria dice si hay algún registro de esfuerzo de esa historia (HU-06, RN10: con registros no se elimina).
+func (r *Registros) TieneDeHistoria(historiaID int64) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return historiaID != 0 && slices.ContainsFunc(r.lista, func(reg effort.Registro) bool { return reg.HistoriaID == historiaID })
+}
+
 // ListarPorHistoria devuelve los registros de la historia, la fecha más reciente primero.
 func (r *Registros) ListarPorHistoria(_ context.Context, historiaID int64) ([]effort.Registro, error) {
 	return r.filtrar(func(reg effort.Registro) bool { return reg.HistoriaID == historiaID }), nil
