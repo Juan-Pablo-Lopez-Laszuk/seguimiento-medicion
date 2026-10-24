@@ -52,22 +52,32 @@ func (s *Historias) Crear(ctx context.Context, proyectoID int64, d backlog.Datos
 }
 
 // VistaBacklog es lo que muestra la página del backlog (HU-09): las historias que no están Hechas, en el orden del
-// backlog, y las Hechas aparte, la más reciente primero.
+// backlog, y las Hechas aparte, la más reciente primero. Con un filtro (HU-10) son solo las que lo cumplen; Total es la
+// cantidad de historias del proyecto, para mostrar "3 de 10".
 type VistaBacklog struct {
 	Proyecto   project.Proyecto
 	Pendientes []backlog.Historia
 	Hechas     []backlog.Historia
+	Filtro     backlog.Filtro
+	Total      int
 }
 
-// Backlog devuelve el proyecto con su backlog ordenado (backlog.Ordenar). Si el proyecto no existe, el error es
-// project.ErrNoEncontrado.
+// Backlog devuelve el proyecto con su backlog completo y ordenado (backlog.Ordenar). Si el proyecto no existe, el
+// error es project.ErrNoEncontrado.
 func (s *Historias) Backlog(ctx context.Context, proyectoID int64) (VistaBacklog, error) {
+	return s.Buscar(ctx, proyectoID, backlog.Filtro{})
+}
+
+// Buscar devuelve el backlog ordenado con solo las historias que cumplen el filtro (HU-10), en cada sección y en el
+// mismo orden. Si el proyecto no existe, el error es project.ErrNoEncontrado.
+func (s *Historias) Buscar(ctx context.Context, proyectoID int64, f backlog.Filtro) (VistaBacklog, error) {
 	p, lista, err := s.Listar(ctx, proyectoID)
 	if err != nil {
 		return VistaBacklog{}, err
 	}
 	pendientes, hechas := backlog.Ordenar(lista)
-	return VistaBacklog{Proyecto: p, Pendientes: pendientes, Hechas: hechas}, nil
+	return VistaBacklog{Proyecto: p, Pendientes: backlog.Filtrar(pendientes, f), Hechas: backlog.Filtrar(hechas, f),
+		Filtro: f, Total: len(lista)}, nil
 }
 
 // Mover sube o baja la historia HU-numero un lugar dentro de su prioridad (HU-09), guarda el orden nuevo de su
