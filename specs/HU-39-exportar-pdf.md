@@ -1,12 +1,14 @@
 # SPEC-39 · Exportar reporte a PDF
 
-**Historia:** HU-39 (#50) · **Responsable:** López, Juan Pablo · **Sprint:** 4 · **Estado:** Borrador
+**Historia:** HU-39 (#50) · **Responsable:** López, Juan Pablo · **Sprint:** 4 · **Estado:** Revisada
 
 > Especificación escrita antes del código (SDD). Pasa a PDF los dos reportes que ya existen: el de un sprint (HU-37) y
 > el del proyecto (HU-38). No calcula nada nuevo: el PDF se arma con los mismos datos y los mismos textos que la
 > pantalla, así no pueden dar distinto (CA-39.2).
 > Spike del 24/10 (#375): `codeberg.org/go-pdf/fpdf` v0.11.1 (Go puro, licencia MIT, fuentes base incluidas) genera
 > 12 páginas con tablas en unos 20 ms. La v0.12 pide Go 1.25 y el módulo está en 1.24, así que va la v0.11.1.
+> Revisada por Juan Pablo el 24/10: los dos PDF (sprint y proyecto), el nombre con la fecha AAAA-MM-DD, las métricas
+> en tabla, el pie con la fecha y la página, y `?` en lugar de los caracteres que el PDF no tiene.
 
 ## 1. Objetivo
 
