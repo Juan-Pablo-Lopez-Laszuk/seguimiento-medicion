@@ -31,8 +31,8 @@ Esta matriz la comprueba `features/trazabilidad_test.go`, que corre con `go test
 Cuando una historia pendiente se mergea, se pasa su fila a **Cubierto** con sus escenarios y tests. Un requerimiento nuevo se
 suma a la lista del test y a la matriz.
 
-**Estado al 22/10/2026: 50 de 59 requerimientos cubiertos.** Los 9 pendientes son de Sprint 3 y 4: Planning Poker
-(HU-17 a HU-22), los gráficos del dashboard (HU-36), el reporte de un proyecto (HU-38) y la exportación a PDF (HU-39).
+**Estado al 24/10/2026: 51 de 59 requerimientos cubiertos.** Los 8 pendientes son de Sprint 3 y 4: Planning Poker
+(HU-17 a HU-22), los gráficos del dashboard (HU-36) y la exportación a PDF (HU-39).
 
 > Lo que no es un requerimiento de la consigna (el login de TEC-05, el deploy de TEC-04, el umbral de cobertura de TEC-06
 > y el diseño base de TEC-07) se traza en su propia especificación.
@@ -129,7 +129,7 @@ suma a la lista del test y a la matriz.
 | Requerimiento | Historia | Escenarios BDD | Tests | Estado |
 |---|---|---|---|---|
 | Reportes · Reporte de un Sprint | HU-37 | `hu-37-reporte-sprint.feature` «Las métricas del reporte de un sprint cerrado» · «Reporte de un sprint que todavía no se cerró» | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_Abierto`, `TestReporteDeSprint_MuestraElReporte` | Cubierto |
-| Reportes · Reporte de un proyecto | HU-38 | — | — | Pendiente: HU-38 |
+| Reportes · Reporte de un proyecto | HU-38 | `hu-38-reporte-proyecto.feature` «Un bloque por sprint igual a su reporte» · «La evolución de la velocidad» · «Reporte de un proyecto sin sprints» | `TestReporteDeProyecto_UnBloquePorSprint`, `TestReporteDeProyecto_EvolucionDeLaVelocidad`, `TestReporteDeProyecto_MuestraElReporte` | Cubierto |
 | Reportes · Historias planificadas y completadas | HU-37 | `hu-37-reporte-sprint.feature` «El reporte conserva la foto del cierre» · «Las historias del reporte con sus horas» | `TestReporteDeSprint_ConservaLaFoto`, `TestReporteDeSprint_Cerrado` | Cubierto |
 | Reportes · Estimaciones | HU-37 | `hu-37-reporte-sprint.feature` «Las historias del reporte con sus horas» | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_MuestraElReporte` | Cubierto |
 | Reportes · Esfuerzo registrado | HU-37 | `hu-37-reporte-sprint.feature` «Las historias del reporte con sus horas» | `TestReporteDeSprint_Cerrado`, `TestReporteDeSprint_MuestraElReporte` | Cubierto |
