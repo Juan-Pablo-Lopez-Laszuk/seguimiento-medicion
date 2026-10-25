@@ -166,6 +166,7 @@ func rutas(r chi.Router, dep Dependencias) {
 	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	r.Get("/proyectos/{id}/horas", horas{casos: dep.Horas}.ver)
 	gr := graficos{casos: dep.Graficos}
+	r.Get("/proyectos/{id}/graficos", gr.ver)
 	r.Get("/proyectos/{id}/graficos/datos", gr.datos)
 	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
 }

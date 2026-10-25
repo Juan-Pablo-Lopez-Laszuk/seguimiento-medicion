@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -16,6 +17,31 @@ import (
 // graficos agrupa los handlers de los gráficos de métricas de un proyecto (HU-36).
 type graficos struct {
 	casos *service.Graficos
+}
+
+// paginaGraficos son los datos de graficos.html: los de los gráficos y la ruta del endpoint que los devuelve en JSON.
+type paginaGraficos struct {
+	service.DatosGraficos
+	RutaDatos string
+}
+
+// ver muestra la página de gráficos. Las tablas con los datos salen del servidor; los gráficos los dibuja Chart.js con
+// el JSON de datos.
+func (h graficos) ver(w http.ResponseWriter, r *http.Request) {
+	proyectoID, ok := idDeProyecto(w, r)
+	if !ok {
+		return
+	}
+	numeroSprint, _ := strconv.Atoi(r.URL.Query().Get("sprint"))
+	d, err := h.casos.Datos(r.Context(), proyectoID, numeroSprint)
+	if respondeErrorDeTareas(w, err, "ver los gráficos") {
+		return
+	}
+	pagina := paginaGraficos{DatosGraficos: d, RutaDatos: fmt.Sprintf("/proyectos/%d/graficos/datos", proyectoID)}
+	if d.Burndown != nil {
+		pagina.RutaDatos += fmt.Sprintf("?sprint=%d", d.Burndown.Numero)
+	}
+	render(w, http.StatusOK, "graficos.html", Pagina{Titulo: "Gráficos", Datos: pagina})
 }
 
 // datos responde en JSON los datos de los cinco gráficos (CA-36.2). ?sprint= elige el sprint del burndown; un valor

@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/defect"
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/effort"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/project"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/sprint"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/metrics"
@@ -202,4 +204,62 @@ func sprintDelReporte(rep ReporteProyecto, numero int, siNo ReporteSprint) Repor
 // unDecimalNumero redondea a 1 decimal (RG-2).
 func unDecimalNumero(v float64) float64 {
 	return math.Round(v*10) / 10
+}
+
+// FilaGrafico es una fila de la tabla "Ver los datos" de un gráfico: el nombre y sus valores ya escritos ("6,7", o
+// "—" si el día no pasó).
+type FilaGrafico struct {
+	Nombre  string
+	Valores []string
+}
+
+// FilasStoryPoints devuelve, por sprint, los SP planificados y completados.
+func (d DatosGraficos) FilasStoryPoints() []FilaGrafico {
+	return filasDe(d.StoryPoints.Sprints, d.StoryPoints.Planificados, d.StoryPoints.Completados)
+}
+
+// FilasVelocidad devuelve, por sprint cerrado, los SP completados y la velocidad hasta ese sprint.
+func (d DatosGraficos) FilasVelocidad() []FilaGrafico {
+	return filasDe(d.Velocidad.Sprints, d.Velocidad.Completados, d.Velocidad.Velocidad)
+}
+
+// FilasHoras devuelve, por sprint, las horas estimadas y reales.
+func (d DatosGraficos) FilasHoras() []FilaGrafico {
+	return filasDe(d.Horas.Sprints, d.Horas.Estimadas, d.Horas.Reales)
+}
+
+// FilasDefectos devuelve, por severidad, los defectos detectados y los abiertos.
+func (d DatosGraficos) FilasDefectos() []FilaGrafico {
+	filas := make([]FilaGrafico, len(d.Defectos.Severidades))
+	for i, sev := range d.Defectos.Severidades {
+		filas[i] = FilaGrafico{Nombre: sev, Valores: []string{strconv.Itoa(d.Defectos.Detectados[i]), strconv.Itoa(d.Defectos.Abiertos[i])}}
+	}
+	return filas
+}
+
+// FilasBurndown devuelve, por día, la línea ideal y los SP pendientes ("—" si el día no pasó).
+func (d DatosGraficos) FilasBurndown() []FilaGrafico {
+	if d.Burndown == nil {
+		return nil
+	}
+	filas := make([]FilaGrafico, len(d.Burndown.Dias))
+	for i, dia := range d.Burndown.Dias {
+		pendientes := "—"
+		if p := d.Burndown.Pendientes[i]; p != nil {
+			pendientes = effort.FormatearHoras(*p)
+		}
+		filas[i] = FilaGrafico{Nombre: dia, Valores: []string{effort.FormatearHoras(d.Burndown.Ideal[i]), pendientes}}
+	}
+	return filas
+}
+
+func filasDe(nombres []string, columnas ...[]float64) []FilaGrafico {
+	filas := make([]FilaGrafico, len(nombres))
+	for i, n := range nombres {
+		filas[i] = FilaGrafico{Nombre: n}
+		for _, c := range columnas {
+			filas[i].Valores = append(filas[i].Valores, effort.FormatearHoras(c[i]))
+		}
+	}
+	return filas
 }
