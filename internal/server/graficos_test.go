@@ -131,3 +131,41 @@ func TestDatosDeGraficos_ProyectoInexistente_404EnJSON(t *testing.T) {
 		}
 	}
 }
+
+// HU-36 · CA-36.1 · la página tiene los cinco gráficos, Chart.js por CDN, la ruta de los datos y una tabla con los
+// datos de cada gráfico (se ve sin JavaScript y se imprime)
+func TestPaginaDeGraficos_MuestraLosCincoGraficos(t *testing.T) {
+	rec := get(conGraficos(t, true), "/proyectos/1/graficos?sprint=abc")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("código = %d, se esperaba %d", rec.Code, http.StatusOK)
+	}
+	verificarContiene(t, rec.Body.String(),
+		"<title>Gráficos · Software Metrics</title>",
+		`id="grafico-velocidad"`, `id="grafico-story-points"`, `id="grafico-horas"`, `id="grafico-defectos"`, `id="grafico-burndown"`,
+		`src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"`,
+		`data-datos="/proyectos/1/graficos/datos?sprint=1"`,
+		"Ver los datos", "Todavía no hay sprints cerrados.",
+		"<td>Sprint 1</td><td class=\"text-end\">8</td><td class=\"text-end\">5</td>", // SP planificados y completados
+		"<td>Alta</td><td class=\"text-end\">1</td><td class=\"text-end\">1</td>",     // defectos
+		"Burndown del Sprint 1", "<td>13/10</td><td class=\"text-end\">6,7</td><td class=\"text-end\">3</td>",
+		"<td>16/10</td><td class=\"text-end\">2,7</td><td class=\"text-end\">—</td>",
+		`href="/proyectos/1/graficos?sprint=1"`,
+	)
+}
+
+// HU-36 · RN5 · sin sprints no hay burndown
+func TestPaginaDeGraficos_SinSprints(t *testing.T) {
+	verificarContiene(t, get(conGraficos(t, false), "/proyectos/1/graficos").Body.String(), "Sin sprints todavía.")
+}
+
+// A los gráficos se llega desde la vista del proyecto.
+func TestProyecto_EnlazaASusGraficos(t *testing.T) {
+	verificarContiene(t, get(conProyecto(t), "/proyectos/1").Body.String(), `href="/proyectos/1/graficos"`, "Gráficos")
+}
+
+func TestPaginaDeGraficos_ProyectoInexistente_Responde404(t *testing.T) {
+	if rec := get(conGraficos(t, false), "/proyectos/99/graficos"); rec.Code != http.StatusNotFound {
+		t.Errorf("código = %d, se esperaba %d", rec.Code, http.StatusNotFound)
+	}
+}
