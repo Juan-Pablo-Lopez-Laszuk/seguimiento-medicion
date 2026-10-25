@@ -1,6 +1,6 @@
 # SPEC-36 · Gráficos de métricas
 
-**Historia:** HU-36 (#14) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Borrador
+**Historia:** HU-36 (#14) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las métricas que ya existen (M1 a M9 de `docs/metricas.md`), el
 > reporte de cada sprint (HU-37, con la foto del cierre de HU-14) y la fecha en que se completó cada historia (HU-13).
@@ -99,4 +99,15 @@ La página los pide con JavaScript y dibuja los gráficos con Chart.js.
 
 Issue: #14 · Feature: `features/hu-36-graficos.feature` · Pasos BDD: `features/hu36_steps_test.go`
 
-(Se completa al implementar.)
+| Tarea | Capa | Código | Tests |
+|---|---|---|---|
+| T2 (#208) | Métrica | `internal/metrics/burndown.go` (`CalcularBurndown`, `HistoriaCompletada`, `DiaBurndown`, `ErrSprintSinDias`) | `internal/metrics/burndown_test.go` |
+| T3 (#209) | Caso de uso | `internal/service/graficos.go` (`Graficos.Datos`, `DatosGraficos` y las filas de cada tabla) | `internal/service/graficos_test.go` |
+| T4 (#210) | Endpoint JSON | `internal/server/graficos.go` (`datos`, `/proyectos/{id}/graficos/datos`) | `TestDatosDeGraficos_RespondeJSON`, `_SinSprints_BurndownNulo`, `_ProyectoInexistente_404EnJSON` |
+| T5 (#211) | Pantalla | `internal/server/graficos.go` (`ver`), `web/templates/paginas/graficos.html` (Chart.js 4.4.1 por CDN), botón en `proyecto.html` | `TestPaginaDeGraficos_*`, `TestProyecto_EnlazaASusGraficos` |
+| T6 (#212) | Integración y BDD | `app/app.go` arma `Graficos` | `app/graficos_test.go`, `features/hu36_steps_test.go` |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-36.1 Los cinco gráficos | Velocidad y story points por sprint · Horas por sprint y defectos por severidad · Burndown del sprint activo · Burndown de un sprint cerrado · Proyecto sin sprints | `TestCalcularBurndown_*`, `TestDatosDeGraficos_SeriesPorSprint`, `TestDatosDeGraficos_Burndown`, `TestPaginaDeGraficos_MuestraLosCincoGraficos` |
+| CA-36.2 Endpoint JSON con tests | Los datos salen en JSON · Proyecto sin sprints · Proyecto inexistente | `TestDatosDeGraficos_RespondeJSON`, `TestDatosDeGraficos_SinSprints_BurndownNulo`, `TestDatosDeGraficos_ProyectoInexistente_404EnJSON`, `app/graficos_test.go` |

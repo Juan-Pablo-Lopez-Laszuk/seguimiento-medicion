@@ -122,7 +122,7 @@ suma a la lista del test y a la matriz.
 | Requerimiento | Historia | Escenarios BDD | Tests | Estado |
 |---|---|---|---|---|
 | Dashboard · Estado del proyecto | HU-35, HU-04 | `hu-35-panel.feature` «Panel con datos» · «Panel de un proyecto recién creado»; `hu-04-estado-proyecto.feature` «Proyecto en curso con su sprint activo» | `TestPanel_ConDatos`, `TestPanel_SinDatos`, `TestPanel_SinDatos_MuestraLasSeisTarjetas` | Cubierto |
-| Dashboard · Representaciones gráficas de métricas | HU-36 | — | — | Pendiente: HU-36, Sprint 4 |
+| Dashboard · Representaciones gráficas de métricas | HU-36 | `hu-36-graficos.feature` «Velocidad y story points por sprint» · «Horas por sprint y defectos por severidad» · «Burndown del sprint activo» · «Los datos salen en JSON» | `TestCalcularBurndown_SprintEnCurso`, `TestDatosDeGraficos_SeriesPorSprint`, `TestDatosDeGraficos_RespondeJSON`, `TestPaginaDeGraficos_MuestraLosCincoGraficos` | Cubierto |
 
 ## 9. Reportes
 
