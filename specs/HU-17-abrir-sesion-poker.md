@@ -1,6 +1,6 @@
 # SPEC-17 · Abrir sesión de Planning Poker
 
-**Historia:** HU-17 (#25) · **Responsable:** Piastrellini, Mariano · **Sprint:** 4 · **Estado:** Borrador
+**Historia:** HU-17 (#25) · **Responsable:** Piastrellini, Mariano · **Sprint:** 4 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las tablas `sesiones_poker`, `rondas_poker` y `votos` que existen
 > desde la migración 0001 (`docs/modelo-datos.md`), la escala de story points de HU-16 (`backlog.EscalaStoryPoints`),
@@ -24,16 +24,16 @@ conjunto: la sesión queda abierta con su primera ronda y participan los integra
 
 ## 3. Salidas esperadas
 
-- **Página de la historia** (`/proyectos/{id}/backlog/{numero}`): una sección **Planning Poker**.
-  - Si la historia no tiene una sesión abierta y no está Hecha: el botón **Abrir Planning Poker** (sin login, con el
-    desplegable **Quién abre**, que ofrece los integrantes activos).
-  - Si ya tiene una abierta: el enlace **Ir a la sesión de Planning Poker**.
-  - Si está Hecha: "La historia está Hecha: ya no se estima." y ningún botón.
-- **Abrir** (`POST /proyectos/{id}/backlog/{numero}/poker`): crea la sesión **Abierta** con la **Ronda 1** y lleva a la
-  página de la sesión con el mensaje **"Sesión de Planning Poker abierta."** (303).
+- **Página de la historia** (`/proyectos/{id}/backlog/{numero}`): el enlace **Planning Poker**, que lleva a la página
+  de la sesión de esa historia.
 - **Página de la sesión** (`GET /proyectos/{id}/backlog/{numero}/poker`): la historia (identificador, título y story
-  points actuales), el estado de la sesión, la ronda actual ("Ronda 1") y la lista de **participantes**: los integrantes
-  activos del proyecto, con su rol (CA-17.3). Desde HU-18 esta página tiene además el formulario para votar.
+  points actuales) y la lista de **participantes**, los integrantes activos del proyecto con su rol (CA-17.3). Además:
+  - **Con una sesión abierta:** "Sesión abierta · Ronda 1". Desde HU-18 tiene además el formulario para votar.
+  - **Sin sesión abierta:** el botón **Abrir sesión** (sin login, con el desplegable **Quién abre**, que ofrece los
+    integrantes activos).
+  - **Historia Hecha:** "La historia está Hecha: ya no se estima." y ningún botón.
+- **Abrir** (`POST /proyectos/{id}/backlog/{numero}/poker`): crea la sesión **Abierta** con la **Ronda 1** y vuelve a la
+  página de la sesión con el mensaje **"Sesión de Planning Poker abierta."** (303).
 
 ## 4. Reglas de negocio
 
@@ -67,26 +67,27 @@ conjunto: la sesión queda abierta con su primera ronda y participan los integra
 |---|---|
 | Historia Pendiente, En sprint o En progreso | Se abre (RN1) |
 | Historia que ya tiene story points | Se abre: se puede re-estimar (RN1) |
-| Historia Hecha | No se abre (CA-17.1) y la página no ofrece el botón |
-| Ya hay una sesión abierta | No se abre otra (CA-17.2): error con el enlace a la abierta |
+| Historia Hecha | No se abre (CA-17.1) y la página de la sesión no ofrece el botón |
+| Ya hay una sesión abierta | No se abre otra (CA-17.2): la página muestra la abierta con el aviso |
 | Dos pedidos de abrir a la vez | Se abre una sola (índice único) |
 | Un integrante dado de baja | No aparece entre los participantes (CA-17.3) |
 | Un integrante nuevo con la sesión abierta | Aparece entre los participantes al recargar (RN5) |
 | El proyecto no tiene Agile Enabler activo | Nadie puede abrir: el mensaje dice que hay que registrarlo en Integrantes |
-| Ver la sesión de una historia sin sesión abierta | 404 con el enlace a la historia |
+| Ver la página de una historia sin sesión abierta | Se ofrece abrirla |
+| Eliminar una historia que tuvo una sesión | No se elimina (HU-06, RN10): la sesión es un registro asociado |
 
 ## 7. Condiciones de error
 
 | Situación | Error | Código | Mensaje al usuario |
 |---|---|---|---|
 | La historia está Hecha | `poker.ErrHistoriaHecha` | 409 | "La historia está Hecha: ya no se estima." |
-| Ya hay una sesión abierta | `poker.ErrSesionYaAbierta` | 409 | "La historia ya tiene una sesión de Planning Poker abierta." y el enlace **Ir a la sesión** |
+| Ya hay una sesión abierta | `poker.ErrSesionYaAbierta` | 409 | "La historia ya tiene una sesión de Planning Poker abierta.", con la sesión abierta |
 | Quien abre no es el Agile Enabler activo | `poker.ErrSoloAgileEnabler` | 403 | "Solo el Agile Enabler del proyecto abre una sesión de Planning Poker." |
 | Sin login, no se eligió quién abre | `poker.ErrSoloAgileEnabler` | 422 | El mismo mensaje, debajo del desplegable |
 | Con login, la cuenta no es integrante del proyecto | `member.ErrNoEsIntegrante` | 403 | "No sos integrante de este proyecto." |
 | El proyecto o la historia no existen | — | 404 | Los de siempre |
-| No hay sesión abierta (al verla) | `poker.ErrSesionNoEncontrada` | 404 | "Esta historia no tiene una sesión de Planning Poker abierta." |
-| Falla la base | — | 500 | "No se pudo abrir la sesión. Probá de nuevo en unos minutos." |
+| Falla la base al abrir | — | 500 | "No se pudo abrir la sesión. Probá de nuevo en unos minutos." |
+| Falla la base al ver la página | — | 500 | "No se pudo cargar la sesión de Planning Poker. Probá de nuevo en unos minutos." |
 
 ## 8. Criterios de aceptación (issue #25)
 
@@ -100,8 +101,8 @@ conjunto: la sesión queda abierta con su primera ronda y participan los integra
    HU-22 (registrar el valor acordado).
 2. **Los participantes no se guardan:** son los integrantes activos en cada momento (RN5). Así no hace falta migración.
 3. **La Ronda 1 se crea al abrir**, en la misma transacción (RN3).
-4. **Una página por sesión**, colgada de la historia (`/proyectos/{id}/backlog/{numero}/poker`), con el botón en la
-   página de la historia.
+4. **Una página por sesión**, colgada de la historia (`/proyectos/{id}/backlog/{numero}/poker`), con el enlace en la
+   página de la historia. Sin sesión abierta, la misma página ofrece abrirla.
 5. **Sin migración:** alcanzan las tablas de la 0001 (la Planning preveía una; no hace falta).
 6. **Dos PRs:** el primero, hoy, con esta spec, la feature y los tipos del modelo común, para que HU-18, HU-19 y HU-22
    arranquen sobre algo mergeado; el segundo, con el código de HU-17 (TDD).
@@ -152,7 +153,7 @@ HU-18 agrega `RepositorioVotosPoker` (votar y listar los votos de una ronda), HU
 
 ### Página y quién es quién
 
-- La página de la sesión es la de HU-17 (`web/templates/paginas/poker.html`, handler `poker` en
+- La página de la sesión es la de HU-17 (`web/templates/paginas/poker.html`, handlers `pokerHandlers` en
   `internal/server/poker.go`). HU-18 agrega el formulario de votar, HU-19 los votos revelados y HU-22 el valor
   acordado, cada uno en un bloque `{{define}}` propio para no tocar las mismas líneas.
 - HU-17 deja en `internal/server/poker.go` la función **`quienParticipa`**, que devuelve el integrante que hace el
@@ -164,12 +165,19 @@ HU-18 agrega `RepositorioVotosPoker` (votar y listar los votos de una ronda), HU
 
 Issue: #25 · Feature: `features/hu-17-abrir-sesion-poker.feature` · Pasos BDD: `features/hu17_steps_test.go`
 
-| Tarea | Qué | Dónde |
+| Tarea | Código | Tests |
 |---|---|---|
-| T1 (#268) | Spec y escenarios | Esta spec y la feature |
-| T2 (#269) | Dominio | `internal/domain/poker` |
-| T3 (#270) | Repositorios | `internal/store/memory/poker.go` y `internal/store/postgres/poker.go` |
-| T4 (#271) | Caso de uso | `internal/service/poker.go` |
-| T5 (#272) | Pantalla | `internal/server/poker.go`, `web/templates/paginas/poker.html` y la sección de `historia.html` |
-| T6 (#273) | App y BDD | `app/app.go` y `features/hu17_steps_test.go` |
-| T7 (#274) | Documentación | Esta spec, la matriz de trazabilidad y el registro de IA |
+| T1 (#268) | Esta spec y la feature | — |
+| T2 (#269) | `internal/domain/poker/poker.go` (modelo común) y `abrir.go` (`PuedeAbrir`, `PuedeConducir`, `Participantes`) | `internal/domain/poker/abrir_test.go` |
+| T3 (#270) | `internal/store/memory/poker.go` y `internal/store/postgres/poker.go` (`Abrir`, `SesionAbierta`; en memoria, `TieneDeHistoria`) | `internal/store/memory/poker_test.go`, `internal/store/postgres/poker_test.go` |
+| T4 (#271) | `internal/service/poker.go` (`RepositorioSesionesPoker`, `Poker.Abrir`, `Poker.Ver`) | `internal/service/poker_test.go` |
+| T5 (#272) | `internal/server/poker.go` (`pokerHandlers`, `quienParticipa`), `web/templates/paginas/poker.html` y el enlace en `historia.html` | `internal/server/poker_test.go` |
+| T6 (#273) | `app/app.go` y `features/hu17_steps_test.go` | `app/poker_test.go` y los escenarios |
+| T7 (#274) | Esta spec, la matriz de trazabilidad y el registro de IA | — |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-17.1 Solo historias no Hechas | El Agile Enabler abre una sesión · Historias que se pueden estimar · No se abre una sesión para una historia Hecha | `TestPuedeAbrir`, `TestPuedeAbrir_HistoriaYaEstimada`, `TestAbrirPoker_Errores`, `TestPoker_AbrirSinLogin_Errores`, `TestPoker_HistoriaHecha_NoOfreceAbrir` |
+| CA-17.2 Una sola sesión abierta | No se abre una segunda sesión para la misma historia | `TestPoker_AbrirDosVecesLaMismaHistoria` (memoria), `TestPoker_AbrirDosVecesALaVez` (PostgreSQL), `TestPoker_DespuesDeCerrarSeAbreOtra`, `TestAbrirPoker_DosVeces`, `TestPoker_AbrirDosVeces` |
+| CA-17.3 Participan los activos | El Agile Enabler abre una sesión · Un integrante que se da de baja deja de participar | `TestParticipantes`, `TestVerPoker_LosParticipantesSonLosActivosDeCadaMomento`, `TestPoker_SinSesion_OfreceAbrirla` |
+| RN4 y RN6 Quién abre | Un Product Builder no abre una sesión · Un Agile Enabler dado de baja no abre una sesión | `TestPuedeConducir`, `TestAbrirPoker_IntegranteDeOtroProyecto`, `TestPoker_ConLogin_AbreElIntegranteDeLaCuenta`, `TestPoker_ConLogin_UnaProductBuilderNoAbre`, `TestPoker_ConLogin_NoEsIntegrante` |
