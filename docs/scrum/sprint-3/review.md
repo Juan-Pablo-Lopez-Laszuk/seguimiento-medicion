@@ -45,11 +45,11 @@ Además, la app tiene login en producción (TEC-05, adelantada del Sprint 4).
 |---|---|---|---|---|
 | #7 | HU-29 · Consultar defectos | 2 | Carolina | PR #412 · filtros en la página de defectos |
 | #4 | HU-26 · Consultar y corregir registros de esfuerzo | 3 | Carolina | PR #417 · `/proyectos/{id}/esfuerzo` |
-| #49 | HU-38 · Reporte de proyecto | 3 | Juan Pablo | PR #423 · `/proyectos/{id}/reporte` [A CONFIRMAR si se mergea antes del cierre] |
+| #49 | HU-38 · Reporte de proyecto | 3 | Juan Pablo | PR #423 (mergeado el 25/10) · `/proyectos/{id}/reporte` |
 
 Fuera del compromiso y sin SP: arreglo de HU-06 en el modo memoria (PR #420, Mariano) y la Planning del Sprint 4 (#425).
 
-**Velocidad del Sprint 3: 45 SP** (48 si entra HU-38). Sprint 1: 39 SP · Sprint 2: 33 SP.
+**Velocidad del Sprint 3: 48 SP** (40 comprometidos y 8 adelantados). Sprint 1: 39 SP · Sprint 2: 33 SP.
 
 ## Demo
 
