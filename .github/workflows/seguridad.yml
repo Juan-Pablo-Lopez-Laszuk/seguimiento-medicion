@@ -1,0 +1,45 @@
+# Seguridad: govulncheck (la herramienta oficial de Go) cruza las dependencias de go.mod y la biblioteca estándar
+# contra la base de vulnerabilidades de Go (vuln.go.dev) y avisa solo de las que nuestro código llega a llamar.
+# Corre en cada Pull Request y en cada push a main, y además todos los lunes: así una vulnerabilidad publicada
+# después del merge también aparece, aunque nadie toque el código. Si encuentra una, el check falla.
+name: Seguridad
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 11 * * 1" # lunes 08:00 en Argentina
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seguridad-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vulnerabilidades:
+    name: Vulnerabilidades (govulncheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      # Usa el toolchain de go.mod: es la misma versión con la que compila Vercel, así se analiza la
+      # biblioteca estándar que va a producción.
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - name: Buscar vulnerabilidades conocidas
+        run: |
+          go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./... | tee "$RUNNER_TEMP/govulncheck.txt"
+          estado=${PIPESTATUS[0]}
+          {
+            echo '### Vulnerabilidades (govulncheck)'
+            echo '```'
+            cat "$RUNNER_TEMP/govulncheck.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$estado"
