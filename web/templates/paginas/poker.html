@@ -1,0 +1,71 @@
+{{define "contenido"}}
+{{with .Datos}}
+{{$ruta := printf "/proyectos/%d/backlog/%d/poker" .Proyecto.ID .Historia.Numero}}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}">{{.Historia.Identificador}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Planning Poker</li>
+  </ol>
+</nav>
+
+{{template "exito" .Mensaje}}
+{{template "aviso" .Aviso}}
+
+<div class="mb-4">
+  <h1 class="h3 mb-2">Planning Poker · {{.Historia.Identificador}} · {{.Historia.Titulo}}</h1>
+  <p class="small text-body-secondary mb-0">Story points actuales: {{with .Historia.StoryPoints}}{{.}}{{else}}Sin estimar{{end}}</p>
+</div>
+
+<div class="row g-3">
+  <section class="col-12 col-lg-8" aria-labelledby="titulo-sesion">
+    <div class="h-100 p-4 bg-body rounded-3 shadow-sm">
+      <h2 class="h5" id="titulo-sesion">Sesión</h2>
+      {{if .Abierta}}
+      <p class="mb-0"><span class="badge text-bg-success">Sesión abierta</span> · Ronda {{.Ronda.Numero}}</p>
+      {{template "pokerRonda" .}}
+      {{else if eq .Historia.Estado "Hecho"}}
+      <p class="text-body-secondary mb-0">La historia está Hecha: ya no se estima.</p>
+      {{else}}
+      <p class="text-body-secondary">Esta historia no tiene una sesión abierta. La abre el Agile Enabler del proyecto.</p>
+      <form action="{{$ruta}}" method="post" class="d-flex flex-wrap align-items-start gap-2" novalidate>
+        {{if not .ConLogin}}
+        <label class="col-form-label col-form-label-sm" for="quien">Quién abre</label>
+        <div>
+          <select class="form-select form-select-sm{{if index .Errores "quien"}} is-invalid{{end}}" id="quien" name="quien" required>
+            <option value="">Elegí un integrante</option>
+            {{$quien := .QuienID}}
+            {{range .Participantes}}<option value="{{.ID}}"{{if eq .ID $quien}} selected{{end}}>{{.Nombre}} ({{.Rol.Texto}})</option>
+            {{end}}
+          </select>
+          {{template "errorCampo" (index .Errores "quien")}}
+        </div>
+        {{end}}
+        <button class="btn btn-sm btn-primary" type="submit">Abrir sesión</button>
+      </form>
+      {{end}}
+    </div>
+  </section>
+
+  <section class="col-12 col-lg-4" aria-labelledby="titulo-participantes">
+    <div class="h-100 p-4 bg-body rounded-3 shadow-sm">
+      <h2 class="h5" id="titulo-participantes">Participantes</h2>
+      {{if .Participantes}}
+      <ul class="list-unstyled mb-0">
+        {{range .Participantes}}<li>{{.Nombre}} <span class="small text-body-secondary">· {{.Rol.Texto}}</span></li>
+        {{end}}
+      </ul>
+      {{else}}
+      <p class="text-body-secondary mb-0">El proyecto no tiene integrantes activos.</p>
+      {{end}}
+      <p class="small text-body-secondary mt-2 mb-0">Participan los integrantes activos del proyecto.</p>
+    </div>
+  </section>
+</div>
+{{end}}
+{{end}}
+
+{{/* pokerRonda: lo que se hace en la ronda actual. HU-18 (votar), HU-19 (votos revelados) y HU-22 (valor acordado)
+     definen cada una su bloque en este archivo y lo llaman desde acá, una línea cada una. */}}
+{{define "pokerRonda"}}{{end}}
