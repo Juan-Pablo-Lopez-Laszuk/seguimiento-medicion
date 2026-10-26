@@ -35,6 +35,8 @@ type Dependencias struct {
 	Esfuerzo *service.Esfuerzo
 	// RegistrosEsfuerzo consulta y corrige los registros de horas de un proyecto (HU-26).
 	RegistrosEsfuerzo *service.RegistrosEsfuerzo
+	// Graficos arma los datos de los gráficos de métricas de un proyecto (HU-36).
+	Graficos *service.Graficos
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
@@ -172,6 +174,9 @@ func rutas(r chi.Router, dep Dependencias) {
 	r.Post("/proyectos/{id}/defectos", df.registrar)
 	r.Post("/proyectos/{id}/defectos/{defecto}/estado", df.cambiarEstado)
 	r.Get("/proyectos/{id}/horas", horas{casos: dep.Horas}.ver)
+	gr := graficos{casos: dep.Graficos}
+	r.Get("/proyectos/{id}/graficos", gr.ver)
+	r.Get("/proyectos/{id}/graficos/datos", gr.datos)
 	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
 }
 

@@ -151,6 +151,9 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		// Editar y eliminar una historia (HU-06).
 		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
 
+		// Gráficos de las métricas (HU-36): usan el reporte de cada sprint de HU-37.
+		Graficos: service.NuevoGraficos(service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos, panel), casosDefectos, historias, time.Now),
+
 		// Consultar y corregir los registros de horas (HU-26).
 		RegistrosEsfuerzo: service.NuevoRegistrosEsfuerzo(proyectos, sprints, historias, integrantes, tareas, registros, horas, time.Now),
 	}

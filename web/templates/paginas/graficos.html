@@ -1,0 +1,132 @@
+{{define "tabla-grafico"}}
+<details class="mt-2">
+  <summary class="small">Ver los datos</summary>
+  <div class="table-responsive">
+    <table class="table table-sm align-middle mb-0 mt-2">
+      <thead><tr><th scope="col">{{.Nombre}}</th><th scope="col" class="text-end">{{.A}}</th><th scope="col" class="text-end">{{.B}}</th></tr></thead>
+      <tbody>
+        {{range .Filas}}<tr><td>{{.Nombre}}</td>{{range .Valores}}<td class="text-end">{{.}}</td>{{end}}</tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</details>
+{{end}}
+
+{{define "contenido"}}
+{{with .Datos}}
+{{$proyecto := .Proyecto.ID}}
+<nav aria-label="breadcrumb" class="d-print-none">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="/proyectos">Proyectos</a></li>
+    <li class="breadcrumb-item"><a href="/proyectos/{{$proyecto}}">{{.Proyecto.Nombre}}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Gráficos</li>
+  </ol>
+</nav>
+
+<h1 class="h3 mb-2">Gráficos de {{.Proyecto.Nombre}}</h1>
+<p class="text-body-secondary mb-4">
+  Los sprints cerrados usan la foto de su cierre. Debajo de cada gráfico están los datos en una tabla.
+</p>
+
+<div id="graficos" class="row g-3" data-datos="{{.RutaDatos}}">
+  <section class="col-12 col-lg-6" aria-labelledby="titulo-velocidad">
+    <div class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6" id="titulo-velocidad">Velocidad por sprint</h2>
+      {{if .Velocidad.Sprints}}
+      <div style="position: relative; height: 260px"><canvas id="grafico-velocidad" aria-label="Gráfico de la velocidad por sprint" role="img"></canvas></div>
+      {{template "tabla-grafico" (dict "Nombre" "Sprint" "A" "SP completados" "B" "Velocidad" "Filas" .FilasVelocidad)}}
+      {{else}}
+      <canvas id="grafico-velocidad" hidden></canvas>
+      <p class="text-body-secondary mb-0">Todavía no hay sprints cerrados.</p>
+      {{end}}
+    </div>
+  </section>
+
+  <section class="col-12 col-lg-6" aria-labelledby="titulo-story-points">
+    <div class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6" id="titulo-story-points">Story points planificados vs completados</h2>
+      <div style="position: relative; height: 260px"><canvas id="grafico-story-points" aria-label="Gráfico de story points por sprint" role="img"></canvas></div>
+      {{template "tabla-grafico" (dict "Nombre" "Sprint" "A" "Planificados" "B" "Completados" "Filas" .FilasStoryPoints)}}
+    </div>
+  </section>
+
+  <section class="col-12 col-lg-6" aria-labelledby="titulo-horas">
+    <div class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6" id="titulo-horas">Horas estimadas vs reales</h2>
+      <div style="position: relative; height: 260px"><canvas id="grafico-horas" aria-label="Gráfico de horas por sprint" role="img"></canvas></div>
+      {{template "tabla-grafico" (dict "Nombre" "Sprint" "A" "Estimadas (h)" "B" "Reales (h)" "Filas" .FilasHoras)}}
+    </div>
+  </section>
+
+  <section class="col-12 col-lg-6" aria-labelledby="titulo-defectos">
+    <div class="h-100 p-3 bg-body rounded-3 shadow-sm">
+      <h2 class="h6" id="titulo-defectos">Defectos por severidad</h2>
+      <div style="position: relative; height: 260px"><canvas id="grafico-defectos" aria-label="Gráfico de defectos por severidad" role="img"></canvas></div>
+      {{template "tabla-grafico" (dict "Nombre" "Severidad" "A" "Detectados" "B" "Abiertos" "Filas" .FilasDefectos)}}
+    </div>
+  </section>
+
+  <section class="col-12" aria-labelledby="titulo-burndown">
+    <div class="p-3 bg-body rounded-3 shadow-sm">
+      {{with .Burndown}}
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h2 class="h6 mb-0" id="titulo-burndown">Burndown del {{.Sprint}}</h2>
+        <nav class="d-print-none" aria-label="Elegir el sprint del burndown">
+          {{$elegido := .Numero}}
+          {{range $.Datos.Sprints}}<a class="btn btn-sm {{if eq . $elegido}}btn-primary{{else}}btn-outline-secondary{{end}} me-1" href="/proyectos/{{$proyecto}}/graficos?sprint={{.}}">Sprint {{.}}</a>{{end}}
+        </nav>
+      </div>
+      <div style="position: relative; height: 300px"><canvas id="grafico-burndown" aria-label="Gráfico del burndown del {{.Sprint}}" role="img"></canvas></div>
+      <div class="form-text">SP que faltan al final de cada día. Los días que todavía no pasaron no tienen dato.</div>
+      {{template "tabla-grafico" (dict "Nombre" "Día" "A" "Ideal" "B" "Pendientes" "Filas" $.Datos.FilasBurndown)}}
+      {{else}}
+      <h2 class="h6" id="titulo-burndown">Burndown</h2>
+      <canvas id="grafico-burndown" hidden></canvas>
+      <p class="text-body-secondary mb-0">Sin sprints todavía.</p>
+      {{end}}
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+(function () {
+  if (!window.Chart) { return; } // sin el CDN quedan las tablas con los datos
+  var azul = "#0d6efd", verde = "#198754", gris = "#6c757d", rojo = "#dc3545", naranja = "#fd7e14";
+  function grafico(id, tipo, etiquetas, series, enteros) {
+    var lienzo = document.getElementById(id);
+    if (!lienzo || lienzo.hidden) { return; }
+    var y = { beginAtZero: true, ticks: enteros ? { precision: 0 } : {} };
+    new Chart(lienzo, { type: tipo, data: { labels: etiquetas, datasets: series }, options: { responsive: true, maintainAspectRatio: false, scales: { y: y } } });
+  }
+  fetch(document.getElementById("graficos").dataset.datos)
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      grafico("grafico-velocidad", "bar", d.velocidad.sprints, [
+        { label: "SP completados", data: d.velocidad.completados, backgroundColor: azul },
+        { label: "Velocidad", data: d.velocidad.velocidad, type: "line", borderColor: naranja, backgroundColor: naranja }
+      ], true);
+      grafico("grafico-story-points", "bar", d.storyPoints.sprints, [
+        { label: "Planificados", data: d.storyPoints.planificados, backgroundColor: gris },
+        { label: "Completados", data: d.storyPoints.completados, backgroundColor: verde }
+      ], true);
+      grafico("grafico-horas", "bar", d.horas.sprints, [
+        { label: "Estimadas (h)", data: d.horas.estimadas, backgroundColor: gris },
+        { label: "Reales (h)", data: d.horas.reales, backgroundColor: azul }
+      ]);
+      grafico("grafico-defectos", "bar", d.defectos.severidades, [
+        { label: "Detectados", data: d.defectos.detectados, backgroundColor: rojo },
+        { label: "Abiertos", data: d.defectos.abiertos, backgroundColor: naranja }
+      ], true);
+      if (d.burndown) {
+        grafico("grafico-burndown", "line", d.burndown.dias, [
+          { label: "Ideal", data: d.burndown.ideal, borderColor: gris, borderDash: [6, 4], pointRadius: 0 },
+          { label: "SP pendientes", data: d.burndown.pendientes, borderColor: azul, backgroundColor: azul }
+        ], true);
+      }
+    });
+})();
+</script>
+{{end}}
+{{end}}
