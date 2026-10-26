@@ -18,7 +18,10 @@
       · {{with .Resumen.Estado}}<span class="badge {{if eq . "En curso"}}text-bg-primary{{else if eq . "Finalizado"}}text-bg-success{{else}}text-bg-secondary{{end}}">{{.}}</span>{{end}}
     </div>
   </div>
-  <button type="button" class="btn btn-outline-primary d-print-none" onclick="window.print()">Imprimir</button>
+  <div class="d-flex gap-2 d-print-none">
+    <a class="btn btn-primary d-print-none" href="/proyectos/{{$p.ID}}/reporte.pdf">Descargar PDF</a>
+    <button type="button" class="btn btn-outline-primary" onclick="window.print()">Imprimir</button>
+  </div>
 </div>
 
 <section class="mb-4" aria-labelledby="titulo-resumen">

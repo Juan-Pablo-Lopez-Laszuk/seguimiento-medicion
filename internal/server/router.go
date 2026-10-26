@@ -4,6 +4,7 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -52,6 +53,8 @@ type Dependencias struct {
 	Verificador auth.Verificador
 	// Cuentas registra e ingresa cuentas de usuario (TEC-05).
 	Cuentas *service.Cuentas
+	// Ahora da la fecha del nombre de los PDF (HU-39); si es nil se usa time.Now.
+	Ahora func() time.Time
 }
 
 // NewRouter arma el router con todas las rutas de la aplicación. /health queda siempre abierto. Con el login activado
@@ -106,8 +109,14 @@ func rutas(r chi.Router, dep Dependencias) {
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/empezar", pl.accion((*service.Asignaciones).Empezar, "empezada"))
 	r.Post("/proyectos/{id}/sprints/{sprint}/historias/{historia}/completar", pl.accion((*service.Asignaciones).Completar, "completada"))
 
-	r.Get("/proyectos/{id}/sprints/{sprint}/reporte", reportes{casos: dep.Reportes}.sprint)
-	r.Get("/proyectos/{id}/reporte", reportes{casos: dep.Reportes}.proyecto)
+	rp := reportes{casos: dep.Reportes, ahora: dep.Ahora}
+	if rp.ahora == nil {
+		rp.ahora = time.Now
+	}
+	r.Get("/proyectos/{id}/sprints/{sprint}/reporte", rp.sprint)
+	r.Get("/proyectos/{id}/sprints/{sprint}/reporte.pdf", rp.sprintPDF)
+	r.Get("/proyectos/{id}/reporte", rp.proyecto)
+	r.Get("/proyectos/{id}/reporte.pdf", rp.proyectoPDF)
 
 	ci := cierres{casos: dep.Cierres}
 	r.Get("/proyectos/{id}/sprints/{sprint}/cerrar", ci.confirmar)

@@ -60,6 +60,8 @@ func dependenciasEnMemoria(ahora func() time.Time) server.Dependencias {
 		Estado:         estado,
 		Edicion:        service.NuevoEdicionProyectos(proyectos, sprints, ahora),
 		Estimaciones:   service.NuevoEstimaciones(proyectos, historias),
+		// la fecha del nombre de los PDF (HU-39)
+		Ahora: ahora,
 	}
 }
 
