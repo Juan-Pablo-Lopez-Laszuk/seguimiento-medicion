@@ -16,23 +16,12 @@ import (
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
-// rondasHU19 es el repositorio de HU-19: Revelar del store en memoria y los votos de cada ronda, que en la aplicación
-// guarda HU-18.
-type rondasHU19 struct {
-	*memory.Poker
-	votos map[int64][]poker.Voto
-}
-
-func (r *rondasHU19) Votos(_ context.Context, rondaID int64) ([]poker.Voto, error) {
-	return r.votos[rondaID], nil
-}
-
 // hu19 guarda el estado de un escenario de HU-19 (revelar estimaciones), con sus propios repositorios en memoria.
 type hu19 struct {
 	repoProyectos   *memory.Proyectos
 	repoHistorias   *memory.Historias
 	repoIntegrantes *memory.Integrantes
-	rondas          *rondasHU19
+	repoPoker       *memory.Poker
 	poker           *service.Poker
 	revelar         *service.RevelarPoker
 	agileEnabler    member.Integrante
@@ -51,11 +40,11 @@ func registrarPasosHU19(sc *godog.ScenarioContext) {
 	e := &hu19{
 		repoProyectos: memory.NuevoProyectos(), repoHistorias: memory.NuevoHistorias(),
 		repoIntegrantes: memory.NuevoIntegrantes(),
-		rondas:          &rondasHU19{Poker: memory.NuevoPoker(), votos: map[int64][]poker.Voto{}},
+		repoPoker:       memory.NuevoPoker(),
 		porNombre:       map[string]member.Integrante{},
 	}
-	e.poker = service.NuevoPoker(e.repoProyectos, e.repoHistorias, e.repoIntegrantes, e.rondas.Poker)
-	e.revelar = service.NuevoRevelarPoker(e.poker, e.rondas)
+	e.poker = service.NuevoPoker(e.repoProyectos, e.repoHistorias, e.repoIntegrantes, e.repoPoker).ConVotos(e.repoPoker)
+	e.revelar = service.NuevoRevelarPoker(e.poker, e.repoPoker)
 
 	sc.Step(`^el equipo de Planning Poker con "([^"]*)" de Agile Enabler y "([^"]*)" y "([^"]*)" de Product Builder$`, e.elEquipo)
 	sc.Step(`^una sesión de Planning Poker abierta para "HU-(\d+) ([^"]*)" con la ronda 1$`, e.unaSesionAbierta)
@@ -114,16 +103,16 @@ func (e *hu19) unaSesionAbierta(numero int, titulo string) error {
 	return nil
 }
 
-// enLaRondaVotaron guarda los votos de la frase y revisa la ronda, como después de cada voto (RN1).
+// enLaRondaVotaron vota con Poker.Votar de HU-18 y revisa la ronda, como después de cada voto (RN1).
 func (e *hu19) enLaRondaVotaron(votos string) error {
 	for _, m := range unVoto.FindAllStringSubmatch(votos, -1) {
 		i, ok := e.porNombre[m[1]]
 		if !ok {
 			return fmt.Errorf("no hay un integrante %q en el escenario", m[1])
 		}
-		valor, _ := strconv.Atoi(m[2])
-		e.rondas.votos[e.ronda.ID] = append(e.rondas.votos[e.ronda.ID],
-			poker.Voto{RondaID: e.ronda.ID, IntegranteID: i.ID, Valor: valor})
+		if _, err := e.poker.Votar(context.Background(), e.proyectoID, e.numero, i.ID, m[2]); err != nil {
+			return err
+		}
 	}
 	_, err := e.revelar.Revisar(context.Background(), e.proyectoID, e.numero)
 	return err

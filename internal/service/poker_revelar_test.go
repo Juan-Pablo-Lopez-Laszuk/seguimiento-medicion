@@ -8,26 +8,15 @@ import (
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/poker"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
 
-// rondasConVotos es el repositorio de HU-19: Revelar del store en memoria y los votos de cada ronda, que guarda HU-18.
-type rondasConVotos struct {
-	*memory.Poker
-	votos map[int64][]poker.Voto
-}
-
-func (r *rondasConVotos) Votos(_ context.Context, rondaID int64) ([]poker.Voto, error) {
-	return r.votos[rondaID], nil
-}
-
-// escenarioRevelar es el de HU-17 con la sesión de HU-1 abierta por Juan y votos en la ronda 1.
+// escenarioRevelar es el de HU-17 con la sesión de HU-1 abierta por Juan y votos en la ronda 1, guardados con Votar
+// de HU-18.
 type escenarioRevelar struct {
 	*escenarioPoker
 	casos    *service.RevelarPoker
 	ronda    poker.Ronda
 	historia int64
-	repo     *rondasConVotos
 }
 
 func nuevoEscenarioRevelar(t *testing.T, votos map[string]int) *escenarioRevelar {
@@ -37,11 +26,12 @@ func nuevoEscenarioRevelar(t *testing.T, votos map[string]int) *escenarioRevelar
 	if err != nil {
 		t.Fatalf("abrir la sesión: %v", err)
 	}
-	repo := &rondasConVotos{Poker: e.sesiones, votos: map[int64][]poker.Voto{}}
 	for nombre, valor := range votos {
-		repo.votos[v.Ronda.ID] = append(repo.votos[v.Ronda.ID], poker.Voto{RondaID: v.Ronda.ID, IntegranteID: e.porNombre[nombre].ID, Valor: valor})
+		if err := e.sesiones.Votar(context.Background(), v.Ronda.ID, e.porNombre[nombre].ID, valor); err != nil {
+			t.Fatalf("votar: %v", err)
+		}
 	}
-	return &escenarioRevelar{escenarioPoker: e, casos: service.NuevoRevelarPoker(e.casos, repo), ronda: v.Ronda, historia: v.Historia.ID, repo: repo}
+	return &escenarioRevelar{escenarioPoker: e, casos: service.NuevoRevelarPoker(e.casos, e.sesiones), ronda: v.Ronda, historia: v.Historia.ID}
 }
 
 func (e *escenarioRevelar) rondaGuardada(t *testing.T) poker.Ronda {
@@ -102,7 +92,7 @@ func TestRevelarPoker_RevisarUnaRondaYaRevelada(t *testing.T) {
 // HU-19 · sin sesión abierta no hay nada que revelar
 func TestRevelarPoker_RevisarSinSesion(t *testing.T) {
 	e := nuevoEscenarioPoker(t)
-	casos := service.NuevoRevelarPoker(e.casos, &rondasConVotos{Poker: e.sesiones})
+	casos := service.NuevoRevelarPoker(e.casos, e.sesiones)
 
 	v, err := casos.Revisar(context.Background(), e.proyecto, 1)
 
@@ -168,7 +158,7 @@ func TestRevelarPoker_CerrarConError(t *testing.T) {
 // HU-19 · cerrar sin sesión abierta
 func TestRevelarPoker_CerrarSinSesion(t *testing.T) {
 	e := nuevoEscenarioPoker(t)
-	casos := service.NuevoRevelarPoker(e.casos, &rondasConVotos{Poker: e.sesiones})
+	casos := service.NuevoRevelarPoker(e.casos, e.sesiones)
 
 	_, err := casos.Cerrar(context.Background(), e.proyecto, 1, e.porNombre["Juan"].ID)
 

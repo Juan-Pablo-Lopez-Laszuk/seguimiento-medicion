@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/poker"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/store/memory"
 )
@@ -18,16 +17,6 @@ const (
 	rutaCerrarRonda      = rutaPoker + "/cerrar"
 )
 
-// rondasConVotos es el repositorio de HU-19: Revelar del store en memoria y los votos de cada ronda, que guarda HU-18.
-type rondasConVotos struct {
-	*memory.Poker
-	votos map[int64][]poker.Voto
-}
-
-func (r *rondasConVotos) Votos(_ context.Context, rondaID int64) ([]poker.Voto, error) {
-	return r.votos[rondaID], nil
-}
-
 // nuevaAppRevelar es la aplicación de HU-17 con la sesión de HU-1 abierta por Juan y estos votos en la ronda 1.
 func nuevaAppRevelar(t *testing.T, votos map[string]int) (*appPoker, http.Handler) {
 	t.Helper()
@@ -37,11 +26,12 @@ func nuevaAppRevelar(t *testing.T, votos map[string]int) (*appPoker, http.Handle
 	if err != nil {
 		t.Fatalf("abrir la sesión: %v", err)
 	}
-	repo := &rondasConVotos{Poker: sesiones, votos: map[int64][]poker.Voto{}}
 	for nombre, valor := range votos {
-		repo.votos[v.Ronda.ID] = append(repo.votos[v.Ronda.ID], poker.Voto{RondaID: v.Ronda.ID, IntegranteID: a.porNombre[nombre].ID, Valor: valor})
+		if err := sesiones.Votar(context.Background(), v.Ronda.ID, a.porNombre[nombre].ID, valor); err != nil {
+			t.Fatalf("votar: %v", err)
+		}
 	}
-	a.dep.RevelarPoker = service.NuevoRevelarPoker(a.dep.Poker, repo)
+	a.dep.RevelarPoker = service.NuevoRevelarPoker(a.dep.Poker, sesiones)
 	return a, a.sinLogin()
 }
 
