@@ -91,7 +91,7 @@ func TestPoker_NadieVeLosValoresAntesDeRevelar(t *testing.T) {
 	pedido(h, rutaVotos, a.vota("Juan", "21"))
 
 	pagina := pedido(h, rutaPoker, nil).Body.String()
-	fragmento := pedido(h, rutaVotos, nil).Body.String()
+	fragmento := pedido(h, rutaVotos, nil, porHTMX).Body.String()
 
 	verificarNoContiene(t, pagina, `aria-pressed="true"`, "checked")
 	verificarContiene(t, fragmento, "2 de 2 votaron")
@@ -105,7 +105,7 @@ func TestPoker_FragmentoDeQuienVoto(t *testing.T) {
 	h := a.sinLogin()
 	pedido(h, rutaVotos, a.vota("Juan", "3"))
 
-	rec := pedido(h, rutaVotos, nil)
+	rec := pedido(h, rutaVotos, nil, porHTMX)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("código = %d, se esperaba 200", rec.Code)
@@ -115,9 +115,22 @@ func TestPoker_FragmentoDeQuienVoto(t *testing.T) {
 	verificarNoContiene(t, cuerpo, "<html", "<nav", `name="valor"`)
 }
 
+// porHTMX marca el pedido como lo hace HTMX.
+func porHTMX(r *http.Request) { r.Header.Set("HX-Request", "true") }
+
+// Después de un error al votar, la dirección queda en …/poker/votos: si se recarga (sin HTMX), vuelve a la página de
+// la sesión en lugar de mostrar el fragmento suelto
+func TestPoker_FragmentoSinHTMX_VuelveALaPagina(t *testing.T) {
+	rec := pedido(nuevaAppPoker(t, "", nil).conSesionAbierta(t).sinLogin(), rutaVotos, nil)
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != rutaPoker {
+		t.Errorf("código = %d, Location = %q; se esperaba 303 a %s", rec.Code, rec.Header().Get("Location"), rutaPoker)
+	}
+}
+
 // Sin sesión abierta el fragmento queda vacío: HTMX lo saca y deja de preguntar
 func TestPoker_FragmentoSinSesion(t *testing.T) {
-	rec := pedido(nuevaAppPoker(t, "", nil).sinLogin(), rutaVotos, nil)
+	rec := pedido(nuevaAppPoker(t, "", nil).sinLogin(), rutaVotos, nil, porHTMX)
 
 	if rec.Code != http.StatusOK || strings.TrimSpace(rec.Body.String()) != "" {
 		t.Errorf("código = %d, cuerpo = %q; se esperaba 200 sin contenido", rec.Code, rec.Body.String())
@@ -154,7 +167,7 @@ func TestPoker_VotarSinLogin_Errores(t *testing.T) {
 				t.Errorf("código = %d, se esperaba %d", rec.Code, c.codigo)
 			}
 			verificarContiene(t, rec.Body.String(), c.texto)
-			verificarContiene(t, pedido(a.sinLogin(), rutaVotos, nil).Body.String(), "0 de 2 votaron")
+			verificarContiene(t, pedido(a.sinLogin(), rutaVotos, nil, porHTMX).Body.String(), "0 de 2 votaron")
 		})
 	}
 }
@@ -199,7 +212,7 @@ func TestPoker_Votar_FallaLaBase(t *testing.T) {
 
 // Si falla la base al ver quién votó, 500 con el mensaje de HU-17
 func TestPoker_FragmentoFallaLaBase(t *testing.T) {
-	rec := pedido(nuevaAppPoker(t, "", pokerQueFalla{}).sinLogin(), rutaVotos, nil)
+	rec := pedido(nuevaAppPoker(t, "", pokerQueFalla{}).sinLogin(), rutaVotos, nil, porHTMX)
 
 	if rec.Code != http.StatusInternalServerError {
 		t.Errorf("código = %d, se esperaba 500", rec.Code)
@@ -209,7 +222,7 @@ func TestPoker_FragmentoFallaLaBase(t *testing.T) {
 func TestPoker_Votar_NoEncontrado(t *testing.T) {
 	a := nuevaAppPoker(t, "", nil)
 	for _, ruta := range []string{"/proyectos/9/backlog/1/poker/votos", "/proyectos/1/backlog/9/poker/votos", "/proyectos/1/backlog/x/poker/votos"} {
-		if rec := pedido(a.sinLogin(), ruta, nil); rec.Code != http.StatusNotFound {
+		if rec := pedido(a.sinLogin(), ruta, nil, porHTMX); rec.Code != http.StatusNotFound {
 			t.Errorf("GET %s: código = %d, se esperaba 404", ruta, rec.Code)
 		}
 		if rec := pedido(a.sinLogin(), ruta, a.vota("Juan", "5")); rec.Code != http.StatusNotFound {
@@ -231,7 +244,7 @@ func TestPoker_ConLogin_VotaElIntegranteDeLaCuenta(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("código = %d, se esperaba 303: %s", rec.Code, rec.Body.String())
 	}
-	fragmento := pedido(h, rutaVotos, nil, conSesion("token-de-ana")).Body.String()
+	fragmento := pedido(h, rutaVotos, nil, conSesion("token-de-ana"), porHTMX).Body.String()
 	verificarContiene(t, fragmento, estadoDeVoto("Ana", true), estadoDeVoto("Juan", false))
 }
 
@@ -253,7 +266,7 @@ func TestPoker_ConLogin_VotarPideSesion(t *testing.T) {
 	if rec := pedido(h, rutaVotos, url.Values{"valor": {"5"}}); rec.Code != http.StatusUnauthorized {
 		t.Errorf("votar sin sesión: código = %d, se esperaba 401", rec.Code)
 	}
-	if rec := pedido(h, rutaVotos, nil); rec.Code == http.StatusOK {
+	if rec := pedido(h, rutaVotos, nil, porHTMX); rec.Code == http.StatusOK {
 		t.Errorf("ver quién votó sin sesión: código = %d, no se esperaba 200", rec.Code)
 	}
 }

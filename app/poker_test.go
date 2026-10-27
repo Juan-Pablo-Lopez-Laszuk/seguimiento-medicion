@@ -2,6 +2,7 @@ package app_test
 
 import (
 	"net/http"
+	"net/http/httptest"
 	neturl "net/url"
 	"strings"
 	"testing"
@@ -58,7 +59,11 @@ func verificarVotos(t *testing.T, h http.Handler) {
 	if rec := post(h, "/proyectos/1/backlog/1/poker/votos", neturl.Values{"quien": {"1"}, "valor": {"13"}}); rec.Code != http.StatusSeeOther {
 		t.Fatalf("votar: se esperaba %d y se obtuvo %d:\n%s", http.StatusSeeOther, rec.Code, rec.Body.String())
 	}
-	if fragmento := get(h, "/proyectos/1/backlog/1/poker/votos"); !strings.Contains(fragmento, "1 de 1 votaron") || strings.Contains(fragmento, "13") {
+	req := httptest.NewRequest(http.MethodGet, "/proyectos/1/backlog/1/poker/votos", nil)
+	req.Header.Set("HX-Request", "true")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if fragmento := rec.Body.String(); !strings.Contains(fragmento, "1 de 1 votaron") || strings.Contains(fragmento, "13") {
 		t.Errorf("quién votó tendría que decir que Juan votó, sin el valor:\n%s", fragmento)
 	}
 }

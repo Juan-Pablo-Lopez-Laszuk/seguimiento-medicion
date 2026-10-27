@@ -174,7 +174,9 @@ func (e *hu18) votaronEstosIntegrantes(tabla *godog.Table) error {
 func (e *hu18) laListaNoMuestraValores() error {
 	ruta := fmt.Sprintf("/proyectos/%d/backlog/1/poker/votos", e.proyectoID)
 	rec := httptest.NewRecorder()
-	e.router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, ruta, nil))
+	req := httptest.NewRequest(http.MethodGet, ruta, nil)
+	req.Header.Set("HX-Request", "true")
+	e.router.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		return fmt.Errorf("GET %s: código %d", ruta, rec.Code)
 	}
