@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/cucumber/godog"
 
@@ -49,6 +50,7 @@ func registrarPasosHU17(sc *godog.ScenarioContext) {
 	sc.Step(`^la historia "([^"]*)" tiene una sola sesión de Planning Poker abierta$`, e.tieneUnaSolaSesionAbierta)
 	sc.Step(`^participan estos integrantes:$`, e.participanEstosIntegrantes)
 	sc.Step(`^(?:que )?se da de baja a "([^"]*)"$`, e.seDaDeBajaA)
+	sc.Step(`^se registra a "([^"]*)" como integrante del proyecto$`, e.seRegistraComoIntegrante)
 	sc.Step(`^abrir la sesión da el error "([^"]*)"$`, e.abrirLaSesionDaElError)
 }
 
@@ -172,6 +174,14 @@ func (e *hu17) participanEstosIntegrantes(tabla *godog.Table) error {
 
 func (e *hu17) seDaDeBajaA(nombre string) error {
 	_, err := e.integrantes.DarDeBaja(context.Background(), e.proyectoID, e.porNombre[nombre].ID)
+	return err
+}
+
+// seRegistraComoIntegrante registra un Product Builder con el caso de uso de HU-03, como en la aplicación.
+func (e *hu17) seRegistraComoIntegrante(nombre string) error {
+	_, err := e.integrantes.Registrar(context.Background(), e.proyectoID, member.Datos{
+		Nombre: nombre, Email: strings.ToLower(nombre) + "@mail.com", Rol: member.RolProductBuilder,
+	})
 	return err
 }
 
