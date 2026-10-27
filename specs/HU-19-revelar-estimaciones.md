@@ -1,6 +1,6 @@
 # SPEC-19 · Revelar estimaciones
 
-**Historia:** HU-19 (#27) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Borrador
+**Historia:** HU-19 (#27) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Usa las tablas `sesiones_poker`, `rondas_poker` y `votos` de
 > `docs/modelo-datos.md` (migración 0001) y se apoya en HU-17 (abrir la sesión) y HU-18 (votar de forma oculta), de
@@ -48,7 +48,7 @@ Según el modelo común de HU-17, todo lo de HU-19 va en sus propios archivos:
 | Capa | Archivo | Qué |
 |---|---|---|
 | Dominio | `internal/domain/poker/revelar.go` | `TodosVotaron`, `RevelarSiCorresponde`, `Cerrar` y `VotosRevelados`, funciones puras con TDD |
-| Repositorios | `internal/store/memory/poker_revelar.go` y `internal/store/postgres/poker_revelar.go` | `Revelar`: marca la ronda como revelada (`rondas_poker.revelada`). Sin migración nueva: la columna ya existe |
+| Repositorios | `internal/store/memory/poker_revelar.go` y `internal/store/postgres/poker_revelar.go` | `Revelar`: marca la ronda como revelada (`rondas_poker.revelada`); `Votos`: los votos de la ronda con su valor (HU-18 solo dice quiénes votaron). Sin migración nueva: las columnas ya existen |
 | Caso de uso | `internal/service/poker_revelar.go` | La interfaz `RepositorioRevelarPoker`; revelar sola después de cada voto y al ver la sesión, y cerrar la ronda |
 | Pantalla | `internal/server/poker.go` y un bloque `{{define}}` propio en `web/templates/paginas/poker.html` | El botón "Cerrar la ronda y revelar" y la tabla de votos; quién cierra sale de `quienParticipa` (HU-17) |
 
@@ -80,4 +80,17 @@ Según el modelo común de HU-17, todo lo de HU-19 va en sus propios archivos:
 
 Issue: #27 · Feature: `features/hu-19-revelar-estimaciones.feature` · Pasos BDD: `features/hu19_steps_test.go`
 
-(Se completa al implementar.)
+| Tarea | Capa | Código | Tests |
+|---|---|---|---|
+| T1 (#283) | Spec y BDD | Esta spec y `features/hu-19-revelar-estimaciones.feature` | — |
+| T2 (#284) | Dominio | `internal/domain/poker/revelar.go` (`TodosVotaron`, `RevelarSiCorresponde`, `Cerrar`, `VotosRevelados`) | `internal/domain/poker/revelar_test.go` |
+| T3 (#285) | Repositorios | `internal/store/memory/poker_revelar.go` y `internal/store/postgres/poker_revelar.go` (`Revelar`) | `TestPoker_RevelarGuardaLaRondaRevelada`, `TestPoker_RevelarUnaRondaQueNoExiste` (en los dos) |
+| T4 (#286) | Caso de uso | `internal/service/poker_revelar.go` (`RepositorioRevelarPoker`, `RevelarPoker.Revisar` y `RevelarPoker.Cerrar`) | `internal/service/poker_revelar_test.go` |
+| T5 (#287) | Pantalla | `internal/server/poker_revelar.go` (`cerrar`, `conVotosRevelados`), bloque `pokerRevelar` en `poker.html` | `internal/server/poker_revelar_test.go` |
+| T6 (#288) | Integración y BDD | `app/app.go` arma `RevelarPoker` con el mismo repositorio de HU-17 y HU-18 | `app/poker_revelar_test.go`, `features/hu19_steps_test.go` (votan con `Poker.Votar` de HU-18) |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-19.1 Se revela cuando votan todos o cierra el Agile Enabler | La ronda se revela cuando votaron todos · El Agile Enabler cierra la ronda antes de que voten todos · Falta un voto y la ronda sigue oculta · Un Product Builder no puede cerrar la ronda | `TestRevelarSiCorresponde`, `TestCerrar`, `TestRevelarPoker_SeRevelaSolaCuandoVotaronTodos`, `TestRevelarPoker_ElAgileEnablerCierraLaRonda`, `TestRevelar_VotaronTodos_SeRevelaSola`, `TestRevelar_ElAgileEnablerCierraLaRonda` |
+| CA-19.2 Cada voto con su autor | La ronda se revela cuando votaron todos · El Agile Enabler cierra la ronda antes de que voten todos | `TestVotosRevelados`, `TestRevelarPoker_ElAgileEnablerCierraLaRonda` |
+| CA-19.3 Sin votos no se revela | Una ronda sin votos no se puede revelar | `TestCerrar`, `TestRevelarPoker_CerrarConError`, `TestRevelar_CerrarConError` |
