@@ -31,8 +31,9 @@ type hu17 struct {
 	err             error
 }
 
-// registrarPasosHU17 conecta cada frase de features/hu-17-abrir-sesion-poker.feature con una función de Go.
-func registrarPasosHU17(sc *godog.ScenarioContext) {
+// registrarPasosHU17 conecta cada frase de features/hu-17-abrir-sesion-poker.feature con una función de Go. Devuelve el
+// estado del escenario para que las otras historias de Planning Poker (HU-22) usen los mismos repositorios.
+func registrarPasosHU17(sc *godog.ScenarioContext) *hu17 {
 	e := &hu17{
 		repoProyectos: memory.NuevoProyectos(), repoHistorias: memory.NuevoHistorias(),
 		repoIntegrantes: memory.NuevoIntegrantes(), repoPoker: memory.NuevoPoker(),
@@ -52,6 +53,7 @@ func registrarPasosHU17(sc *godog.ScenarioContext) {
 	sc.Step(`^(?:que )?se da de baja a "([^"]*)"$`, e.seDaDeBajaA)
 	sc.Step(`^se registra a "([^"]*)" como integrante del proyecto$`, e.seRegistraComoIntegrante)
 	sc.Step(`^abrir la sesión da el error "([^"]*)"$`, e.abrirLaSesionDaElError)
+	return e
 }
 
 func (e *hu17) elProyectoConEstosIntegrantes(nombre string, tabla *godog.Table) error {

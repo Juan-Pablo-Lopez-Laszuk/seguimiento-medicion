@@ -61,7 +61,7 @@ Característica: Registrar la estimación acordada
   Escenario: Un valor fuera de la escala no se registra
     Dado que se reveló la ronda actual de "Login"
     Cuando "Juan" registra 4 como estimación acordada de "Login"
-    Entonces registrar la estimación da el error "el valor tiene que ser uno de la escala"
+    Entonces registrar la estimación da el error "los story points tienen que ser 0, 1, 2, 3, 5, 8, 13 o 21"
     Y la historia "Login" no tiene story points
     Y la historia "Login" tiene una sesión de Planning Poker abierta en la ronda 1
 
