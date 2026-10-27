@@ -38,6 +38,8 @@ type paginaPoker struct {
 	Mensaje  string
 	Aviso    string
 	Errores  map[string]string
+	// Escala son los valores de las cartas para votar (HU-18, CA-18.4).
+	Escala []int
 }
 
 // quienParticipa devuelve el ID del integrante que hace el pedido (RN6): con login, el vinculado a la cuenta con la que
@@ -70,6 +72,9 @@ func (h pokerHandlers) ver(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Get("abierta") == "1" {
 		pagina.Mensaje = "Sesión de Planning Poker abierta."
 	}
+	if r.URL.Query().Get("votado") == "1" {
+		pagina.Mensaje = "Voto registrado. Podés cambiarlo hasta que se revele la ronda."
+	}
 	renderPoker(w, http.StatusOK, pagina)
 }
 
@@ -90,31 +95,37 @@ func (h pokerHandlers) abrir(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var codigo int
-	pagina := paginaPoker{QuienID: quienID, Errores: map[string]string{}}
+	pedido := paginaPoker{QuienID: quienID, Errores: map[string]string{}}
 	switch {
 	case errors.Is(err, poker.ErrHistoriaHecha), errors.Is(err, poker.ErrSesionYaAbierta):
-		codigo, pagina.Aviso = http.StatusConflict, err.Error()
+		codigo, pedido.Aviso = http.StatusConflict, err.Error()
 	case errors.Is(err, member.ErrNoEsIntegrante):
-		codigo, pagina.Aviso = http.StatusForbidden, mensajeNoEsIntegrante
+		codigo, pedido.Aviso = http.StatusForbidden, mensajeNoEsIntegrante
 	case errors.Is(err, poker.ErrSoloAgileEnabler) && h.cuentas == nil && quienID == 0:
-		codigo, pagina.Errores[campoQuien] = http.StatusUnprocessableEntity, err.Error()
+		codigo, pedido.Errores[campoQuien] = http.StatusUnprocessableEntity, err.Error()
 	case errors.Is(err, poker.ErrSoloAgileEnabler):
-		codigo, pagina.Aviso = http.StatusForbidden, err.Error()
+		codigo, pedido.Aviso = http.StatusForbidden, err.Error()
 	default:
 		respondeErrorDePoker(w, err, "abrir la sesión de Planning Poker", mensajeNoSeAbrio)
 		return
 	}
+	h.mostrarConAviso(w, r, proyectoID, numero, codigo, pedido)
+}
+
+// mostrarConAviso vuelve a mostrar la página de la sesión, con el código, quién hizo el pedido, el aviso y los errores
+// de campo de un pedido que no se pudo hacer. La usan abrir (HU-17) y votar (HU-18).
+func (h pokerHandlers) mostrarConAviso(w http.ResponseWriter, r *http.Request, proyectoID int64, numero, codigo int, pedido paginaPoker) {
 	v, err := h.casos.Ver(r.Context(), proyectoID, numero)
 	if respondeErrorDePoker(w, err, "volver a mostrar la sesión de Planning Poker", mensajeNoSeCargo) {
 		return
 	}
-	completa := h.pagina(v)
-	completa.QuienID, completa.Aviso, completa.Errores = pagina.QuienID, pagina.Aviso, pagina.Errores
-	renderPoker(w, codigo, completa)
+	pagina := h.pagina(v)
+	pagina.QuienID, pagina.Aviso, pagina.Errores = pedido.QuienID, pedido.Aviso, pedido.Errores
+	renderPoker(w, codigo, pagina)
 }
 
 func (h pokerHandlers) pagina(v service.VistaSesion) paginaPoker {
-	return paginaPoker{VistaSesion: v, ConLogin: h.cuentas != nil, Errores: map[string]string{}}
+	return paginaPoker{VistaSesion: v, ConLogin: h.cuentas != nil, Errores: map[string]string{}, Escala: backlog.EscalaStoryPoints}
 }
 
 func renderPoker(w http.ResponseWriter, codigo int, pagina paginaPoker) {

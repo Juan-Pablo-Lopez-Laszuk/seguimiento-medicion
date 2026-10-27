@@ -197,9 +197,18 @@ func TestPoker_Votar_FallaLaBase(t *testing.T) {
 	verificarContiene(t, rec.Body.String(), mensajeNoSeGuardoVoto)
 }
 
+// Si falla la base al ver quién votó, 500 con el mensaje de HU-17
+func TestPoker_FragmentoFallaLaBase(t *testing.T) {
+	rec := pedido(nuevaAppPoker(t, "", pokerQueFalla{}).sinLogin(), rutaVotos, nil)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Errorf("código = %d, se esperaba 500", rec.Code)
+	}
+}
+
 func TestPoker_Votar_NoEncontrado(t *testing.T) {
 	a := nuevaAppPoker(t, "", nil)
-	for _, ruta := range []string{"/proyectos/9/backlog/1/poker/votos", "/proyectos/1/backlog/9/poker/votos"} {
+	for _, ruta := range []string{"/proyectos/9/backlog/1/poker/votos", "/proyectos/1/backlog/9/poker/votos", "/proyectos/1/backlog/x/poker/votos"} {
 		if rec := pedido(a.sinLogin(), ruta, nil); rec.Code != http.StatusNotFound {
 			t.Errorf("GET %s: código = %d, se esperaba 404", ruta, rec.Code)
 		}
