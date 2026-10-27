@@ -26,8 +26,9 @@ const (
 )
 
 // appPoker es la aplicación en memoria con el proyecto 1 "Software Metrics", sus integrantes (Juan Agile Enabler,
-// Carolina Product Builder y Lucía dada de baja; Ana, con la cuenta de los tests de TEC-05, si se pide) y las
-// historias HU-1 Login (Pendiente) y HU-2 Reportes (Hecha).
+// Carolina Product Builder y Lucía dada de baja; Ana, con la cuenta de los tests de TEC-05, si se pide; si es la Agile Enabler, Juan pasa a Product Builder) y las
+// historias HU-1 Login (Pendiente) y HU-2 Reportes (Hecha). Si el repositorio de sesiones también guarda votos, se
+// conectan (HU-18).
 type appPoker struct {
 	dep       server.Dependencias
 	porNombre map[string]member.Integrante
@@ -51,9 +52,11 @@ func nuevaAppPoker(t *testing.T, anaRol member.Rol, sesiones service.Repositorio
 		{Nombre: "Carolina", Email: "carolina@mail.com", Rol: member.RolProductBuilder, Activo: true},
 		{Nombre: "Lucía", Email: "lucia@mail.com", Rol: member.RolProductBuilder},
 	}
-	if anaRol != "" {
+	if anaRol == member.RolAgileEnabler {
 		// Ana ocupa el lugar de Juan: el proyecto tiene un solo Agile Enabler activo.
 		lista[0].Rol = member.RolProductBuilder
+	}
+	if anaRol != "" {
 		lista = append(lista, member.Integrante{Nombre: "Ana", Email: "ana@mail.com", Rol: anaRol, Activo: true})
 	}
 	for _, i := range lista {
@@ -70,12 +73,16 @@ func nuevaAppPoker(t *testing.T, anaRol member.Rol, sesiones service.Repositorio
 			t.Fatalf("guardar %q: %v", h.Titulo, err)
 		}
 	}
+	casos := service.NuevoPoker(proyectos, historias, integrantes, sesiones)
+	if votos, ok := sesiones.(service.RepositorioVotosPoker); ok {
+		casos.ConVotos(votos)
+	}
 	a.dep = server.Dependencias{
 		Proyectos:   service.NuevoProyectos(proyectos, time.Now),
 		Integrantes: service.NuevoIntegrantes(proyectos, integrantes),
 		Historias:   service.NuevoHistorias(proyectos, historias),
 		Criterios:   service.NuevoCriterios(proyectos, historias, criterios),
-		Poker:       service.NuevoPoker(proyectos, historias, integrantes, sesiones),
+		Poker:       casos,
 		Cuentas:     service.NuevoCuentas(&servicioDeLoginSimulado{}, integrantes),
 	}
 	return a
