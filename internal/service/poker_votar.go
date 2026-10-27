@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/poker"
@@ -37,7 +38,10 @@ func (s *Poker) Votar(ctx context.Context, proyectoID int64, numero int, quienID
 		return VistaSesion{}, err
 	}
 	v.Sesion, v.Ronda, err = s.sesiones.SesionAbierta(ctx, v.Historia.ID)
-	if err != nil {
+	switch {
+	case errors.Is(err, poker.ErrSesionNoEncontrada):
+		return VistaSesion{}, err
+	case err != nil:
 		return VistaSesion{}, fmt.Errorf("buscar la sesión de la historia %d: %w", v.Historia.ID, err)
 	}
 	v.Abierta = true
@@ -48,7 +52,12 @@ func (s *Poker) Votar(ctx context.Context, proyectoID int64, numero int, quienID
 	if err != nil {
 		return VistaSesion{}, err
 	}
-	if err := s.votos.Votar(ctx, v.Ronda.ID, quienID, n); err != nil {
+	err = s.votos.Votar(ctx, v.Ronda.ID, quienID, n)
+	switch {
+	// Los errores de la ronda o la sesión son los avisos de la spec: van tal cual (RN3).
+	case errors.Is(err, poker.ErrSesionNoEncontrada), errors.Is(err, poker.ErrSesionCerrada), errors.Is(err, poker.ErrRondaRevelada):
+		return VistaSesion{}, err
+	case err != nil:
 		return VistaSesion{}, fmt.Errorf("guardar el voto en la ronda %d: %w", v.Ronda.ID, err)
 	}
 	return s.conQuienesVotaron(ctx, v)
