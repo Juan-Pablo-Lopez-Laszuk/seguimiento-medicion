@@ -31,8 +31,8 @@ Esta matriz la comprueba `features/trazabilidad_test.go`, que corre con `go test
 Cuando una historia pendiente se mergea, se pasa su fila a **Cubierto** con sus escenarios y tests. Un requerimiento nuevo se
 suma a la lista del test y a la matriz.
 
-**Estado al 24/10/2026: 52 de 59 requerimientos cubiertos.** Los 7 pendientes son del Sprint 4: Planning Poker
-(HU-17 a HU-22) y los gráficos del dashboard (HU-36).
+**Estado al 27/10/2026: 56 de 59 requerimientos cubiertos.** Los 3 pendientes son del Sprint 4, todos de Planning
+Poker (HU-19 a HU-21).
 
 > Lo que no es un requerimiento de la consigna (el login de TEC-05, el deploy de TEC-04, el umbral de cobertura de TEC-06
 > y el diseño base de TEC-07) se traza en su propia especificación.
@@ -80,7 +80,7 @@ suma a la lista del test y a la matriz.
 | Estimación · Mostrar las estimaciones realizadas | HU-19 | — | — | Pendiente: HU-19, Sprint 4 |
 | Estimación · Detectar diferencias entre estimaciones | HU-20 | — | — | Pendiente: HU-20, Sprint 4 |
 | Estimación · Realizar nuevas rondas | HU-21 | — | — | Pendiente: HU-21, Sprint 4 |
-| Estimación · Registrar la estimación acordada | HU-22 | — | — | Pendiente: HU-22, Sprint 4 |
+| Estimación · Registrar la estimación acordada | HU-22 | `hu-22-registrar-estimacion.feature` «El Agile Enabler registra la estimación acordada» · «Un valor fuera de la escala no se registra» · «Las sesiones cerradas se consultan desde la historia» | `TestAcordar_ConLaRondaRevelada_EstimaLaHistoria`, `TestAcordarPoker_ElAgileEnablerRegistraLaEstimacion`, `TestPoker_Cerrar_CierraLaSesionYEstimaLaHistoria`, `TestPoker_SesionesCerradas`, `TestPoker_AcordarSinLogin` | Cubierto |
 
 ## 5. Registro de esfuerzo
 
