@@ -119,12 +119,37 @@ func TestVotarPoker_IntegranteDeOtroProyecto(t *testing.T) {
 	}
 }
 
-// RN3 · sin sesión abierta no se vota
+// RN3 · sin sesión abierta no se vota; el error es el de la spec, tal cual, porque es el aviso que ve el usuario
 func TestVotarPoker_SinSesion(t *testing.T) {
 	e := nuevoEscenarioVotos(t)
 
-	if _, err := e.casos.Votar(context.Background(), e.proyecto, 2, e.porNombre["Carolina"].ID, "5"); !errors.Is(err, poker.ErrSesionNoEncontrada) {
-		t.Errorf("error = %v, se esperaba ErrSesionNoEncontrada", err)
+	if _, err := e.casos.Votar(context.Background(), e.proyecto, 2, e.porNombre["Carolina"].ID, "5"); err == nil || err.Error() != poker.ErrSesionNoEncontrada.Error() {
+		t.Errorf("error = %v, se esperaba el mensaje de ErrSesionNoEncontrada sin contexto", err)
+	}
+}
+
+// sesionesQueSeRevelan dicen que la ronda está sin revelar, pero al guardar el voto el repositorio la encuentra
+// revelada (se reveló entre que se buscó la sesión y se votó, RN3).
+type sesionesQueSeRevelan struct {
+	service.RepositorioSesionesPoker
+}
+
+func (sesionesQueSeRevelan) Votar(context.Context, int64, int64, int) error {
+	return poker.ErrRondaRevelada
+}
+
+func (sesionesQueSeRevelan) QuienesVotaron(context.Context, int64) ([]int64, error) {
+	return []int64{}, nil
+}
+
+// RN3 · si la ronda se revela antes de que llegue el voto, el error es el de la spec, tal cual
+func TestVotarPoker_SeRevelaAntesDeGuardar(t *testing.T) {
+	e := nuevoEscenarioPoker(t)
+	_, _ = e.casos.Abrir(context.Background(), e.proyecto, 1, e.porNombre["Juan"].ID)
+	e.casos.ConVotos(sesionesQueSeRevelan{e.sesiones})
+
+	if _, err := e.casos.Votar(context.Background(), e.proyecto, 1, e.porNombre["Carolina"].ID, "5"); err == nil || err.Error() != poker.ErrRondaRevelada.Error() {
+		t.Errorf("error = %v, se esperaba el mensaje de ErrRondaRevelada sin contexto", err)
 	}
 }
 
