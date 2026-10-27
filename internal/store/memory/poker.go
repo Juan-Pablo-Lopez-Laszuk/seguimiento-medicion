@@ -13,8 +13,10 @@ type Poker struct {
 	mu           sync.Mutex
 	sesiones     []poker.Sesion
 	rondas       []poker.Ronda
+	votos        []poker.Voto
 	ultimaSesion int64
 	ultimaRonda  int64
+	ultimoVoto   int64
 }
 
 // NuevoPoker crea un repositorio vacío.
