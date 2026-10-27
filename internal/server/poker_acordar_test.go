@@ -177,7 +177,7 @@ func TestPoker_AcordarSinLogin_LosErroresVanEnElCampo(t *testing.T) {
 	h := a.sinLogin()
 
 	valor := pedido(h, rutaAcordar, a.acuerda("Juan", "4")).Body.String()
-	verificarContiene(t, valor, "is-invalid", `<div class="invalid-feedback">Los story points tienen que ser`)
+	verificarContiene(t, valor, "is-invalid", `<div class="invalid-feedback">`+mensajeValorInvalido)
 
 	quien := pedido(h, rutaAcordar, a.acuerda("", "5")).Body.String()
 	verificarContiene(t, quien, `<div class="invalid-feedback">`+poker.ErrSoloAgileEnablerAcuerda.Error())

@@ -189,6 +189,7 @@ func rutas(r chi.Router, dep Dependencias) {
 	r.Post("/proyectos/{id}/backlog/{numero}/poker", pk.abrir)
 	r.Get("/proyectos/{id}/backlog/{numero}/poker/votos", pk.quienVoto)
 	r.Post("/proyectos/{id}/backlog/{numero}/poker/votos", pk.votar)
+	r.Post("/proyectos/{id}/backlog/{numero}/poker/acordar", pk.acordar)
 }
 
 // inicio muestra la página principal.
