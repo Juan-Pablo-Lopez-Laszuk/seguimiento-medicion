@@ -17,6 +17,8 @@ import (
 // Lucía dada de baja; HU-1 Login Pendiente y HU-2 Reportes Hecha.
 type escenarioPoker struct {
 	casos       *service.Poker
+	proyectos   *memory.Proyectos
+	historias   *memory.Historias
 	integrantes *memory.Integrantes
 	sesiones    *memory.Poker
 	proyecto    int64
@@ -33,6 +35,8 @@ func nuevoEscenarioPoker(t *testing.T) *escenarioPoker {
 	}
 	e := &escenarioPoker{
 		casos:       service.NuevoPoker(proyectos, historias, integrantes, sesiones),
+		proyectos:   proyectos,
+		historias:   historias,
 		integrantes: integrantes,
 		sesiones:    sesiones,
 		proyecto:    p.ID,
