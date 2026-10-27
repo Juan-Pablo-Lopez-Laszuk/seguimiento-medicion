@@ -17,6 +17,7 @@ type Poker struct {
 	ultimaSesion int64
 	ultimaRonda  int64
 	ultimoVoto   int64
+	historias    EstimadorDeHistorias // lo conecta ConHistorias: cerrar la sesión estima la historia (HU-22)
 }
 
 // NuevoPoker crea un repositorio vacío.

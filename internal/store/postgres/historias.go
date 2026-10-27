@@ -134,30 +134,13 @@ func (r *Historias) ActualizarCompletada(ctx context.Context, historiaID int64, 
 
 // ActualizarStoryPoints guarda los story points de la historia sin tocar los demás datos, o devuelve
 // backlog.ErrHistoriaNoEncontrada si no existe. La base rechaza un valor fuera de la escala (CHECK). Es el único lugar
-// donde se escribe la estimación (HU-16): si la historia ya tenía una y el valor es distinto, anota el cambio en el
-// historial (HU-16b, CA-16.3). Todo ocurre en una transacción que bloquea la fila de la historia: si falla una cosa no
-// queda la otra, y dos re-estimaciones a la vez no pierden un valor (cada una parte de donde terminó la anterior).
+// donde se escribe la estimación (HU-16), junto con el cierre de una sesión de Planning Poker (HU-22), que usa la misma
+// guardarStoryPoints: si la historia ya tenía una y el valor es distinto, anota el cambio en el historial (HU-16b,
+// CA-16.3). Todo ocurre en una transacción que bloquea la fila de la historia: si falla una cosa no queda la otra, y
+// dos re-estimaciones a la vez no pierden un valor (cada una parte de donde terminó la anterior).
 func (r *Historias) ActualizarStoryPoints(ctx context.Context, historiaID int64, puntos int) error {
 	err := pgx.BeginFunc(ctx, r.pool, func(tx pgx.Tx) error {
-		var actual *int
-		err := tx.QueryRow(ctx, `SELECT story_points FROM historias WHERE id = $1 FOR UPDATE`, historiaID).Scan(&actual)
-		if errors.Is(err, pgx.ErrNoRows) {
-			return backlog.ErrHistoriaNoEncontrada
-		}
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(ctx, `UPDATE historias SET story_points = $1 WHERE id = $2`, puntos, historiaID); err != nil {
-			return err
-		}
-		cambio, anota := backlog.NuevaReestimacion(actual, puntos, r.ahora())
-		if !anota {
-			return nil
-		}
-		_, err = tx.Exec(ctx,
-			`INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES ($1, $2, $3, $4)`,
-			historiaID, cambio.Anterior, cambio.Nuevo, cambio.CambiadaEn)
-		return err
+		return guardarStoryPoints(ctx, tx, historiaID, puntos, r.ahora())
 	})
 	if errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
 		return backlog.ErrHistoriaNoEncontrada
@@ -166,6 +149,31 @@ func (r *Historias) ActualizarStoryPoints(ctx context.Context, historiaID int64,
 		return fmt.Errorf("actualizar los story points de la historia %d: %w", historiaID, err)
 	}
 	return nil
+}
+
+// guardarStoryPoints escribe los story points de la historia dentro de la transacción tx, bloqueando su fila, y anota
+// el cambio en el historial si corresponde (HU-16b). Devuelve backlog.ErrHistoriaNoEncontrada si no existe. La usan
+// ActualizarStoryPoints (HU-16) y Poker.Cerrar (HU-22).
+func guardarStoryPoints(ctx context.Context, tx pgx.Tx, historiaID int64, puntos int, ahora time.Time) error {
+	var actual *int
+	err := tx.QueryRow(ctx, `SELECT story_points FROM historias WHERE id = $1 FOR UPDATE`, historiaID).Scan(&actual)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return backlog.ErrHistoriaNoEncontrada
+	}
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(ctx, `UPDATE historias SET story_points = $1 WHERE id = $2`, puntos, historiaID); err != nil {
+		return err
+	}
+	cambio, anota := backlog.NuevaReestimacion(actual, puntos, ahora)
+	if !anota {
+		return nil
+	}
+	_, err = tx.Exec(ctx,
+		`INSERT INTO estimaciones_historia (historia_id, valor_anterior, valor_nuevo, cambiada_en) VALUES ($1, $2, $3, $4)`,
+		historiaID, cambio.Anterior, cambio.Nuevo, cambio.CambiadaEn)
+	return err
 }
 
 // ListarEstimaciones devuelve el historial de re-estimaciones de la historia, la más reciente primero (HU-16b). Una
