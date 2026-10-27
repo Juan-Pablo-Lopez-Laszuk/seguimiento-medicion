@@ -1,6 +1,6 @@
 # SPEC-18 · Votar de forma oculta
 
-**Historia:** HU-18 (#26) · **Responsable:** Piastrellini, Mariano · **Sprint:** 4 · **Estado:** Borrador
+**Historia:** HU-18 (#26) · **Responsable:** Piastrellini, Mariano · **Sprint:** 4 · **Estado:** Implementada
 
 > Especificación escrita antes del código (SDD). Construye sobre HU-17 (#432): el modelo común de Planning Poker
 > (`specs/HU-17-abrir-sesion-poker.md`), la página de la sesión, `quienParticipa` y la tabla `votos` de la migración 0001
@@ -33,6 +33,11 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 - Al votar vuelve a la página con **"Voto registrado. Podés cambiarlo hasta que se revele la ronda."** (303).
 - La lista de quién votó se actualiza sola cada 5 segundos con HTMX (`GET …/poker/votos`, que devuelve solo ese
   fragmento). El resto de la página se actualiza al recargar.
+  - Sin sesión abierta, o con la ronda revelada, el fragmento queda vacío: HTMX lo saca y deja de pedirlo.
+  - Un `GET …/poker/votos` que no viene de HTMX (por ejemplo, recargar después de un error al votar, que queda en esa
+    dirección) vuelve a la página de la sesión (303).
+- Si no se puede votar, la página de la sesión se vuelve a mostrar con el aviso, o con el error debajo de su campo (las
+  cartas o **Quién vota**), y el código de la sección 7.
 
 ## 4. Reglas de negocio
 
@@ -55,7 +60,8 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 - **Dominio puro** en `internal/domain/poker/votar.go`: `ValidarVoto` (RN4), `PuedeVotar` (RN2 y RN3) y `Votaron` (quién
   votó entre los participantes, RN2).
 - **Repositorio** en `poker_votos.go` (memoria y PostgreSQL). En PostgreSQL, guardar el voto y controlar que la ronda no
-  esté revelada va en una sola sentencia (RN3).
+  esté revelada ni la sesión cerrada va en una sola sentencia (`INSERT … SELECT … FOR SHARE … ON CONFLICT DO UPDATE`),
+  que bloquea la ronda mientras guarda: si se revela a la vez, el voto no se guarda (RN3).
 - **Caso de uso** en `internal/service/poker_votar.go`: `Poker.Votar` y `Poker.ConVotos`, que conecta el repositorio de
   votos sin cambiar `NuevoPoker` (como `Criterios.ConHistorial` en HU-16b). `VistaSesion` suma `Votaron`, el conjunto de
   IDs de los participantes que votaron.
@@ -75,6 +81,8 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 | Un integrante nuevo con la ronda en curso | Aparece con Falta votar (RN5 de HU-17) |
 | La historia no tiene sesión abierta | Error: no se puede votar |
 | La ronda se revela antes de que llegue el voto | Error (RN3) y el voto no se guarda |
+| La sesión se cierra antes de que llegue el voto (HU-22) | Error y el voto no se guarda |
+| Recargar después de un error al votar | Vuelve a la página de la sesión |
 
 ## 7. Condiciones de error
 
@@ -86,8 +94,10 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 | Con login, la cuenta no es integrante del proyecto | `member.ErrNoEsIntegrante` | 403 | "No sos integrante de este proyecto." |
 | La historia no tiene sesión abierta | `poker.ErrSesionNoEncontrada` | 409 | "esta historia no tiene una sesión de Planning Poker abierta" |
 | La ronda ya se reveló | `poker.ErrRondaRevelada` | 409 | "la ronda ya se reveló: no se puede votar" |
+| La sesión se cerró (HU-22) | `poker.ErrSesionCerrada` | 409 | "la sesión de Planning Poker ya está cerrada" |
 | El proyecto o la historia no existen | — | 404 | Los de siempre |
-| Falla la base | — | 500 | "No se pudo guardar el voto. Probá de nuevo en unos minutos." |
+| Falla la base al votar | — | 500 | "No se pudo guardar el voto. Probá de nuevo en unos minutos." |
+| Falla la base al ver quién votó | — | 500 | "No se pudo cargar la sesión de Planning Poker. Probá de nuevo en unos minutos." (el de HU-17) |
 
 ## 8. Criterios de aceptación (issue #26)
 
@@ -115,6 +125,9 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 
 ## Para HU-19
 
+- **En memoria**, `memory.Poker` ya guarda los votos (`votos`) junto con las sesiones y las rondas: `Revelar` cambia
+  `Revelada` en `r.rondas`, y desde entonces `Votar` devuelve `poker.ErrRondaRevelada` (hoy los tests internos de
+  `poker_votos_internal_test.go` lo simulan cambiando el campo).
 - `ronda.Revelada` existe desde la 0001; HU-19 agrega `Revelar` (repositorio) y la lectura de los votos de una ronda
   **revelada** (por ejemplo `VotosRevelados(ctx, rondaID)`, que devuelve `poker.ErrRondaNoRevelada` si no lo está).
 - "Todos votaron" (CA-19.1) = `len(Votaron) == len(Participantes)` de la `VistaSesion`.
@@ -125,13 +138,22 @@ En la página de la sesión (`/proyectos/{id}/backlog/{numero}/poker`), con la s
 
 Issue: #26 · Feature: `features/hu-18-votar-oculto.feature` · Pasos BDD: `features/hu18_steps_test.go`
 
-| Tarea | Qué | Dónde |
+| Tarea | Código | Tests |
 |---|---|---|
-| T1 (#275) | Spec y escenarios | Esta spec y la feature |
-| T2 (#276) | Dominio | `internal/domain/poker/votar.go` |
-| T3 (#277) | Repositorios | `internal/store/memory/poker_votos.go` y `internal/store/postgres/poker_votos.go` |
-| T4 (#278) | Caso de uso | `internal/service/poker_votar.go` |
-| T5 (#279) | Pantalla | `internal/server/poker_votar.go` y el bloque `pokerVotar` de `poker.html` |
-| T6 (#280) | Tests de que no se exponen los votos | En los tests de caso de uso y de pantalla |
-| T7 (#281) | App y BDD | `app/app.go` y `features/hu18_steps_test.go` |
-| T8 (#282) | Documentación | Esta spec, la matriz de trazabilidad y el registro de IA |
+| T1 (#275) | Esta spec y la feature | — |
+| T2 (#276) | `internal/domain/poker/votar.go` (`ValidarVoto`, `PuedeVotar`, `Votaron`) | `internal/domain/poker/votar_test.go` |
+| T3 (#277) | `internal/store/memory/poker_votos.go` y `internal/store/postgres/poker_votos.go` (`Votar`, `QuienesVotaron`) | `internal/store/memory/poker_votos_test.go`, `poker_votos_internal_test.go` e `internal/store/postgres/poker_votos_test.go` |
+| T4 (#278) | `internal/service/poker_votar.go` (`RepositorioVotosPoker`, `Poker.ConVotos`, `Poker.Votar`; `VistaSesion.Votaron`) | `internal/service/poker_votar_test.go` |
+| T5 (#279) | `internal/server/poker_votar.go` (`votar`, `quienVoto`) y los bloques `pokerVotar` y `pokerQuienVoto` de `poker.html` | `internal/server/poker_votar_test.go` |
+| T6 (#280) | Que no se expongan los votos (RN5) | `TestVistaSesion_NoTieneValoresDeVotos`, `TestPoker_NadieVeLosValoresAntesDeRevelar` y el escenario «Nadie ve los valores antes de revelar» |
+| T7 (#281) | `app/app.go` y `features/hu18_steps_test.go` | `app/poker_test.go` y los escenarios |
+| T8 (#282) | Esta spec, la matriz de trazabilidad y el registro de IA | — |
+
+| Criterio | Escenarios BDD | Tests |
+|---|---|---|
+| CA-18.1 Un voto por integrante y por ronda; se cambia antes de revelar | Un integrante vota · Cambiar el voto antes de revelar | `TestPoker_VotarDeNuevo_ReemplazaElVoto` (memoria y PostgreSQL), `TestVotarPoker_DeNuevoYElAgileEnabler`, `TestPoker_VotarSinLogin` |
+| CA-18.2 Solo se ve quién votó | Un integrante vota · Nadie ve los valores antes de revelar | `TestVotaron`, `TestVotarPoker_GuardaElVotoYMuestraQuienVoto`, `TestPoker_FragmentoDeQuienVoto`, `TestPoker_NadieVeLosValoresAntesDeRevelar` |
+| CA-18.3 La API no expone los votos | Nadie ve los valores antes de revelar | `TestVistaSesion_NoTieneValoresDeVotos`, `TestPoker_NadieVeLosValoresAntesDeRevelar`, `TestPoker_VotarYQuienesVotaron` |
+| CA-18.4 Fuera de la escala, error | Valores de la escala · Voto fuera de la escala | `TestValidarVoto`, `TestValidarVoto_FueraDeEscala`, `TestVotarPoker_Errores`, `TestPoker_VotarSinLogin_Errores` |
+| RN2 Votan los participantes | Votan todos los participantes · Una integrante dada de baja no vota · El voto de un integrante que se da de baja no cuenta | `TestPuedeVotar`, `TestVotarPoker_IntegranteDeOtroProyecto`, `TestVotarPoker_ElVotoDeQuienSeDaDeBajaNoCuenta`, `TestPoker_ConLogin_VotaElIntegranteDeLaCuenta` |
+| RN3 Solo en la ronda actual, antes de revelar | No se vota en una historia sin sesión abierta | `TestPoker_Votar_RondaRevelada` (memoria y PostgreSQL), `TestPoker_Votar_SesionCerrada`, `TestVotarPoker_SeRevelaAntesDeGuardar`, `TestPoker_RondaRevelada` |
