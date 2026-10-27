@@ -31,6 +31,7 @@ type Poker struct {
 	integrantes ListadorIntegrantes
 	sesiones    RepositorioSesionesPoker
 	votos       RepositorioVotosPoker
+	acordar     RepositorioAcordarPoker // lo conecta ConAcordar (HU-22)
 }
 
 // NuevoPoker arma el caso de uso.
@@ -50,6 +51,8 @@ type VistaSesion struct {
 	Ronda         poker.Ronda
 	Participantes []member.Integrante
 	Votaron       map[int64]bool
+	// Cerradas son las sesiones cerradas de la historia, la más reciente primero (HU-22, CA-22.3).
+	Cerradas []poker.SesionCerrada
 }
 
 // Ver devuelve la historia HU-N del proyecto con su sesión abierta, si tiene, y los participantes de ese momento
@@ -67,6 +70,9 @@ func (s *Poker) Ver(ctx context.Context, proyectoID int64, numero int) (VistaSes
 		return VistaSesion{}, fmt.Errorf("buscar la sesión de la historia %d: %w", v.Historia.ID, err)
 	default:
 		v.Abierta = true
+	}
+	if v.Cerradas, err = s.sesionesCerradas(ctx, v.Historia.ID); err != nil {
+		return VistaSesion{}, err
 	}
 	return s.conQuienesVotaron(ctx, v)
 }
