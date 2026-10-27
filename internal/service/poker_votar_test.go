@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/backlog"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/member"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/domain/poker"
 	"github.com/Juan-Pablo-Lopez-Laszuk/seguimiento-medicion/internal/service"
@@ -237,5 +238,12 @@ func TestVotarPoker_FallaLaBaseAlBuscarLaSesion(t *testing.T) {
 
 	if _, err := casos.Votar(context.Background(), e.proyecto, 1, e.porNombre["Carolina"].ID, "5"); !errors.Is(err, errBaseCaida) {
 		t.Errorf("error = %v, se esperaba el de la base", err)
+	}
+}
+
+func TestVotarPoker_HistoriaInexistente(t *testing.T) {
+	e := nuevoEscenarioVotos(t)
+	if _, err := e.casos.Votar(context.Background(), e.proyecto, 99, e.porNombre["Carolina"].ID, "5"); !errors.Is(err, backlog.ErrHistoriaNoEncontrada) {
+		t.Errorf("error = %v, se esperaba ErrHistoriaNoEncontrada", err)
 	}
 }

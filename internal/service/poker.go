@@ -30,6 +30,7 @@ type Poker struct {
 	historias   BuscadorHistorias
 	integrantes ListadorIntegrantes
 	sesiones    RepositorioSesionesPoker
+	votos       RepositorioVotosPoker
 }
 
 // NuevoPoker arma el caso de uso.
@@ -39,6 +40,8 @@ func NuevoPoker(proyectos BuscadorProyectos, historias BuscadorHistorias, integr
 
 // VistaSesion es lo que muestra la página de la sesión de una historia. Si la historia no tiene una sesión abierta,
 // Abierta es false y Sesion y Ronda quedan vacías. Participantes son los integrantes activos del proyecto (CA-17.3).
+// Votaron es el conjunto de IDs de los participantes que votaron en la ronda actual (HU-18, CA-18.2), nunca los
+// valores (RN5); vacío si no hay sesión abierta.
 type VistaSesion struct {
 	Proyecto      project.Proyecto
 	Historia      backlog.Historia
@@ -46,6 +49,7 @@ type VistaSesion struct {
 	Sesion        poker.Sesion
 	Ronda         poker.Ronda
 	Participantes []member.Integrante
+	Votaron       map[int64]bool
 }
 
 // Ver devuelve la historia HU-N del proyecto con su sesión abierta, si tiene, y los participantes de ese momento
@@ -64,7 +68,7 @@ func (s *Poker) Ver(ctx context.Context, proyectoID int64, numero int) (VistaSes
 	default:
 		v.Abierta = true
 	}
-	return v, nil
+	return s.conQuienesVotaron(ctx, v)
 }
 
 // Abrir abre una sesión de Planning Poker para la historia HU-N del proyecto, con la Ronda 1, y devuelve la vista de la
@@ -77,13 +81,7 @@ func (s *Poker) Abrir(ctx context.Context, proyectoID int64, numero int, quienID
 	if err != nil {
 		return VistaSesion{}, err
 	}
-	var quien member.Integrante
-	for _, i := range integrantes {
-		if i.ID == quienID {
-			quien = i
-		}
-	}
-	if err := poker.PuedeAbrir(v.Historia, quien); err != nil {
+	if err := poker.PuedeAbrir(v.Historia, integranteConID(integrantes, quienID)); err != nil {
 		return VistaSesion{}, err
 	}
 	v.Sesion, v.Ronda, err = s.sesiones.Abrir(ctx, v.Historia.ID)
@@ -112,5 +110,16 @@ func (s *Poker) historiaConIntegrantes(ctx context.Context, proyectoID int64, nu
 	if err != nil {
 		return VistaSesion{}, nil, fmt.Errorf("listar los integrantes del proyecto %d: %w", proyectoID, err)
 	}
-	return VistaSesion{Proyecto: p, Historia: h, Participantes: poker.Participantes(integrantes)}, integrantes, nil
+	return VistaSesion{Proyecto: p, Historia: h, Participantes: poker.Participantes(integrantes), Votaron: map[int64]bool{}}, integrantes, nil
+}
+
+// integranteConID busca el integrante entre los del proyecto. Si no está (0 o alguien de otro proyecto) devuelve un
+// integrante vacío, que es como no haber elegido a nadie.
+func integranteConID(integrantes []member.Integrante, id int64) member.Integrante {
+	for _, i := range integrantes {
+		if i.ID == id {
+			return i
+		}
+	}
+	return member.Integrante{}
 }
