@@ -38,3 +38,22 @@ func TestPoker_RevelarUnaRondaQueNoExiste(t *testing.T) {
 		t.Errorf("error = %v, se esperaba poker.ErrSesionNoEncontrada", err)
 	}
 }
+
+// HU-19 CA-19.2 · Votos devuelve los votos de la ronda con su valor, por integrante; los de otra ronda no
+func TestPoker_VotosDeLaRonda(t *testing.T) {
+	ctx := context.Background()
+	repo := memory.NuevoPoker()
+	_, ronda, _ := repo.Abrir(ctx, 7)
+	_, otra, _ := repo.Abrir(ctx, 8)
+	for _, v := range []poker.Voto{{RondaID: ronda.ID, IntegranteID: 3, Valor: 5}, {RondaID: ronda.ID, IntegranteID: 1, Valor: 8}, {RondaID: otra.ID, IntegranteID: 2, Valor: 13}} {
+		if err := repo.Votar(ctx, v.RondaID, v.IntegranteID, v.Valor); err != nil {
+			t.Fatalf("votar: %v", err)
+		}
+	}
+
+	votos, err := repo.Votos(ctx, ronda.ID)
+
+	if err != nil || len(votos) != 2 || votos[0].IntegranteID != 1 || votos[0].Valor != 8 || votos[1].IntegranteID != 3 || votos[1].Valor != 5 {
+		t.Errorf("Votos = %+v, %v; se esperaban los votos 8 (integrante 1) y 5 (integrante 3)", votos, err)
+	}
+}
