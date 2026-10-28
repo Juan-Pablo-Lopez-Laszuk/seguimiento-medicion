@@ -30,6 +30,9 @@ Ver todas las estimaciones de una ronda al terminar la votación, para que el eq
 - **Revelada:** la tabla **Votos de la ronda N**, con cada integrante y su voto (CA-19.2), ordenada por nombre. Los que
   no votaron aparecen con "no votó".
 - Al revelarse sola (todos votaron) o al cerrarla, se vuelve a la sesión con el mensaje **"Ronda revelada."**.
+- Las otras pestañas con la sesión abierta se enteran solas: el fragmento de quién votó de HU-18, que HTMX pide cada 5
+  segundos, revisa la ronda (RN1) y, si está revelada, responde `HX-Refresh: true` para que la página se recargue y
+  muestre la tabla de votos.
 
 ## 4. Reglas de negocio
 
@@ -40,6 +43,8 @@ Ver todas las estimaciones de una ronda al terminar la votación, para que el eq
 - RN4: Solo el Agile Enabler cierra la ronda.
 - RN5: Una ronda revelada no se vuelve a revelar ni recibe votos nuevos. Para votar de nuevo se abre otra ronda (HU-21).
 - RN6: Los valores de los votos solo se muestran en una ronda revelada (CA-19.2 y regla de HU-18).
+- RN7: Solo cuentan y se muestran los votos de los integrantes activos: el de alguien que se dio de baja no cuenta para
+  revelar ni para cerrar, y no aparece en la tabla (RN2 de HU-18).
 
 ## 5. Restricciones
 
@@ -59,7 +64,7 @@ Según el modelo común de HU-17, todo lo de HU-19 va en sus propios archivos:
 | Votaron todos menos uno | No se revela sola; el Agile Enabler puede cerrarla |
 | Un integrante dado de baja no votó | No cuenta: se revela si votaron todos los activos |
 | El Agile Enabler cierra con un solo voto | Se revela con ese voto |
-| Un voto de alguien que ya no está activo | Se muestra igual, con su nombre |
+| Alguien vota y después se da de baja | Su voto no cuenta ni se muestra, como dice HU-18 (RN2 de HU-18); si era el último que faltaba, la ronda se revela con los votos de los activos |
 
 ## 7. Condiciones de error
 
