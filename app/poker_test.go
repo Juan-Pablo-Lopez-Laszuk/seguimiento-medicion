@@ -53,9 +53,13 @@ func TestNewHandlerConBase_ConURLAbrePlanningPoker(t *testing.T) {
 	verificarPoker(t, h)
 }
 
-// verificarVotos vota con Juan y comprueba que la página dice que votó, sin mostrar el valor (HU-18).
+// verificarVotos suma a Carolina, vota con Juan y comprueba que la página dice que votó, sin mostrar el valor (HU-18).
+// Con Carolina falta un voto: si Juan fuera el único participante, la ronda se revelaría sola (HU-19, RN1).
 func verificarVotos(t *testing.T, h http.Handler) {
 	t.Helper()
+	if rec := post(h, "/proyectos/1/integrantes", neturl.Values{"nombre": {"Carolina"}, "email": {"caro@mail.com"}, "rol": {"ProductBuilder"}}); rec.Code != http.StatusSeeOther {
+		t.Fatalf("registrar a Carolina: se esperaba %d y se obtuvo %d", http.StatusSeeOther, rec.Code)
+	}
 	if rec := post(h, "/proyectos/1/backlog/1/poker/votos", neturl.Values{"quien": {"1"}, "valor": {"13"}}); rec.Code != http.StatusSeeOther {
 		t.Fatalf("votar: se esperaba %d y se obtuvo %d:\n%s", http.StatusSeeOther, rec.Code, rec.Body.String())
 	}
@@ -63,7 +67,7 @@ func verificarVotos(t *testing.T, h http.Handler) {
 	req.Header.Set("HX-Request", "true")
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
-	if fragmento := rec.Body.String(); !strings.Contains(fragmento, "1 de 1 votaron") || strings.Contains(fragmento, "13") {
+	if fragmento := rec.Body.String(); !strings.Contains(fragmento, "1 de 2 votaron") || strings.Contains(fragmento, "13") {
 		t.Errorf("quién votó tendría que decir que Juan votó, sin el valor:\n%s", fragmento)
 	}
 }

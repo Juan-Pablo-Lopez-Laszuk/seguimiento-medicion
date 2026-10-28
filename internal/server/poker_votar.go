@@ -56,7 +56,7 @@ func (h pokerHandlers) votar(w http.ResponseWriter, r *http.Request) {
 // quienVoto devuelve solo el fragmento de quién votó (bloque pokerQuienVoto), que HTMX pide cada 5 segundos (HU-18,
 // T5). Nunca tiene los valores (RN5). Sin sesión abierta el fragmento queda vacío: HTMX lo saca y deja de pedirlo. Un
 // pedido que no es de HTMX (recargar la página después de un error al votar, que queda en esta dirección) vuelve a la
-// página de la sesión.
+// página de la sesión. Si la ronda se reveló (HU-19), pide recargar la página entera.
 func (h pokerHandlers) quienVoto(w http.ResponseWriter, r *http.Request) {
 	proyectoID, numero, ok := idsDeHistoria(w, r)
 	if !ok {
@@ -64,6 +64,9 @@ func (h pokerHandlers) quienVoto(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.Header.Get("HX-Request") != "true" {
 		http.Redirect(w, r, fmt.Sprintf("/proyectos/%d/backlog/%d/poker", proyectoID, numero), http.StatusSeeOther)
+		return
+	}
+	if h.recargaSiSeRevelo(w, r, proyectoID, numero) {
 		return
 	}
 	v, err := h.casos.Ver(r.Context(), proyectoID, numero)
