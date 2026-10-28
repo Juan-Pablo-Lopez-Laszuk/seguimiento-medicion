@@ -73,9 +73,13 @@ func (s *supabaseFalso) config() auth.Config {
 func b64(b []byte) string { return base64.RawURLEncoding.EncodeToString(b) }
 
 func (s *supabaseFalso) jwkEC() map[string]string {
-	p := s.ec.PublicKey
+	// Forma sin comprimir: 0x04, X (32 bytes) e Y (32 bytes).
+	p, err := s.ec.PublicKey.Bytes()
+	if err != nil {
+		s.t.Fatalf("clave pública EC: %v", err)
+	}
 	return map[string]string{"kty": "EC", "crv": "P-256", "alg": "ES256", "use": "sig", "kid": kidEC,
-		"x": b64(p.X.FillBytes(make([]byte, 32))), "y": b64(p.Y.FillBytes(make([]byte, 32)))}
+		"x": b64(p[1:33]), "y": b64(p[33:65])}
 }
 
 func (s *supabaseFalso) jwkRSA() map[string]string {

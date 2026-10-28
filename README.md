@@ -58,7 +58,8 @@ Cómo trabajar en el repositorio (ramas, commits, Pull Requests): ver [CONTRIBUT
 
 ## Cómo correrlo
 
-Requisitos: [Go](https://go.dev/dl/) 1.24 o superior y Git.
+Requisitos: [Go](https://go.dev/dl/) 1.26 o superior y Git. `go.mod` fija el toolchain en Go 1.27.3: si tenés uno más viejo,
+`go` descarga esa versión solo la primera vez.
 
 ```bash
 go run ./cmd/server          # levanta la app en http://localhost:8080 (salud: /health)
@@ -78,6 +79,12 @@ Sin esas variables funciona abierta, como hasta ahora (es lo que usan los tests,
 Cada Pull Request corre el **CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): gofmt, go vet, golangci-lint,
 tests con race detector y cobertura, y los escenarios BDD. Si algo falla, el PR no se puede mergear. El reporte de
 cobertura queda en el resumen de la corrida y como artefacto descargable (`cobertura`).
+
+**Seguridad:** el workflow [`.github/workflows/seguridad.yml`](.github/workflows/seguridad.yml) corre `govulncheck`, la
+herramienta oficial de Go, en cada Pull Request, en cada push a `main` y todos los lunes. Cruza las dependencias de
+`go.mod` y la biblioteca estándar contra la base de vulnerabilidades de Go y falla si el código llama a alguna función
+vulnerable. Para correrlo antes de subir: `go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...`. Dependabot avisa de
+las dependencias con vulnerabilidades y abre el PR para actualizarlas.
 
 **Umbral de cobertura (TEC-06):** el CI también falla si la cobertura combinada de `internal/domain` (con todos sus
 subpaquetes) e `internal/metrics` baja del **80 %**. Es una meta interna del equipo: la cátedra no fija un porcentaje.
