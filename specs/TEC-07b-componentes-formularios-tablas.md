@@ -1,6 +1,6 @@
 # SPEC-TEC-07b · Componentes de formularios y tablas
 
-**Tarea:** TEC-07b (#101, tareas #401 a #404) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Borrador
+**Tarea:** TEC-07b (#101, tareas #401 a #404) · **Responsable:** Bravo, Carolina · **Sprint:** 4 · **Estado:** Implementada (las demás pantallas adoptan los componentes cuando se toquen)
 
 > Especificación escrita antes del código (SDD). Completa el CA-07.3 de TEC-07 (`specs/TEC-07-diseno-base.md`): la
 > primera entrega (#99) trajo los mensajes, el error de campo y la ventana de confirmación. Sale de la revisión de
@@ -85,4 +85,15 @@ deje un botón afuera de la pantalla (por ejemplo, el "Dar de baja" de integrant
 Issue: #101 · Escenarios BDD: no aplica (no hay una regla de negocio nueva; se prueba con los tests de las pantallas,
 igual que TEC-07).
 
-(Se completa al implementar.)
+| Tarea | Qué | Código | Tests |
+|---|---|---|---|
+| T1 (#401) | Componente de campo | `campo` en `web/templates/componentes.html` | `TestCampo_EtiquetaYAyudaUnidasAlCampo`, `TestCampo_ConErrorMarcaElCampoYMuestraElMensaje` |
+| T2 (#402) | Tablas responsivas | `estilos` (`tabla-lista`) en `componentes.html`, cargado en `base.html` | `TestTablaLista_IntegrantesSeApilaEnElCelular` |
+| T3 (#403) | Adopción | `integrante_nuevo.html` (`campo`, `error` y `errorCampo`) e `integrantes.html` (`tabla-lista`) | Los anteriores y los de HU-03 en `internal/server/integrantes_test.go` |
+| T4 (#404) | PR y revisión | Este PR | — |
+
+| Criterio | Tests |
+|---|---|
+| CA-07b.1 Campo de formulario | `TestCampo_EtiquetaYAyudaUnidasAlCampo`, `TestCampo_ConErrorMarcaElCampoYMuestraElMensaje` |
+| CA-07b.2 Tablas en el celular | `TestTablaLista_IntegrantesSeApilaEnElCelular`; además lo revisé con un navegador de 375 px de ancho: el botón "Dar de baja" queda adentro de la pantalla |
+| CA-07b.3 Adopción de a poco | Las pantallas de integrantes; las demás cuando se toquen |
