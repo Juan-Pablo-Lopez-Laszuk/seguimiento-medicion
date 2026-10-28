@@ -18,7 +18,7 @@
 
 {{if .Integrantes}}
 <div class="table-responsive bg-body rounded-3 shadow-sm">
-  <table class="table table-hover align-middle mb-0">
+  <table class="table table-hover align-middle mb-0 tabla-lista">
     <thead>
       <tr>
         <th scope="col">Nombre</th>
@@ -33,13 +33,13 @@
       {{range .Integrantes}}
       <tr{{if not .Activo}} class="text-body-secondary"{{end}}>
         <td class="fw-semibold">{{.Nombre}}</td>
-        <td>{{.Email}}</td>
-        <td>{{.Rol.Texto}}</td>
-        <td>
+        <td data-etiqueta="Email">{{.Email}}</td>
+        <td data-etiqueta="Rol">{{.Rol.Texto}}</td>
+        <td data-etiqueta="Estado">
           {{if .Activo}}<span class="badge text-bg-success">Activo</span>
           {{else}}<span class="badge text-bg-secondary">Dado de baja</span>{{end}}
         </td>
-        <td class="text-end">
+        <td class="acciones text-end">
           {{if .Activo}}
           {{template "confirmar" (dict
               "ID" (printf "confirmar-baja-%d" .ID)

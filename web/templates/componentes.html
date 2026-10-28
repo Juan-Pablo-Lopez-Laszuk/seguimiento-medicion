@@ -3,6 +3,25 @@
   páginas, así cada página los usa con {{template "nombre" …}} en lugar de repetir el HTML.
 */}}
 
+{{/*
+  estilos: los estilos propios del diseño base, que carga base.html. tabla-lista (TEC-07b): en el celular (menos de
+  576 px) la tabla de una lista se apila; cada fila es un bloque y cada celda muestra su data-etiqueta antes del valor,
+  así ningún botón queda afuera de la pantalla (RN4). Uso: <table class="table … tabla-lista"> y <td data-etiqueta="Email">;
+  la celda de los botones lleva class="acciones".
+*/}}
+{{define "estilos"}}
+<style>
+  @media (max-width: 575.98px) {
+    .tabla-lista thead { display: none; }
+    .tabla-lista, .tabla-lista tbody, .tabla-lista tr, .tabla-lista td { display: block; width: 100%; }
+    .tabla-lista tr { padding: .5rem 0; border-bottom: 1px solid var(--bs-border-color); }
+    .tabla-lista td { border: 0; padding: .25rem 1rem; text-align: start !important; overflow-wrap: anywhere; }
+    .tabla-lista td[data-etiqueta]::before { content: attr(data-etiqueta) ": "; font-weight: 600; color: var(--bs-secondary-color); }
+    .tabla-lista td.acciones { padding-top: .5rem; }
+  }
+</style>
+{{end}}
+
 {{/* exito: mensaje verde que se puede cerrar. Uso: {{template "exito" "Proyecto creado."}} */}}
 {{define "exito"}}{{with .}}
 <div class="alert alert-success alert-dismissible fade show" role="status">
@@ -23,6 +42,22 @@
 
 {{/* errorCampo: el error debajo de un campo del formulario. Uso: {{template "errorCampo" (index .Errores "nombre")}} */}}
 {{define "errorCampo"}}{{with .}}<div class="invalid-feedback">{{.}}</div>{{end}}{{end}}
+
+{{/*
+  campo: un campo de formulario con su etiqueta, el error debajo y una ayuda opcional (TEC-07b). Los datos que no se
+  pasan no muestran nada (RN1). Uso:
+  {{template "campo" (dict "ID" "email" "Etiqueta" "Email" "Tipo" "email" "Valor" .Email
+      "Error" (index .Errores "email") "Requerido" true "Max" 254 "Ayuda" "No puede repetirse.")}}
+  Sin Tipo es un campo de texto. También acepta "Foco" true (autofocus).
+*/}}
+{{define "campo"}}
+<div class="mb-3">
+  <label class="form-label" for="{{.ID}}">{{.Etiqueta}}</label>
+  <input class="form-control{{if .Error}} is-invalid{{end}}"{{with .Tipo}} type="{{.}}"{{end}} id="{{.ID}}" name="{{.ID}}" value="{{with .Valor}}{{.}}{{end}}"{{with .Max}} maxlength="{{.}}"{{end}}{{if .Requerido}} required{{end}}{{if .Foco}} autofocus{{end}}{{if .Ayuda}} aria-describedby="{{.ID}}-ayuda"{{end}}>
+  {{template "errorCampo" .Error}}
+  {{with .Ayuda}}<div class="form-text" id="{{$.ID}}-ayuda">{{.}}</div>{{end}}
+</div>
+{{end}}
 
 {{/*
   confirmar: un botón que abre una ventana para confirmar una acción que no se puede deshacer; recién al confirmar se
