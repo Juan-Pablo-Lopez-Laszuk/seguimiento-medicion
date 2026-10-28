@@ -49,6 +49,7 @@ func registrarPasosHU19(sc *godog.ScenarioContext) {
 	sc.Step(`^el equipo de Planning Poker con "([^"]*)" de Agile Enabler y "([^"]*)" y "([^"]*)" de Product Builder$`, e.elEquipo)
 	sc.Step(`^una sesión de Planning Poker abierta para "HU-(\d+) ([^"]*)" con la ronda 1$`, e.unaSesionAbierta)
 	sc.Step(`^que en la ronda votaron (.+)$`, e.enLaRondaVotaron)
+	sc.Step(`^que "([^"]*)" deja el equipo de Planning Poker$`, e.dejaElEquipo)
 	sc.Step(`^"([^"]*)" cierra la ronda$`, e.cierraLaRonda)
 	sc.Step(`^la ronda está revelada$`, e.laRondaEstaRevelada)
 	sc.Step(`^la ronda no está revelada$`, e.laRondaNoEstaRevelada)
@@ -115,6 +116,16 @@ func (e *hu19) enLaRondaVotaron(votos string) error {
 		}
 	}
 	_, err := e.revelar.Revisar(context.Background(), e.proyectoID, e.numero)
+	return err
+}
+
+// dejaElEquipo da de baja al integrante con el caso de uso de HU-03, como en la aplicación (RN7).
+func (e *hu19) dejaElEquipo(nombre string) error {
+	i, ok := e.porNombre[nombre]
+	if !ok {
+		return fmt.Errorf("no hay un integrante %q en el escenario", nombre)
+	}
+	_, err := service.NuevoIntegrantes(e.repoProyectos, e.repoIntegrantes).DarDeBaja(context.Background(), e.proyectoID, i.ID)
 	return err
 }
 

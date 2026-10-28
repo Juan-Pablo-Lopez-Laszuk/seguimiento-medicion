@@ -75,3 +75,22 @@ func (h pokerHandlers) cerrar(w http.ResponseWriter, r *http.Request) {
 
 // mensajeNoSeCerro es el mensaje de una falla de la base al cerrar la ronda (spec de HU-19, sección 7).
 const mensajeNoSeCerro = "No se pudo cerrar la ronda. Probá de nuevo en unos minutos."
+
+// recargaSiSeRevelo revisa la ronda desde el fragmento de quién votó de HU-18, que HTMX pide cada 5 segundos (RN1): si
+// está revelada, también porque se dio de baja el último que faltaba (RN7), responde HX-Refresh para que las otras
+// pestañas recarguen la página y vean la tabla de votos. Devuelve true si ya respondió.
+func (h pokerHandlers) recargaSiSeRevelo(w http.ResponseWriter, r *http.Request, proyectoID int64, numero int) bool {
+	if h.revelar == nil {
+		return false
+	}
+	v, err := h.revelar.Revisar(r.Context(), proyectoID, numero)
+	if respondeErrorDePoker(w, err, "revisar la ronda de Planning Poker", mensajeNoSeCargo) {
+		return true
+	}
+	if !v.Abierta || !v.Ronda.Revelada {
+		return false
+	}
+	w.Header().Set("HX-Refresh", "true")
+	w.WriteHeader(http.StatusOK)
+	return true
+}

@@ -117,3 +117,45 @@ func TestRevelar_CerrarUnaRondaYaRevelada(t *testing.T) {
 	}
 	verificarContiene(t, rec.Body.String(), "la ronda ya está revelada", "Votos de la ronda 1")
 }
+
+// conHTMX marca el pedido como de HTMX, como el fragmento de quién votó que se pide cada 5 segundos (HU-18).
+func conHTMX(r *http.Request) { r.Header.Set("HX-Request", "true") }
+
+// RN1 · las otras pestañas se enteran: si votaron todos, el fragmento de quién votó revela la ronda y pide recargar la
+// página (HX-Refresh), que ya muestra los votos
+func TestRevelar_FragmentoDeQuienVoto_RecargaAlRevelar(t *testing.T) {
+	_, h := nuevaAppRevelar(t, map[string]int{"Juan": 5, "Carolina": 8})
+
+	rec := pedido(h, rutaPoker+"/votos", nil, conHTMX)
+
+	if rec.Code != http.StatusOK || rec.Header().Get("HX-Refresh") != "true" {
+		t.Fatalf("código = %d, HX-Refresh = %q; se esperaba 200 con HX-Refresh true", rec.Code, rec.Header().Get("HX-Refresh"))
+	}
+	verificarContiene(t, pedido(h, rutaPoker, nil).Body.String(), "Votos de la ronda 1", "<td>8</td>")
+}
+
+// RN1 · si falta votar alguien, el fragmento sigue igual, sin recargar
+func TestRevelar_FragmentoDeQuienVoto_SinRevelarNoRecarga(t *testing.T) {
+	_, h := nuevaAppRevelar(t, map[string]int{"Carolina": 8})
+
+	rec := pedido(h, rutaPoker+"/votos", nil, conHTMX)
+
+	if rec.Header().Get("HX-Refresh") != "" {
+		t.Errorf("HX-Refresh = %q, no se esperaba recargar", rec.Header().Get("HX-Refresh"))
+	}
+	verificarContiene(t, rec.Body.String(), "1 de 2 votaron")
+}
+
+// RN1 y RN7 · si se da de baja el último que faltaba votar, la ronda se revela en el próximo pedido del fragmento
+func TestRevelar_FragmentoDeQuienVoto_SeRevelaSiSeDaDeBajaElQueFaltaba(t *testing.T) {
+	a, h := nuevaAppRevelar(t, map[string]int{"Carolina": 8})
+	if _, err := a.dep.Integrantes.DarDeBaja(context.Background(), 1, a.porNombre["Juan"].ID); err != nil {
+		t.Fatalf("dar de baja a Juan: %v", err)
+	}
+
+	rec := pedido(h, rutaPoker+"/votos", nil, conHTMX)
+
+	if rec.Header().Get("HX-Refresh") != "true" {
+		t.Errorf("HX-Refresh = %q, se esperaba true", rec.Header().Get("HX-Refresh"))
+	}
+}

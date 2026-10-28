@@ -51,3 +51,15 @@ Característica: Revelar estimaciones
     Dado que en la ronda votaron "Carolina" 3
     Cuando "Mariano" cierra la ronda
     Entonces revelar da el error "solo el Agile Enabler del proyecto abre una sesión de Planning Poker"
+
+  # Caso LÍMITE (RN7): el voto de alguien que se dio de baja no cuenta ni se muestra
+  @CA-19.1 @CA-19.2
+  Escenario: El voto de alguien que se dio de baja no se muestra
+    Dado que en la ronda votaron "Mariano" 5
+    Y que "Mariano" deja el equipo de Planning Poker
+    Y que en la ronda votaron "Juan Pablo" 3 y "Carolina" 8
+    Entonces la ronda está revelada
+    Y se ven estos votos:
+      | integrante | voto |
+      | Carolina   | 8    |
+      | Juan Pablo | 3    |

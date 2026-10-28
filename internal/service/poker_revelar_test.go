@@ -119,7 +119,7 @@ func TestRevelarPoker_ElAgileEnablerCierraLaRonda(t *testing.T) {
 	}
 }
 
-// CA-19.3, RN4 y RN5 · cuándo no se puede cerrar la ronda; no se guarda nada
+// CA-19.3, RN4, RN5 y RN7 · cuándo no se puede cerrar la ronda; no se guarda nada
 func TestRevelarPoker_CerrarConError(t *testing.T) {
 	casos := []struct {
 		nombre string
@@ -132,6 +132,7 @@ func TestRevelarPoker_CerrarConError(t *testing.T) {
 		{"una integrante dada de baja", map[string]int{"Carolina": 8}, "Lucía", false, poker.ErrSoloAgileEnabler},
 		{"alguien de otro proyecto", map[string]int{"Carolina": 8}, "", false, poker.ErrSoloAgileEnabler},
 		{"la ronda sin votos", nil, "Juan", false, poker.ErrRondaSinVotos},
+		{"solo votó una integrante dada de baja (RN7)", map[string]int{"Lucía": 8}, "Juan", false, poker.ErrRondaSinVotos},
 		{"la ronda ya revelada", map[string]int{"Carolina": 8}, "Juan", true, poker.ErrRondaYaRevelada},
 	}
 	for _, c := range casos {

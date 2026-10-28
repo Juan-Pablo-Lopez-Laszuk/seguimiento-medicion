@@ -83,7 +83,8 @@ func (s *RevelarPoker) Cerrar(ctx context.Context, proyectoID int64, numero int,
 	return conVotos(v, votos, integrantes)
 }
 
-// sesion busca la historia con su sesión abierta, todos los integrantes del proyecto y los votos de la ronda actual.
+// sesion busca la historia con su sesión abierta, todos los integrantes del proyecto y los votos que cuentan de la
+// ronda actual.
 func (s *RevelarPoker) sesion(ctx context.Context, proyectoID int64, numero int) (VistaRevelar, []member.Integrante, []poker.Voto, error) {
 	vs, integrantes, err := s.poker.historiaConIntegrantes(ctx, proyectoID, numero)
 	if err != nil {
@@ -103,7 +104,23 @@ func (s *RevelarPoker) sesion(ctx context.Context, proyectoID int64, numero int)
 	if err != nil {
 		return VistaRevelar{}, nil, nil, fmt.Errorf("listar los votos de la ronda %d: %w", v.Ronda.ID, err)
 	}
-	return v, integrantes, votos, nil
+	return v, integrantes, votosQueCuentan(votos, v.Participantes), nil
+}
+
+// votosQueCuentan deja solo los votos de los participantes, los integrantes activos: el de alguien que se dio de baja
+// no cuenta para revelar ni para cerrar (RN7, como RN2 de HU-18).
+func votosQueCuentan(votos []poker.Voto, participantes []member.Integrante) []poker.Voto {
+	activos := map[int64]bool{}
+	for _, p := range participantes {
+		activos[p.ID] = true
+	}
+	var cuentan []poker.Voto
+	for _, v := range votos {
+		if activos[v.IntegranteID] {
+			cuentan = append(cuentan, v)
+		}
+	}
+	return cuentan
 }
 
 // revelar guarda la ronda revelada y la deja en la vista.
