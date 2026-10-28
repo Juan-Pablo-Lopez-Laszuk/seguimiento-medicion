@@ -66,8 +66,8 @@ func Cerrar(r Ronda, votos []Voto, quien member.Integrante) (Ronda, error) {
 	return r, nil
 }
 
-// VotosRevelados devuelve cada integrante activo con su voto, y también quien votó aunque ya no esté activo, ordenados
-// por nombre (CA-19.2). Si la ronda no está revelada no devuelve ningún valor (RN6).
+// VotosRevelados devuelve cada integrante activo con su voto, ordenados por nombre (CA-19.2). El voto de alguien que se
+// dio de baja no se muestra (RN7, como RN2 de HU-18). Si la ronda no está revelada no devuelve ningún valor (RN6).
 func VotosRevelados(r Ronda, votos []Voto, integrantes []member.Integrante) ([]VotoRevelado, error) {
 	if !r.Revelada {
 		return nil, ErrRondaSinRevelar
@@ -79,7 +79,7 @@ func VotosRevelados(r Ronda, votos []Voto, integrantes []member.Integrante) ([]V
 	var filas []VotoRevelado
 	for _, i := range integrantes {
 		v, voto := valor[i.ID]
-		if i.Activo || voto {
+		if i.Activo {
 			filas = append(filas, VotoRevelado{Integrante: i.Nombre, Valor: v, Voto: voto})
 		}
 	}
