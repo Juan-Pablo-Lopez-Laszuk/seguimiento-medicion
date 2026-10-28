@@ -47,3 +47,32 @@ func TestDarDeBaja_PideConfirmacionEnUnaVentana(t *testing.T) {
 		t.Error("la baja no debería usar el cuadro de confirmación del navegador")
 	}
 }
+
+// TEC-07b · CA-07b.1 y RN3: el formulario de nuevo integrante usa el componente campo: etiqueta unida al campo, ayuda
+// unida con aria-describedby y, sin datos, ningún "<no value>" (RN1).
+func TestCampo_EtiquetaYAyudaUnidasAlCampo(t *testing.T) {
+	html := get(conProyecto(t), "/proyectos/1/integrantes/nuevo").Body.String()
+
+	verificarContiene(t, html,
+		`<label class="form-label" for="nombre">Nombre</label>`,
+		`<label class="form-label" for="email">Email</label>`,
+		`aria-describedby="email-ayuda"`, `id="email-ayuda"`, "No puede repetirse dentro del proyecto.",
+		`value=""`,
+	)
+	if strings.Contains(html, "no value") {
+		t.Error("un dato que no se pasa al campo no tiene que mostrar <no value>")
+	}
+	if strings.Contains(html, `aria-describedby="nombre-ayuda"`) {
+		t.Error("el campo Nombre no tiene ayuda: no tiene que llevar aria-describedby")
+	}
+}
+
+// TEC-07b · RN2: con error, el campo queda en rojo con el mensaje debajo y conserva lo escrito.
+func TestCampo_ConErrorMarcaElCampoYMuestraElMensaje(t *testing.T) {
+	campos := integranteValido()
+	campos.Set("email", "sin-arroba")
+
+	html := post(conProyecto(t), "/proyectos/1/integrantes", campos).Body.String()
+
+	verificarContiene(t, html, `class="form-control is-invalid" type="email" id="email" name="email" value="sin-arroba"`, `<div class="invalid-feedback">`)
+}
