@@ -96,7 +96,7 @@ func TestAcordarPoker_ErroresDeLasReglas(t *testing.T) {
 		{"una Product Builder dada de baja", "Lucía", 0, true, poker.ErrSoloAgileEnablerAcuerda},
 		{"nadie (no se eligió quién)", "", 0, true, poker.ErrSoloAgileEnablerAcuerda},
 		{"alguien de otro proyecto", "", 999, true, poker.ErrSoloAgileEnablerAcuerda},
-		{"la ronda sin revelar", "Juan", 0, false, poker.ErrRondaSinRevelar},
+		{"la ronda sin revelar", "Juan", 0, false, poker.ErrAcordarSinRevelar},
 	}
 	for _, c := range casos {
 		t.Run(c.nombre, func(t *testing.T) {

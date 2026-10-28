@@ -113,7 +113,7 @@ type RepositorioAcordarPoker interface {
 | Situación | Error | Código | Mensaje al usuario |
 |---|---|---|---|
 | El valor no es de la escala | `domain.ErroresValidacion` (campo `story_points`) | 422 | "los story points tienen que ser 0, 1, 2, 3, 5, 8, 13 o 21", debajo del desplegable (el mismo de HU-16) |
-| La ronda actual no está revelada | `poker.ErrRondaSinRevelar` | 409 | "Para registrar la estimación, primero revelá la ronda." |
+| La ronda actual no está revelada | `poker.ErrAcordarSinRevelar` | 409 | "Para registrar la estimación, primero revelá la ronda." |
 | Quien registra no es el Agile Enabler activo | `poker.ErrSoloAgileEnablerAcuerda` | 403 | "Solo el Agile Enabler del proyecto registra la estimación acordada." |
 | Sin login, no se eligió quién registra | `poker.ErrSoloAgileEnablerAcuerda` | 422 | El mismo mensaje, debajo del desplegable |
 | Con login, la cuenta no es integrante del proyecto | `member.ErrNoEsIntegrante` | 403 | "No sos integrante de este proyecto." |
@@ -147,7 +147,7 @@ Issue: #30 · Feature: `features/hu-22-registrar-estimacion.feature` · Pasos BD
 | Tarea | Código | Tests |
 |---|---|---|
 | T1 (#303) | Esta spec y la feature | — |
-| T2 (#304) | `internal/domain/poker/acordar.go` (`Acordar`, `SesionCerrada`, `ErrRondaSinRevelar`, `ErrSoloAgileEnablerAcuerda`) | `internal/domain/poker/acordar_test.go` |
+| T2 (#304) | `internal/domain/poker/acordar.go` (`Acordar`, `SesionCerrada`, `ErrAcordarSinRevelar`, `ErrSoloAgileEnablerAcuerda`) | `internal/domain/poker/acordar_test.go` |
 | T3 (#305) | `poker_acordar.go` en `internal/store/memory` (`ConHistorias`, `Cerrar`, `SesionesCerradas`) y en `internal/store/postgres` (`Cerrar`, `SesionesCerradas`); `guardarStoryPoints` en `internal/store/postgres/historias.go` | `poker_acordar_test.go` en los dos stores |
 | T4 (#306) | `internal/service/poker_acordar.go` (`RepositorioAcordarPoker`, `ConAcordar`, `Acordar`) y `VistaSesion.Cerradas` en `poker.go` | `internal/service/poker_acordar_test.go` |
 | T5 (#307) | `internal/server/poker_acordar.go` (`acordar`, `mensajeAcordada`), la ruta en `router.go` y los bloques `pokerAcordar` y `pokerCerradas` de `poker.html` | `internal/server/poker_acordar_test.go` |

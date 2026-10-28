@@ -86,8 +86,8 @@ func TestAcordar_SoloElAgileEnabler(t *testing.T) {
 // RN4 · el valor se acuerda después de revelar la ronda
 func TestAcordar_ConLaRondaSinRevelar_NoSeAcuerda(t *testing.T) {
 	_, err := poker.Acordar(historiaLogin, sesionAbierta, rondaSinVotar, juan, "5")
-	if !errors.Is(err, poker.ErrRondaSinRevelar) {
-		t.Errorf("error = %v, se esperaba ErrRondaSinRevelar", err)
+	if !errors.Is(err, poker.ErrAcordarSinRevelar) {
+		t.Errorf("error = %v, se esperaba ErrAcordarSinRevelar", err)
 	}
 }
 
@@ -122,7 +122,7 @@ func TestAcordar_OrdenDeLasReglas(t *testing.T) {
 	if _, err := poker.Acordar(historiaLogin, sesionAbierta, rondaSinVotar, carolina, "4"); !errors.Is(err, poker.ErrSoloAgileEnablerAcuerda) {
 		t.Errorf("después quién registra: error = %v", err)
 	}
-	if _, err := poker.Acordar(historiaLogin, sesionAbierta, rondaSinVotar, juan, "4"); !errors.Is(err, poker.ErrRondaSinRevelar) {
+	if _, err := poker.Acordar(historiaLogin, sesionAbierta, rondaSinVotar, juan, "4"); !errors.Is(err, poker.ErrAcordarSinRevelar) {
 		t.Errorf("después la ronda: error = %v", err)
 	}
 }

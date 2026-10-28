@@ -48,7 +48,7 @@ func (h pokerHandlers) acordar(w http.ResponseWriter, r *http.Request) {
 		codigo, pagina.Errores[campoValorAcordado] = http.StatusUnprocessableEntity, errs[backlog.CampoStoryPoints].Error()
 	case errors.Is(err, poker.ErrSesionNoEncontrada):
 		codigo, pagina.Aviso = http.StatusNotFound, err.Error()
-	case errors.Is(err, poker.ErrRondaSinRevelar), errors.Is(err, poker.ErrSesionCerrada),
+	case errors.Is(err, poker.ErrAcordarSinRevelar), errors.Is(err, poker.ErrSesionCerrada),
 		errors.Is(err, backlog.ErrEstimacionDeHistoriaHecha):
 		codigo, pagina.Aviso = http.StatusConflict, err.Error()
 	case errors.Is(err, member.ErrNoEsIntegrante):

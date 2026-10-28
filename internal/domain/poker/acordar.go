@@ -9,7 +9,7 @@ import (
 
 // Errores de registrar la estimación acordada (sección 7 de la spec de HU-22).
 var (
-	ErrRondaSinRevelar         = errors.New("para registrar la estimación, primero revelá la ronda")
+	ErrAcordarSinRevelar       = errors.New("para registrar la estimación, primero revelá la ronda")
 	ErrSoloAgileEnablerAcuerda = errors.New("solo el Agile Enabler del proyecto registra la estimación acordada")
 )
 
@@ -24,7 +24,7 @@ type SesionCerrada struct {
 // Acordar devuelve la historia con el valor acordado como story points (CA-22.2), si se puede registrar; la original
 // no cambia. Las reglas se revisan en este orden: la sesión tiene que estar abierta (ErrSesionCerrada, RN5), quien
 // registra tiene que ser el Agile Enabler activo (ErrSoloAgileEnablerAcuerda, RN3) y la ronda actual tiene que estar
-// revelada (ErrRondaSinRevelar, RN4). El valor y la historia Hecha los decide backlog.Historia.Estimar, la misma regla
+// revelada (ErrAcordarSinRevelar, RN4). El valor y la historia Hecha los decide backlog.Historia.Estimar, la misma regla
 // que la estimación de HU-16 (CA-22.1 y RN7).
 //
 // Spec: specs/HU-22-registrar-estimacion.md.
@@ -36,7 +36,7 @@ func Acordar(h backlog.Historia, s Sesion, r Ronda, quien member.Integrante, val
 		return backlog.Historia{}, ErrSoloAgileEnablerAcuerda
 	}
 	if !r.Revelada {
-		return backlog.Historia{}, ErrRondaSinRevelar
+		return backlog.Historia{}, ErrAcordarSinRevelar
 	}
 	return h.Estimar(valor)
 }
