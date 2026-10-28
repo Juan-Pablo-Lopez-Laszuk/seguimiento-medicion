@@ -25,6 +25,22 @@
 {{define "errorCampo"}}{{with .}}<div class="invalid-feedback">{{.}}</div>{{end}}{{end}}
 
 {{/*
+  campo: un campo de formulario con su etiqueta, el error debajo y una ayuda opcional (TEC-07b). Los datos que no se
+  pasan no muestran nada (RN1). Uso:
+  {{template "campo" (dict "ID" "email" "Etiqueta" "Email" "Tipo" "email" "Valor" .Email
+      "Error" (index .Errores "email") "Requerido" true "Max" 254 "Ayuda" "No puede repetirse.")}}
+  Sin Tipo es un campo de texto. También acepta "Foco" true (autofocus).
+*/}}
+{{define "campo"}}
+<div class="mb-3">
+  <label class="form-label" for="{{.ID}}">{{.Etiqueta}}</label>
+  <input class="form-control{{if .Error}} is-invalid{{end}}"{{with .Tipo}} type="{{.}}"{{end}} id="{{.ID}}" name="{{.ID}}" value="{{with .Valor}}{{.}}{{end}}"{{with .Max}} maxlength="{{.}}"{{end}}{{if .Requerido}} required{{end}}{{if .Foco}} autofocus{{end}}{{if .Ayuda}} aria-describedby="{{.ID}}-ayuda"{{end}}>
+  {{template "errorCampo" .Error}}
+  {{with .Ayuda}}<div class="form-text" id="{{$.ID}}-ayuda">{{.}}</div>{{end}}
+</div>
+{{end}}
+
+{{/*
   confirmar: un botón que abre una ventana para confirmar una acción que no se puede deshacer; recién al confirmar se
   envía el formulario (RN4). Uso:
   {{template "confirmar" (dict "ID" "confirmar-baja-1" "Titulo" "¿Dar de baja a Ana?" "Texto" "…" "Accion" "/ruta" "Boton" "Dar de baja")}}

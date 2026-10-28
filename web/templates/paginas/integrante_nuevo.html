@@ -11,25 +11,14 @@
     </nav>
     <h1 class="h3 mb-3">Nuevo integrante</h1>
 
-    {{with .ErrorGeneral}}
-    <div class="alert alert-danger" role="alert">{{.}}</div>
-    {{end}}
+    {{template "error" .ErrorGeneral}}
 
     <form class="p-4 bg-body rounded-3 shadow-sm" action="/proyectos/{{.Proyecto.ID}}/integrantes" method="post" novalidate>
-      <div class="mb-3">
-        <label class="form-label" for="nombre">Nombre</label>
-        <input class="form-control{{if index .Errores "nombre"}} is-invalid{{end}}" id="nombre" name="nombre"
-               value="{{.Nombre}}" maxlength="100" required autofocus>
-        {{with index .Errores "nombre"}}<div class="invalid-feedback">{{.}}</div>{{end}}
-      </div>
+      {{template "campo" (dict "ID" "nombre" "Etiqueta" "Nombre" "Valor" .Nombre "Error" (index .Errores "nombre")
+          "Requerido" true "Max" 100 "Foco" true)}}
 
-      <div class="mb-3">
-        <label class="form-label" for="email">Email</label>
-        <input class="form-control{{if index .Errores "email"}} is-invalid{{end}}" type="email" id="email"
-               name="email" value="{{.Email}}" maxlength="254" required>
-        {{with index .Errores "email"}}<div class="invalid-feedback">{{.}}</div>{{end}}
-        <div class="form-text">No puede repetirse dentro del proyecto.</div>
-      </div>
+      {{template "campo" (dict "ID" "email" "Etiqueta" "Email" "Tipo" "email" "Valor" .Email "Error" (index .Errores "email")
+          "Requerido" true "Max" 254 "Ayuda" "No puede repetirse dentro del proyecto.")}}
 
       <div class="mb-3">
         <label class="form-label" for="rol">Rol</label>
@@ -40,7 +29,7 @@
           <option value="{{.}}"{{if eq . $elegido}} selected{{end}}>{{.Texto}}</option>
           {{end}}
         </select>
-        {{with index .Errores "rol"}}<div class="invalid-feedback">{{.}}</div>{{end}}
+        {{template "errorCampo" (index .Errores "rol")}}
         <div class="form-text">Puede haber un solo Agile Enabler activo por proyecto.</div>
       </div>
 
