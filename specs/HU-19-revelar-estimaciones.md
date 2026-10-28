@@ -99,3 +99,10 @@ Issue: #27 · Feature: `features/hu-19-revelar-estimaciones.feature` · Pasos BD
 | CA-19.1 Se revela cuando votan todos o cierra el Agile Enabler | La ronda se revela cuando votaron todos · El Agile Enabler cierra la ronda antes de que voten todos · Falta un voto y la ronda sigue oculta · Un Product Builder no puede cerrar la ronda | `TestRevelarSiCorresponde`, `TestCerrar`, `TestRevelarPoker_SeRevelaSolaCuandoVotaronTodos`, `TestRevelarPoker_ElAgileEnablerCierraLaRonda`, `TestRevelar_VotaronTodos_SeRevelaSola`, `TestRevelar_ElAgileEnablerCierraLaRonda` |
 | CA-19.2 Cada voto con su autor | La ronda se revela cuando votaron todos · El Agile Enabler cierra la ronda antes de que voten todos | `TestVotosRevelados`, `TestRevelarPoker_ElAgileEnablerCierraLaRonda` |
 | CA-19.3 Sin votos no se revela | Una ronda sin votos no se puede revelar | `TestCerrar`, `TestRevelarPoker_CerrarConError`, `TestRevelar_CerrarConError` |
+
+**Revisión de Mariano después del merge (#435):**
+
+| Arreglo | Código | Tests |
+|---|---|---|
+| RN7: el voto de alguien que se da de baja no cuenta ni se muestra | `VotosRevelados` (dominio) y `votosQueCuentan` (`RevelarPoker`) | `TestVotosRevelados`, `TestRevelarPoker_CerrarConError` («solo votó una integrante dada de baja»), escenario «El voto de alguien que se dio de baja no se muestra» |
+| Las otras pestañas se recargan al revelar | `recargaSiSeRevelo` en `internal/server/poker_revelar.go`, que usa `quienVoto` de HU-18 | `TestRevelar_FragmentoDeQuienVoto_*` |
