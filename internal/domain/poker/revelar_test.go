@@ -87,8 +87,8 @@ func TestCerrar(t *testing.T) {
 	}
 }
 
-// CA-19.2 · RN6 · revelada, cada integrante activo con su voto (o "no votó") y quien votó aunque esté de baja, por
-// nombre; sin revelar, ningún valor
+// CA-19.2 · RN6 · RN7 · revelada, cada integrante activo con su voto (o "no votó"), por nombre; el voto de Ana, que se
+// dio de baja, no se muestra; sin revelar, ningún valor
 func TestVotosRevelados(t *testing.T) {
 	revelada := ronda
 	revelada.Revelada = true
@@ -98,7 +98,6 @@ func TestVotosRevelados(t *testing.T) {
 		t.Fatalf("no se esperaba error: %v", err)
 	}
 	quiero := []poker.VotoRevelado{
-		{Integrante: "Ana", Valor: 13, Voto: true},
 		{Integrante: "Carolina", Valor: 3, Voto: true},
 		{Integrante: "Juan Pablo"},
 		{Integrante: "Mariano", Valor: 5, Voto: true},
