@@ -63,12 +63,13 @@
     </div>
   </section>
 </div>
+{{template "pokerCerradas" .}}
 {{end}}
 {{end}}
 
 {{/* pokerRonda: lo que se hace en la ronda actual. HU-18 (votar), HU-19 (votos revelados) y HU-22 (valor acordado)
      definen cada una su bloque en este archivo y lo llaman desde acá. */}}
-{{define "pokerRonda"}}{{template "pokerVotar" .}}{{template "pokerRevelar" .}}{{end}}
+{{define "pokerRonda"}}{{template "pokerVotar" .}}{{template "pokerRevelar" .}}{{template "pokerAcordar" .}}{{end}}
 
 {{/* pokerVotar (HU-18): las cartas para votar y quién votó, mientras la ronda no se reveló. Ninguna carta queda marcada:
      nadie ve un valor antes de revelar, ni el propio (RN5). */}}
@@ -142,4 +143,64 @@
 </form>
 <p class="small text-body-secondary mt-2 mb-0">La ronda se revela sola cuando votaron todos. El Agile Enabler puede cerrarla antes.</p>
 {{end}}
+{{end}}
+
+{{/* pokerAcordar (HU-22): con la ronda revelada, el Agile Enabler registra el valor acordado y la sesión se cierra. */}}
+{{define "pokerAcordar"}}
+<div class="mt-3 pt-3 border-top">
+  <h3 class="h6">Registrar la estimación</h3>
+  {{if .Ronda.Revelada}}
+  <form action="/proyectos/{{.Proyecto.ID}}/backlog/{{.Historia.Numero}}/poker/acordar" method="post" class="d-flex flex-wrap align-items-start gap-2" novalidate>
+    <label class="col-form-label col-form-label-sm" for="valor">Valor acordado</label>
+    <div>
+      <select class="form-select form-select-sm{{if index .Errores "valor"}} is-invalid{{end}}" id="valor" name="valor" required>
+        <option value="">Elegí un valor</option>
+        {{$elegido := .ValorElegido}}
+        {{range .Escala}}<option value="{{.}}"{{if eq (printf "%d" .) $elegido}} selected{{end}}>{{.}}</option>
+        {{end}}
+      </select>
+      {{template "errorCampo" (index .Errores "valor")}}
+    </div>
+    {{if not .ConLogin}}
+    <label class="col-form-label col-form-label-sm" for="quien-registra">Quién registra</label>
+    <div>
+      <select class="form-select form-select-sm{{if index .Errores "quien"}} is-invalid{{end}}" id="quien-registra" name="quien" required>
+        <option value="">Elegí un integrante</option>
+        {{$quien := .QuienID}}
+        {{range .Participantes}}<option value="{{.ID}}"{{if eq .ID $quien}} selected{{end}}>{{.Nombre}} ({{.Rol.Texto}})</option>
+        {{end}}
+      </select>
+      {{template "errorCampo" (index .Errores "quien")}}
+    </div>
+    {{end}}
+    <button class="btn btn-sm btn-primary" type="submit">Registrar estimación</button>
+  </form>
+  {{else}}
+  <p class="small text-body-secondary mb-0">Para registrar la estimación, primero revelá la ronda.</p>
+  {{end}}
+</div>
+{{end}}
+
+{{/* pokerCerradas (HU-22, CA-22.3): las sesiones cerradas de la historia, la más reciente primero. */}}
+{{define "pokerCerradas"}}
+<section class="mt-3" aria-labelledby="titulo-cerradas">
+  <div class="p-4 bg-body rounded-3 shadow-sm">
+    <h2 class="h5" id="titulo-cerradas">Sesiones cerradas</h2>
+    {{if .Cerradas}}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle mb-0">
+        <thead>
+          <tr><th scope="col">Sesión</th><th scope="col" class="text-end">Rondas</th><th scope="col" class="text-end">Valor acordado</th></tr>
+        </thead>
+        <tbody>
+          {{range .Cerradas}}<tr><td>Sesión {{.Numero}}</td><td class="text-end">{{.Rondas}}</td><td class="text-end">{{.ValorAcordado}} SP</td></tr>
+          {{end}}
+        </tbody>
+      </table>
+    </div>
+    {{else}}
+    <p class="text-body-secondary mb-0">Todavía no se cerró ninguna sesión.</p>
+    {{end}}
+  </div>
+</section>
 {{end}}

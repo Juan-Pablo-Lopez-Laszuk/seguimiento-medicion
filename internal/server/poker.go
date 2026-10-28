@@ -40,8 +40,10 @@ type paginaPoker struct {
 	Mensaje  string
 	Aviso    string
 	Errores  map[string]string
-	// Escala son los valores de las cartas para votar (HU-18, CA-18.4).
-	Escala []int
+	// Escala son los valores de las cartas para votar (HU-18, CA-18.4) y del desplegable para registrar el valor
+	// acordado (HU-22). ValorElegido es el valor acordado que queda marcado si hubo un error.
+	Escala       []int
+	ValorElegido string
 	// VotosRevelados son los votos de la ronda revelada, con su autor (HU-19).
 	VotosRevelados []poker.VotoRevelado
 }
@@ -78,6 +80,9 @@ func (h pokerHandlers) ver(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.URL.Query().Get("votado") == "1" {
 		pagina.Mensaje = "Voto registrado. Podés cambiarlo hasta que se revele la ronda."
+	}
+	if m := mensajeAcordada(r.URL.Query()); m != "" {
+		pagina.Mensaje = m
 	}
 	if h.conVotosRevelados(w, r, &pagina) {
 		return

@@ -191,7 +191,7 @@ func TestPoker_RondaRevelada(t *testing.T) {
 		t.Errorf("código = %d, se esperaba 409", rec.Code)
 	}
 	verificarContiene(t, rec.Body.String(), poker.ErrRondaRevelada.Error())
-	verificarNoContiene(t, rec.Body.String(), `name="valor"`)
+	verificarNoContiene(t, rec.Body.String(), `action="`+rutaVotos+`"`) // las cartas; el valor acordado de HU-22 también se llama "valor"
 }
 
 // pokerSinVotos es el repositorio en memoria con la base caída al guardar el voto.

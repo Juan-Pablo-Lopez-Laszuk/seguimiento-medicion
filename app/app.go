@@ -97,6 +97,7 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 			service.RepositorioVotosPoker
 			service.RepositorioRevelarPoker
 		}
+		acordar   service.RepositorioAcordarPoker
 		tareas    service.RepositorioTareas
 		registros service.RepositorioRegistros
 		defectos  service.RepositorioDefectos
@@ -117,6 +118,8 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		// cerraron (para HU-06).
 		cierres = memory.NuevoCierres(sprintsEnMemoria, historiasEnMemoria)
 		registros, defectos, sesiones = registrosEnMemoria, defectosEnMemoria, pokerEnMemoria
+		// Cerrar una sesión de Planning Poker estima la historia (HU-22): en memoria, Poker conoce al de historias.
+		acordar = pokerEnMemoria.ConHistorias(historiasEnMemoria)
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
@@ -127,7 +130,8 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		registros = postgres.NuevoRegistros(pool)
 		defectos = postgres.NuevoDefectos(pool)
 		cierres = postgres.NuevoCierres(pool)
-		sesiones = postgres.NuevoPoker(pool)
+		pokerEnBase := postgres.NuevoPoker(pool)
+		sesiones, acordar = pokerEnBase, pokerEnBase
 		base = pool
 	}
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now)
@@ -158,8 +162,8 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		// Editar y eliminar una historia (HU-06).
 		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
 
-		// Sesiones de Planning Poker (HU-17) y sus votos (HU-18).
-		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones).ConVotos(sesiones),
+		// Sesiones de Planning Poker: abrirlas (HU-17), votar (HU-18) y registrar la estimación acordada (HU-22).
+		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones).ConVotos(sesiones).ConAcordar(acordar),
 
 		// Revelar las rondas de Planning Poker y mostrar sus votos (HU-19).
 		RevelarPoker: service.NuevoRevelarPoker(service.NuevoPoker(proyectos, historias, integrantes, sesiones), sesiones),

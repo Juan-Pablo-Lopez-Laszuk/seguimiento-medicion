@@ -195,6 +195,7 @@ func rutas(r chi.Router, dep Dependencias) {
 	if pk.revelar != nil {
 		r.Post("/proyectos/{id}/backlog/{numero}/poker/cerrar", pk.cerrar)
 	}
+	r.Post("/proyectos/{id}/backlog/{numero}/poker/acordar", pk.acordar)
 }
 
 // inicio muestra la página principal.

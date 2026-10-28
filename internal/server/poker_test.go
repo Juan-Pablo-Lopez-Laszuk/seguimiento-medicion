@@ -31,6 +31,7 @@ const (
 // conectan (HU-18).
 type appPoker struct {
 	dep       server.Dependencias
+	historias *memory.Historias
 	porNombre map[string]member.Integrante
 }
 
@@ -46,7 +47,7 @@ func nuevaAppPoker(t *testing.T, anaRol member.Rol, sesiones service.Repositorio
 	if err != nil {
 		t.Fatalf("guardar el proyecto: %v", err)
 	}
-	a := &appPoker{porNombre: map[string]member.Integrante{}}
+	a := &appPoker{historias: historias, porNombre: map[string]member.Integrante{}}
 	lista := []member.Integrante{
 		{Nombre: "Juan", Email: "juan@mail.com", Rol: member.RolAgileEnabler, Activo: true},
 		{Nombre: "Carolina", Email: "carolina@mail.com", Rol: member.RolProductBuilder, Activo: true},
