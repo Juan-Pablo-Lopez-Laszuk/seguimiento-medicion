@@ -76,3 +76,17 @@ func TestCampo_ConErrorMarcaElCampoYMuestraElMensaje(t *testing.T) {
 
 	verificarContiene(t, html, `class="form-control is-invalid" type="email" id="email" name="email" value="sin-arroba"`, `<div class="invalid-feedback">`)
 }
+
+// TEC-07b · CA-07b.2 y RN4: la lista de integrantes usa tabla-lista; en el celular se apila y cada celda dice qué es,
+// así el botón Dar de baja no queda afuera de la pantalla.
+func TestTablaLista_IntegrantesSeApilaEnElCelular(t *testing.T) {
+	h := conProyecto(t)
+	post(h, "/proyectos/1/integrantes", integranteValido())
+
+	html := get(h, "/proyectos/1/integrantes").Body.String()
+
+	verificarContiene(t, html,
+		`tabla-lista`, `@media (max-width: 575.98px)`, `content: attr(data-etiqueta)`,
+		`data-etiqueta="Email"`, `data-etiqueta="Rol"`, `data-etiqueta="Estado"`, `class="acciones`,
+	)
+}
