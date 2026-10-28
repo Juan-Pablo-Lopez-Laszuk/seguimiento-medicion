@@ -91,10 +91,11 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
-		// Planning Poker: las sesiones (HU-17) y los votos (HU-18) van en el mismo repositorio.
+		// Planning Poker: las sesiones (HU-17), los votos (HU-18) y revelar (HU-19) van en el mismo repositorio.
 		sesiones interface {
 			service.RepositorioSesionesPoker
 			service.RepositorioVotosPoker
+			service.RepositorioRevelarPoker
 		}
 		acordar   service.RepositorioAcordarPoker
 		tareas    service.RepositorioTareas
@@ -163,6 +164,9 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 
 		// Sesiones de Planning Poker: abrirlas (HU-17), votar (HU-18) y registrar la estimación acordada (HU-22).
 		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones).ConVotos(sesiones).ConAcordar(acordar),
+
+		// Revelar las rondas de Planning Poker y mostrar sus votos (HU-19).
+		RevelarPoker: service.NuevoRevelarPoker(service.NuevoPoker(proyectos, historias, integrantes, sesiones), sesiones),
 
 		// Gráficos de las métricas (HU-36): usan el reporte de cada sprint de HU-37.
 		Graficos: service.NuevoGraficos(service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos, panel), casosDefectos, historias, time.Now),

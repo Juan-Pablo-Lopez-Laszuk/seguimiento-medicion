@@ -31,8 +31,8 @@ Esta matriz la comprueba `features/trazabilidad_test.go`, que corre con `go test
 Cuando una historia pendiente se mergea, se pasa su fila a **Cubierto** con sus escenarios y tests. Un requerimiento nuevo se
 suma a la lista del test y a la matriz.
 
-**Estado al 27/10/2026: 56 de 59 requerimientos cubiertos.** Los 3 pendientes son del Sprint 4, todos de Planning
-Poker (HU-19 a HU-21).
+**Estado al 28/10/2026: 57 de 59 requerimientos cubiertos.** Los 2 pendientes son del Sprint 4, de Planning Poker
+(HU-20 y HU-21).
 
 > Lo que no es un requerimiento de la consigna (el login de TEC-05, el deploy de TEC-04, el umbral de cobertura de TEC-06
 > y el diseño base de TEC-07) se traza en su propia especificación.
@@ -77,7 +77,7 @@ Poker (HU-19 a HU-21).
 | Estimación · Estimar historias mediante Story Points | HU-16, HU-16b | `hu-16-estimar-historia.feature` «Estimar una historia sin estimar» · «Re-estimar reemplaza el valor anterior»; `hu-16b-historial-estimaciones.feature` «Re-estimar conserva el valor anterior» | `TestEstimar_ValoresDeLaEscala`, `TestEstimar_Valido_GuardaLosStoryPoints`, `TestEstimar_ReemplazaLaEstimacionAnterior`, `TestNuevaReestimacion_ConUnValorDistinto_AnotaElCambio` | Cubierto |
 | Estimación · Registrar las estimaciones individuales (Planning Poker) | HU-17, HU-18 | `hu-17-abrir-sesion-poker.feature` «El Agile Enabler abre una sesión» · «No se abre una segunda sesión para la misma historia»; `hu-18-votar-oculto.feature` «Un integrante vota» · «Cambiar el voto antes de revelar» · «Votan todos los participantes» | `TestAbrirPoker_ElAgileEnablerAbreLaSesion`, `TestPuedeAbrir`, `TestParticipantes`, `TestVotarPoker_GuardaElVotoYMuestraQuienVoto`, `TestVotarPoker_DeNuevoYElAgileEnabler`, `TestValidarVoto` | Cubierto |
 | Estimación · Mantenerlas ocultas hasta finalizar la votación | HU-18 | `hu-18-votar-oculto.feature` «Nadie ve los valores antes de revelar» | `TestVistaSesion_NoTieneValoresDeVotos`, `TestPoker_NadieVeLosValoresAntesDeRevelar`, `TestVotaron` | Cubierto |
-| Estimación · Mostrar las estimaciones realizadas | HU-19 | — | — | Pendiente: HU-19, Sprint 4 |
+| Estimación · Mostrar las estimaciones realizadas | HU-19 | `hu-19-revelar-estimaciones.feature` «La ronda se revela cuando votaron todos» · «El Agile Enabler cierra la ronda antes de que voten todos» · «Una ronda sin votos no se puede revelar» | `TestRevelarSiCorresponde`, `TestCerrar`, `TestVotosRevelados`, `TestRevelarPoker_SeRevelaSolaCuandoVotaronTodos`, `TestRevelarPoker_ElAgileEnablerCierraLaRonda`, `TestRevelar_ElAgileEnablerCierraLaRonda` | Cubierto |
 | Estimación · Detectar diferencias entre estimaciones | HU-20 | — | — | Pendiente: HU-20, Sprint 4 |
 | Estimación · Realizar nuevas rondas | HU-21 | — | — | Pendiente: HU-21, Sprint 4 |
 | Estimación · Registrar la estimación acordada | HU-22 | `hu-22-registrar-estimacion.feature` «El Agile Enabler registra la estimación acordada» · «Un valor fuera de la escala no se registra» · «Las sesiones cerradas se consultan desde la historia» | `TestAcordar_ConLaRondaRevelada_EstimaLaHistoria`, `TestAcordarPoker_ElAgileEnablerRegistraLaEstimacion`, `TestPoker_Cerrar_CierraLaSesionYEstimaLaHistoria`, `TestPoker_SesionesCerradas`, `TestPoker_AcordarSinLogin` | Cubierto |

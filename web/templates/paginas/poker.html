@@ -69,7 +69,7 @@
 
 {{/* pokerRonda: lo que se hace en la ronda actual. HU-18 (votar), HU-19 (votos revelados) y HU-22 (valor acordado)
      definen cada una su bloque en este archivo y lo llaman desde acá. */}}
-{{define "pokerRonda"}}{{template "pokerVotar" .}}{{template "pokerAcordar" .}}{{end}}
+{{define "pokerRonda"}}{{template "pokerVotar" .}}{{template "pokerRevelar" .}}{{template "pokerAcordar" .}}{{end}}
 
 {{/* pokerVotar (HU-18): las cartas para votar y quién votó, mientras la ronda no se reveló. Ninguna carta queda marcada:
      nadie ve un valor antes de revelar, ni el propio (RN5). */}}
@@ -114,6 +114,36 @@
   </ul>
 </div>
 {{end}}{{end}}
+
+{{/* pokerRevelar (HU-19): la tabla de votos de una ronda revelada o, si no, el botón para cerrarla. */}}
+{{define "pokerRevelar"}}
+{{$ruta := printf "/proyectos/%d/backlog/%d/poker" .Proyecto.ID .Historia.Numero}}
+{{if .Ronda.Revelada}}
+<h3 class="h6 mt-3" id="titulo-votos">Votos de la ronda {{.Ronda.Numero}}</h3>
+<table class="table table-sm w-auto mb-0" aria-labelledby="titulo-votos">
+  <thead><tr><th scope="col">Integrante</th><th scope="col">Voto</th></tr></thead>
+  <tbody>
+    {{range .VotosRevelados}}<tr><td>{{.Integrante}}</td>{{if .Voto}}<td>{{.Valor}}</td>{{else}}<td class="text-body-secondary">no votó</td>{{end}}</tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<form action="{{$ruta}}/cerrar" method="post" class="d-flex flex-wrap align-items-start gap-2 mt-3" novalidate>
+  {{if not .ConLogin}}
+  <label class="col-form-label col-form-label-sm" for="quien-cierra">Quién cierra</label>
+  <div>
+    <select class="form-select form-select-sm" id="quien-cierra" name="quien" required>
+      <option value="">Elegí un integrante</option>
+      {{range .Participantes}}<option value="{{.ID}}">{{.Nombre}} ({{.Rol.Texto}})</option>
+      {{end}}
+    </select>
+  </div>
+  {{end}}
+  <button class="btn btn-sm btn-outline-primary" type="submit">Cerrar la ronda y revelar</button>
+</form>
+<p class="small text-body-secondary mt-2 mb-0">La ronda se revela sola cuando votaron todos. El Agile Enabler puede cerrarla antes.</p>
+{{end}}
+{{end}}
 
 {{/* pokerAcordar (HU-22): con la ronda revelada, el Agile Enabler registra el valor acordado y la sesión se cierra. */}}
 {{define "pokerAcordar"}}

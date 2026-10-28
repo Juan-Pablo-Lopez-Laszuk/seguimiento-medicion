@@ -25,6 +25,8 @@ const mensajeNoEsIntegrante = "No sos integrante de este proyecto."
 // agregan los suyos en sus archivos.
 type pokerHandlers struct {
 	casos *service.Poker
+	// revelar revela la ronda y muestra sus votos (HU-19); es nil si no está armado.
+	revelar *service.RevelarPoker
 	// cuentas dice quién es el usuario con sesión; es nil si el login no está activado (TEC-05).
 	cuentas *service.Cuentas
 }
@@ -42,6 +44,8 @@ type paginaPoker struct {
 	// acordado (HU-22). ValorElegido es el valor acordado que queda marcado si hubo un error.
 	Escala       []int
 	ValorElegido string
+	// VotosRevelados son los votos de la ronda revelada, con su autor (HU-19).
+	VotosRevelados []poker.VotoRevelado
 }
 
 // quienParticipa devuelve el ID del integrante que hace el pedido (RN6): con login, el vinculado a la cuenta con la que
@@ -79,6 +83,9 @@ func (h pokerHandlers) ver(w http.ResponseWriter, r *http.Request) {
 	}
 	if m := mensajeAcordada(r.URL.Query()); m != "" {
 		pagina.Mensaje = m
+	}
+	if h.conVotosRevelados(w, r, &pagina) {
+		return
 	}
 	renderPoker(w, http.StatusOK, pagina)
 }
