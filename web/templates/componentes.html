@@ -3,6 +3,25 @@
   páginas, así cada página los usa con {{template "nombre" …}} en lugar de repetir el HTML.
 */}}
 
+{{/*
+  estilos: los estilos propios del diseño base, que carga base.html. tabla-lista (TEC-07b): en el celular (menos de
+  576 px) la tabla de una lista se apila; cada fila es un bloque y cada celda muestra su data-etiqueta antes del valor,
+  así ningún botón queda afuera de la pantalla (RN4). Uso: <table class="table … tabla-lista"> y <td data-etiqueta="Email">;
+  la celda de los botones lleva class="acciones".
+*/}}
+{{define "estilos"}}
+<style>
+  @media (max-width: 575.98px) {
+    .tabla-lista thead { display: none; }
+    .tabla-lista, .tabla-lista tbody, .tabla-lista tr, .tabla-lista td { display: block; width: 100%; }
+    .tabla-lista tr { padding: .5rem 0; border-bottom: 1px solid var(--bs-border-color); }
+    .tabla-lista td { border: 0; padding: .25rem 1rem; text-align: start !important; overflow-wrap: anywhere; }
+    .tabla-lista td[data-etiqueta]::before { content: attr(data-etiqueta) ": "; font-weight: 600; color: var(--bs-secondary-color); }
+    .tabla-lista td.acciones { padding-top: .5rem; }
+  }
+</style>
+{{end}}
+
 {{/* exito: mensaje verde que se puede cerrar. Uso: {{template "exito" "Proyecto creado."}} */}}
 {{define "exito"}}{{with .}}
 <div class="alert alert-success alert-dismissible fade show" role="status">
