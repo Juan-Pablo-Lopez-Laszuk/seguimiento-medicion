@@ -91,6 +91,11 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
+		// Planning Poker: las sesiones (HU-17) y los votos (HU-18) van en el mismo repositorio.
+		sesiones interface {
+			service.RepositorioSesionesPoker
+			service.RepositorioVotosPoker
+		}
 		tareas    service.RepositorioTareas
 		registros service.RepositorioRegistros
 		defectos  service.RepositorioDefectos
@@ -100,17 +105,17 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 	if url == "" {
 		proyectos, integrantes = memory.NuevoProyectos(), memory.NuevoIntegrantes()
 		// Eliminar una historia borra también sus criterios y sus tareas (HU-06): en memoria, el repositorio de
-		// historias conoce a los otros dos. Y no se elimina si tiene horas registradas o defectos (RN10), como hacen las
-		// claves foráneas de PostgreSQL: por eso también conoce a esos dos.
+		// historias conoce a los otros dos. Y no se elimina si tiene horas registradas, defectos o sesiones de Planning
+		// Poker (RN10), como hacen las claves foráneas de PostgreSQL: por eso también conoce a esos tres.
 		criteriosEnMemoria, tareasEnMemoria := memory.NuevoCriterios(), memory.NuevoTareas()
-		registrosEnMemoria, defectosEnMemoria := memory.NuevoRegistros(), memory.NuevoDefectos()
-		historiasEnMemoria := memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria).ConRegistrosAsociados(registrosEnMemoria, defectosEnMemoria)
+		registrosEnMemoria, defectosEnMemoria, pokerEnMemoria := memory.NuevoRegistros(), memory.NuevoDefectos(), memory.NuevoPoker()
+		historiasEnMemoria := memory.NuevoHistorias(criteriosEnMemoria, tareasEnMemoria).ConRegistrosAsociados(registrosEnMemoria, defectosEnMemoria, pokerEnMemoria)
 		sprintsEnMemoria := memory.NuevoSprints()
 		historias, criterios, tareas, sprints = historiasEnMemoria, criteriosEnMemoria, tareasEnMemoria, sprintsEnMemoria
 		// El cierre de un sprint (HU-14) cambia sprints e historias juntos, y le avisa al de historias qué sprints se
 		// cerraron (para HU-06).
 		cierres = memory.NuevoCierres(sprintsEnMemoria, historiasEnMemoria)
-		registros, defectos = registrosEnMemoria, defectosEnMemoria
+		registros, defectos, sesiones = registrosEnMemoria, defectosEnMemoria, pokerEnMemoria
 	} else {
 		pool, err := postgres.Conectar(context.Background(), url)
 		if err != nil {
@@ -121,6 +126,7 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		registros = postgres.NuevoRegistros(pool)
 		defectos = postgres.NuevoDefectos(pool)
 		cierres = postgres.NuevoCierres(pool)
+		sesiones = postgres.NuevoPoker(pool)
 		base = pool
 	}
 	estado := service.NuevoEstadoProyectos(proyectos, sprints, historias, time.Now)
@@ -150,6 +156,9 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 
 		// Editar y eliminar una historia (HU-06).
 		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
+
+		// Sesiones de Planning Poker (HU-17) y sus votos (HU-18).
+		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones).ConVotos(sesiones),
 
 		// Gráficos de las métricas (HU-36): usan el reporte de cada sprint de HU-37.
 		Graficos: service.NuevoGraficos(service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos, panel), casosDefectos, historias, time.Now),

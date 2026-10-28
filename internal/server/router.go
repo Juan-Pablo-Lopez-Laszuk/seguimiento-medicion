@@ -37,6 +37,8 @@ type Dependencias struct {
 	RegistrosEsfuerzo *service.RegistrosEsfuerzo
 	// Graficos arma los datos de los gráficos de métricas de un proyecto (HU-36).
 	Graficos *service.Graficos
+	// Poker abre y muestra las sesiones de Planning Poker de las historias (HU-17).
+	Poker *service.Poker
 	// Defectos registra los defectos de un proyecto (HU-27).
 	Defectos *service.Defectos
 	// Horas compara las horas estimadas y reales de un proyecto (HU-33).
@@ -178,6 +180,15 @@ func rutas(r chi.Router, dep Dependencias) {
 	r.Get("/proyectos/{id}/graficos", gr.ver)
 	r.Get("/proyectos/{id}/graficos/datos", gr.datos)
 	r.Get("/proyectos/{id}/panel", panel{casos: dep.Panel}.ver)
+	// Con login, quién es quién sale de la cuenta (HU-17, RN6); sin login, del formulario.
+	pk := pokerHandlers{casos: dep.Poker}
+	if dep.Verificador != nil {
+		pk.cuentas = dep.Cuentas
+	}
+	r.Get("/proyectos/{id}/backlog/{numero}/poker", pk.ver)
+	r.Post("/proyectos/{id}/backlog/{numero}/poker", pk.abrir)
+	r.Get("/proyectos/{id}/backlog/{numero}/poker/votos", pk.quienVoto)
+	r.Post("/proyectos/{id}/backlog/{numero}/poker/votos", pk.votar)
 }
 
 // inicio muestra la página principal.
