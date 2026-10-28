@@ -91,7 +91,11 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 			service.RepositorioEdicionHistorias
 		}
 		criterios service.RepositorioCriterios
-		sesiones  service.RepositorioSesionesPoker
+		// Planning Poker: las sesiones (HU-17) y los votos (HU-18) van en el mismo repositorio.
+		sesiones interface {
+			service.RepositorioSesionesPoker
+			service.RepositorioVotosPoker
+		}
 		tareas    service.RepositorioTareas
 		registros service.RepositorioRegistros
 		defectos  service.RepositorioDefectos
@@ -153,8 +157,8 @@ func NewHandlerConBase(url string, opcionesDeArmado ...Opcion) (http.Handler, er
 		// Editar y eliminar una historia (HU-06).
 		EdicionHistorias: service.NuevoEdicionHistorias(proyectos, historias, criterios, tareas),
 
-		// Sesiones de Planning Poker (HU-17).
-		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones),
+		// Sesiones de Planning Poker (HU-17) y sus votos (HU-18).
+		Poker: service.NuevoPoker(proyectos, historias, integrantes, sesiones).ConVotos(sesiones),
 
 		// Gráficos de las métricas (HU-36): usan el reporte de cada sprint de HU-37.
 		Graficos: service.NuevoGraficos(service.NuevoReportes(proyectos, sprints, historias, casosDeCierre, horas, defectos, panel), casosDefectos, historias, time.Now),

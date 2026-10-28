@@ -75,8 +75,8 @@ suma a la lista del test y a la matriz.
 | Requerimiento | Historia | Escenarios BDD | Tests | Estado |
 |---|---|---|---|---|
 | Estimación · Estimar historias mediante Story Points | HU-16, HU-16b | `hu-16-estimar-historia.feature` «Estimar una historia sin estimar» · «Re-estimar reemplaza el valor anterior»; `hu-16b-historial-estimaciones.feature` «Re-estimar conserva el valor anterior» | `TestEstimar_ValoresDeLaEscala`, `TestEstimar_Valido_GuardaLosStoryPoints`, `TestEstimar_ReemplazaLaEstimacionAnterior`, `TestNuevaReestimacion_ConUnValorDistinto_AnotaElCambio` | Cubierto |
-| Estimación · Registrar las estimaciones individuales (Planning Poker) | HU-17, HU-18 | `hu-17-abrir-sesion-poker.feature` «El Agile Enabler abre una sesión» · «No se abre una segunda sesión para la misma historia» | `TestAbrirPoker_ElAgileEnablerAbreLaSesion`, `TestPuedeAbrir`, `TestParticipantes` | Pendiente: HU-18, Sprint 4 (HU-17 ya abre la sesión con sus participantes; falta votar) |
-| Estimación · Mantenerlas ocultas hasta finalizar la votación | HU-18 | — | — | Pendiente: HU-18, Sprint 4 |
+| Estimación · Registrar las estimaciones individuales (Planning Poker) | HU-17, HU-18 | `hu-17-abrir-sesion-poker.feature` «El Agile Enabler abre una sesión» · «No se abre una segunda sesión para la misma historia»; `hu-18-votar-oculto.feature` «Un integrante vota» · «Cambiar el voto antes de revelar» · «Votan todos los participantes» | `TestAbrirPoker_ElAgileEnablerAbreLaSesion`, `TestPuedeAbrir`, `TestParticipantes`, `TestVotarPoker_GuardaElVotoYMuestraQuienVoto`, `TestVotarPoker_DeNuevoYElAgileEnabler`, `TestValidarVoto` | Cubierto |
+| Estimación · Mantenerlas ocultas hasta finalizar la votación | HU-18 | `hu-18-votar-oculto.feature` «Nadie ve los valores antes de revelar» | `TestVistaSesion_NoTieneValoresDeVotos`, `TestPoker_NadieVeLosValoresAntesDeRevelar`, `TestVotaron` | Cubierto |
 | Estimación · Mostrar las estimaciones realizadas | HU-19 | — | — | Pendiente: HU-19, Sprint 4 |
 | Estimación · Detectar diferencias entre estimaciones | HU-20 | — | — | Pendiente: HU-20, Sprint 4 |
 | Estimación · Realizar nuevas rondas | HU-21 | — | — | Pendiente: HU-21, Sprint 4 |
