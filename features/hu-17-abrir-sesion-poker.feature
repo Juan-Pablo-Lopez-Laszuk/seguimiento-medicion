@@ -74,6 +74,18 @@ Característica: Abrir sesión de Planning Poker
       | Juan     |
       | Carolina |
 
+  # Caso LÍMITE (CA-17.3, RN5): un integrante que se registra con la sesión abierta participa
+  @CA-17.3 @RN5
+  Escenario: Un integrante nuevo participa de la sesión abierta
+    Dado que "Juan" abrió una sesión de Planning Poker para "Login"
+    Cuando se registra a "Ana" como integrante del proyecto
+    Entonces participan estos integrantes:
+      | nombre   |
+      | Juan     |
+      | Carolina |
+      | Mariano  |
+      | Ana      |
+
   # Caso LÍMITE (RN4): sin un Agile Enabler activo nadie abre la sesión
   @RN4
   Escenario: Un Agile Enabler dado de baja no abre una sesión
