@@ -63,6 +63,7 @@ Requisitos: [Go](https://go.dev/dl/) 1.26 o superior y Git. `go.mod` fija el too
 
 ```bash
 go run ./cmd/server          # levanta la app en http://localhost:8080 (salud: /health)
+go run ./cmd/ejemplo         # la misma app, en memoria y con un proyecto de ejemplo de 3 sprints (para la demo)
 go test ./...                # tests unitarios + escenarios BDD
 go test ./features/... -v    # solo los escenarios BDD (godog)
 go test -cover ./...         # tests con porcentaje de cobertura
@@ -99,12 +100,14 @@ app/                  puerta de entrada pública al router (Vercel no puede impo
 cmd/server/           servidor local
 cmd/migrar/           aplica las migraciones a la base (up, status, down)
 cmd/cobertura/        verifica el umbral de cobertura del CI (TEC-06)
+cmd/ejemplo/          carga el proyecto de ejemplo: en memoria para la demo, o en la base con -base
 internal/auth/        login con Supabase Auth: configuración, verificación del token y cliente (TEC-05)
 internal/server/      router, handlers y renderizado de páginas
 internal/domain/      entidades y reglas de negocio (un subpaquete por épica)
 internal/service/     casos de uso
 internal/metrics/     cálculos de métricas
 internal/cobertura/   mide la cobertura de los tests a partir del perfil (lo usa cmd/cobertura)
+internal/ejemplo/     el proyecto de ejemplo, cargado con los casos de uso (lo usa cmd/ejemplo)
 internal/store/       repositorios: memory (tests) y postgres (Supabase)
 migrations/          migraciones SQL versionadas (goose) del modelo de datos
 web/templates/        layout base (base.html) y una plantilla por página (paginas/)
