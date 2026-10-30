@@ -1,8 +1,8 @@
 # Guion de la presentación final
 
-> **Borrador** (24/10/2026, Juan Pablo). Entregable 13 de la consigna: presentación formal del producto al cliente en
-> la Sprint Review final (lunes 02/11). Lo marcado [A CONFIRMAR] lo cerramos en el ensayo del sábado 31/10 o el
-> domingo 01/11.
+> Juan Pablo, al 29/10/2026 (congelamiento del código). Entregable 13 de la consigna: presentación formal del producto
+> al cliente en la Sprint Review final (lunes 02/11). Lo marcado [A CONFIRMAR] lo cerramos en el ensayo del sábado
+> 31/10 o el domingo 01/11.
 
 ## Qué evalúan y cómo lo cubrimos
 
@@ -25,7 +25,7 @@ recorrido de una historia suya (sección 3).
 |---|---|---|---|
 | 1 | El problema y el producto: qué resuelve, para quién, cómo se usa | 2 | Juan Pablo |
 | 2 | Cómo trabajamos: 5 sprints, tablero, rotación de revisiones, SDD → BDD → TDD, uso de IA registrado | 3 | Juan Pablo |
-| 3 | Demo, parte 1: login, proyecto, integrantes, backlog y Planning Poker | 5 | Mariano y Juan Pablo |
+| 3 | Demo, parte 1: login, proyecto, integrantes, backlog y Planning Poker | 5 | Mariano y Juan Pablo (los tres votan) |
 | 4 | Demo, parte 2: sprint, tareas, horas, defectos, cierre | 5 | Juan Pablo y Carolina |
 | 5 | Demo, parte 3: panel, gráficos, reportes y PDF | 4 | Carolina y Juan Pablo |
 | 6 | Trazabilidad de punta a punta de la funcionalidad que elijan | 4 | El dueño de la historia |
@@ -42,8 +42,10 @@ Se hace en **producción** (https://seguimiento-medicion.vercel.app) con el proy
    por campo.
 3. **Backlog** (HU-05 a HU-10). Mariano crea una historia con un criterio, la prioriza con Subir y Bajar y filtra el
    backlog.
-4. **Planning Poker** (HU-17 a HU-22). Mariano abre la sesión para la historia nueva. Carolina y Juan Pablo votan desde
-   el celular, se revela, se ve la diferencia y se registra la estimación acordada.
+4. **Planning Poker** (HU-17, HU-18, HU-19 y HU-22). Juan Pablo, que es el Agile Enabler del proyecto de ejemplo,
+   abre la sesión para la historia nueva de Mariano. Los tres votan, Mariano y Carolina desde el celular: en la
+   pantalla grande aparece quién votó, pero no el valor. Cuando votaron todos, la ronda se revela sola y aparece la
+   tabla de votos. Juan Pablo registra el valor acordado y la historia queda estimada, con el cambio en su historial.
 5. **Sprint** (HU-11 a HU-13). Juan Pablo asigna la historia al sprint activo (aparece el aviso de velocidad si se pasa),
    la empieza y la completa con los criterios cumplidos.
 6. **Esfuerzo y defectos** (HU-23 a HU-29). Carolina divide la historia en tareas, registra horas y carga un defecto
@@ -54,9 +56,10 @@ Se hace en **producción** (https://seguimiento-medicion.vercel.app) con el proy
 9. **Reportes** (HU-37 a HU-39). Juan Pablo abre el reporte del proyecto, la evolución de la velocidad y descarga el
    PDF.
 
-**Plan B:** si producción no responde, la misma demo en la app local: `go run ./cmd/ejemplo` levanta la app en memoria
-con el proyecto de ejemplo ya cargado (2 sprints cerrados, el 3 activo, horas y defectos). No necesita internet ni base.
-[A CONFIRMAR] Dejarlo probado en las tres computadoras.
+**Plan B:** si producción no responde, la misma demo en la app local: `go run ./cmd/ejemplo` (#440) levanta la app en
+memoria con el proyecto de ejemplo ya cargado (2 sprints cerrados, el 3 activo, horas y defectos). No necesita
+internet ni base. Sin login, en Planning Poker se elige quién vota en un desplegable. [A CONFIRMAR] Dejarlo probado en
+las tres computadoras.
 
 ## 3. Recorrido de trazabilidad (ensayar una historia cada uno)
 
@@ -76,7 +79,7 @@ Para la historia que elijan los profesores, se muestra en este orden:
 | Integrante | Historia para ensayar | Por qué |
 |---|---|---|
 | Juan Pablo | HU-39 · Exportar reporte a PDF | Los pasos BDD comparan el PDF descargado con la página; tiene un spike documentado |
-| Mariano | HU-18 · Votar de forma oculta [A CONFIRMAR] | Tiene reglas de seguridad (la API no expone los votos) y casos de error |
+| Mariano | HU-18 · Votar de forma oculta [A CONFIRMAR] | Tiene reglas de seguridad (los valores no salen del repositorio hasta revelar) y casos de error |
 | Carolina | HU-35 · Panel de indicadores | Junta varias métricas y tiene la regla de "sin datos" |
 
 ## 4. Preparación (antes del 02/11)
@@ -101,4 +104,7 @@ Para la historia que elijan los profesores, se muestra en este orden:
 | ¿Cómo saben que la cobertura no baja? | Mariano | El CI falla si `internal/domain` e `internal/metrics` bajan del 80 % (TEC-06) |
 | ¿Cómo calculan la desviación de horas? | Carolina | Reales menos estimadas, sobre las estimadas; sin estimadas no aplica (HU-33) |
 | ¿Cómo usaron la IA? | Los tres | Para specs, escenarios y código, siempre revisado y con tests; registrado en `docs/ia/registro.md` |
-| ¿Qué no llegaron a hacer? | Juan Pablo | [A COMPLETAR después del congelamiento] Por ejemplo, permisos por rol |
+| ¿Qué no llegaron a hacer? | Juan Pablo | HU-20 (destacar diferencias) y HU-21 (nuevas rondas): no estaban comprometidas y se dejaron afuera el 28/10, antes del congelamiento. Tampoco hay permisos por rol en toda la app (sección 11 de `docs/guia-del-proyecto.md`) |
+| ¿Por qué Planning Poker no es en tiempo real? | Mariano | Vercel no sostiene conexiones abiertas: HTMX consulta cada 5 segundos quién votó y recarga la página al revelar (decisión 13 de `docs/arquitectura.md`) |
+| ¿Cómo evitan que se vean los votos antes de revelar? | Mariano | El repositorio solo devuelve quiénes votaron, no los valores, así ninguna pantalla los puede mostrar por error (CA-18.3) |
+| ¿Cómo controlan las vulnerabilidades? | Juan Pablo | `govulncheck` es check obligatorio para mergear y Dependabot avisa y propone el PR (#431) |
