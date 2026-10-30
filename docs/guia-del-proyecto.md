@@ -1,8 +1,9 @@
 # Guía del proyecto
 
-> **Para el equipo** (24/10/2026, Juan Pablo). Explica cómo funciona todo el proyecto, archivo por archivo, para poder
+> **Para el equipo** (29/10/2026, Juan Pablo). Explica cómo funciona todo el proyecto, archivo por archivo, para poder
 > defenderlo ante los profesores: qué hace cada parte, dónde está el código de cada historia y cómo se usan las partes
-> entre sí. Describe `main` con HU-38, HU-39 y el proyecto de ejemplo (`cmd/ejemplo`) ya mergeados.
+> entre sí. Describe `main` al congelamiento del código, con todo el Sprint 4 y el proyecto de ejemplo
+> (`cmd/ejemplo`, #440).
 >
 > No reemplaza a los otros documentos: la arquitectura formal está en [`arquitectura.md`](arquitectura.md), las fórmulas
 > en [`metricas.md`](metricas.md), las tablas en [`modelo-datos.md`](modelo-datos.md) y el detalle de cada historia en su
@@ -20,7 +21,7 @@
 8. [Las pruebas](#8-las-pruebas)
 9. [La trazabilidad para la defensa](#9-la-trazabilidad-para-la-defensa)
 10. [Comandos y entornos](#10-comandos-y-entornos)
-11. [Lo que falta (Sprint 4)](#11-lo-que-falta-sprint-4)
+11. [Lo que quedó afuera](#11-lo-que-quedó-afuera)
 12. [Glosario](#12-glosario)
 
 ---
@@ -44,17 +45,17 @@ Supabase Auth, o en la computadora sin nada instalado: con los datos en memoria 
 
 ### Épicas y responsables
 
-| Épica | Historias | Responsable | Estado al 24/10 |
+| Épica | Historias | Responsable | Estado al 29/10 |
 |---|---|---|---|
 | E1 · Proyectos e integrantes | HU-01 a HU-04 | Juan Pablo | Hechas |
 | E2 · Product Backlog | HU-05 a HU-10 | Mariano | Hechas |
 | E3 · Sprints | HU-11 a HU-15 | Juan Pablo | Hechas |
-| E4 · Estimación | HU-16, HU-16b; Planning Poker HU-17 a HU-22 | Mariano | HU-16 y 16b hechas; Planning Poker en el Sprint 4 |
+| E4 · Estimación | HU-16, HU-16b; Planning Poker HU-17 a HU-22 | Mariano (HU-19 Carolina, HU-22 Juan Pablo) | Hechas, salvo HU-20 y HU-21, que quedaron afuera |
 | E5 · Esfuerzo | HU-23 a HU-26 | Carolina | Hechas |
 | E6 · Defectos | HU-27 a HU-29 | Carolina | Hechas |
-| E7 · Métricas y panel | HU-30 a HU-35; gráficos HU-36 | Carolina | HU-30 a HU-35 hechas; HU-36 en el Sprint 4 |
-| E8 · Reportes | HU-37 a HU-39 | Juan Pablo | HU-37 hecha; HU-38 y HU-39 en revisión |
-| Técnicas | TEC-04 deploy, TEC-05 login, TEC-06 cobertura, TEC-07 diseño | Carolina (04, 07), Mariano (05, 06) | Hechas |
+| E7 · Métricas y panel | HU-30 a HU-36 | Carolina | Hechas |
+| E8 · Reportes | HU-37 a HU-39 | Juan Pablo | Hechas |
+| Técnicas | TEC-04 deploy, TEC-05 login, TEC-06 cobertura, TEC-07 y TEC-07b diseño | Carolina (04, 07, 07b), Mariano (05, 06) | Hechas |
 
 ---
 
@@ -232,7 +233,7 @@ erDiagram
 | `defectos` | Descripción, severidad, estado, sprint de detección y de resolución | HU-27, HU-28 |
 | `sprint_historias` | **La foto del cierre**: qué historias tenía el sprint, con qué SP, y si se completaron | HU-14 |
 | `estimaciones_historia` | Cada re-estimación: valor anterior, nuevo y cuándo | HU-16b |
-| `sesiones_poker`, `rondas_poker`, `votos` | Planning Poker: ya están creadas, sin código todavía | HU-17 a HU-22 (Sprint 4) |
+| `sesiones_poker`, `rondas_poker`, `votos` | Planning Poker: la sesión de una historia (una sola abierta, por un índice único parcial), sus rondas y el voto de cada integrante. Están desde la `0001` | HU-17, HU-18, HU-19, HU-22 |
 
 Las migraciones están en [`migrations/`](../migrations/): `0001` el modelo inicial (con RLS en todas las tablas),
 `0002` el RLS de la tabla de versiones de goose y `0003` el historial de estimaciones. El detalle de columnas y
@@ -282,6 +283,13 @@ las de pantalla bajo `internal/server/` y `web/templates/paginas/`.
 |---|---|---|---|---|---|
 | 16 | Estimar con SP | Escala 0, 1, 2, 3, 5, 8, 13, 21; una Hecha no se re-estima | `backlog/estimar.go` (`Estimar`) | `estimaciones.go` | `estimaciones.go` · `historia.html` |
 | 16b | Historial de estimaciones | Se anota solo cuando cambia un valor que ya existía; nunca se edita | `backlog/reestimacion.go` (`NuevaReestimacion`) | `criterios.go` (`ConHistorial`, en la vista de la historia) | `historia.html` |
+| 17 | Abrir sesión de Planning Poker | Solo el Agile Enabler activo; una sola sesión abierta por historia; no en una Hecha | `poker/abrir.go` (`PuedeAbrir`, `PuedeConducir`) | `poker.go` (`Poker.Abrir`, `Poker.Ver`) | `poker.go` · `poker.html` |
+| 18 | Votar de forma oculta | Un valor de la escala de HU-16, que se puede cambiar hasta revelar; **los valores no salen del repositorio** (`QuienesVotaron` da solo IDs) | `poker/votar.go` (`ValidarVoto`, `PuedeVotar`) | `poker_votar.go` (`Poker.Votar`) | `poker_votar.go` (`votar`, `quienVoto` para HTMX) |
+| 19 | Revelar estimaciones | Se revela sola cuando votaron todos los activos, o la cierra el Agile Enabler; solo cuentan los votos de los activos | `poker/revelar.go` (`RevelarSiCorresponde`, `Cerrar`, `VotosRevelados`) | `poker_revelar.go` (`RevelarPoker`) | `poker_revelar.go` (`cerrar`; `HX-Refresh` a las otras pestañas) |
+| 22 | Registrar la estimación acordada | Solo con la ronda revelada; en una transacción cierra la sesión, estima la historia y anota el historial de HU-16b | `poker/acordar.go` (`Acordar`, que usa `Historia.Estimar`) | `poker_acordar.go` (`Poker.Acordar`) | `poker_acordar.go` (`acordar`) |
+
+Los repositorios están en `internal/store/memory/poker*.go` y `internal/store/postgres/poker*.go`, un archivo por
+historia. Cómo se repartió la épica entre tres personas: [`arquitectura.md`](arquitectura.md), sección 5.
 
 ### E5 · Esfuerzo (Carolina)
 
@@ -313,9 +321,11 @@ reutiliza en varias pantallas (sección 7).
 | 33 | M4 horas estimadas, M5 reales, M6 desviación | `deviation.go` (`CalcularDesviacion`, `SumarDesviaciones`) | El % del sprint suma horas y después divide; sin estimadas "no aplicable" |
 | 34 | M8 defectos detectados, M9 resueltos | `defects.go` (`ContarDefectos`) | Detectado por su sprint de detección, resuelto por el de resolución |
 | 35 | Panel del proyecto | `service/panel.go` (`Panel.Ver`, `Tarjetas`) | Seis tarjetas; la que no tiene datos dice "sin datos" |
+| 36 | Gráficos | `service/graficos.go` (`Graficos.Datos`) | Velocidad, SP planificados vs completados, horas, defectos por severidad y burndown, con los mismos datos de los reportes |
 
-Pantallas: horas en `horas.go` · `horas.html` (HU-33), resumen de defectos en `defectos.html` (HU-34) y el panel en
-`panel.go` · `panel.html` (HU-35).
+Pantallas: horas en `horas.go` · `horas.html` (HU-33), resumen de defectos en `defectos.html` (HU-34), el panel en
+`panel.go` · `panel.html` (HU-35) y los gráficos en `graficos.go` · `graficos.html` (HU-36). Los gráficos los dibuja
+Chart.js con el JSON de `/proyectos/{id}/graficos/datos`; la página trae también las tablas con los datos.
 
 ### E8 · Reportes (Juan Pablo)
 
@@ -333,6 +343,8 @@ Pantallas: horas en `horas.go` · `horas.html` (HU-33), resumen de defectos en `
 | TEC-05 | Login con Supabase Auth, vínculo cuenta ↔ integrante por email | [`internal/auth/`](../internal/auth/), `domain/account`, `service/cuentas.go`, `server/cuentas.go` · `login.html`, `registro.html` |
 | TEC-06 | Umbral de cobertura del 80 % y matriz de trazabilidad con su test | [`internal/cobertura/`](../internal/cobertura/), [`cmd/cobertura/`](../cmd/cobertura/), [`features/trazabilidad_test.go`](../features/trazabilidad_test.go) |
 | TEC-07 | Diseño base: layout, navegación y componentes reutilizables (`exito`, `error`, `aviso`, `confirmar`, `metrica`) | [`web/templates/base.html`](../web/templates/base.html), [`componentes.html`](../web/templates/componentes.html) |
+| TEC-07b | Formularios y tablas: el componente `campo` con su error debajo (`errorCampo`) y la clase `tabla-lista`, que en el celular apila cada fila | [`componentes.html`](../web/templates/componentes.html) |
+| Seguridad (#431) | `govulncheck` en cada PR, en cada push a `main` y semanal; es check obligatorio. Dependabot propone las actualizaciones | [`.github/workflows/seguridad.yml`](../.github/workflows/seguridad.yml) |
 
 ---
 
@@ -352,6 +364,11 @@ flowchart LR
     HU05 --> HU07[HU-07 Criterios]
     HU05 --> HU16[HU-16 Estimar]
     HU16 --> HU16b[HU-16b Historial]
+    HU05 --> HU17[HU-17 Abrir sesión]
+    HU03 --> HU17
+    HU17 --> HU18[HU-18 Votar] --> HU19[HU-19 Revelar] --> HU22[HU-22 Registrar]
+    HU22 --> HU16
+    HU22 --> HU16b
     HU07 --> HU08[HU-08 Estados]
     HU07 --> HU12
     HU16 --> HU12[HU-12 Asignar]
@@ -382,6 +399,9 @@ flowchart LR
     HU35 --> HU38
     HU37 --> HU39[HU-39 PDF]
     HU38 --> HU39
+    HU35 --> HU36[HU-36 Gráficos]
+    HU37 --> HU36
+    HU34 --> HU36
 ```
 
 ### 7.2 Casos de uso que usan otros casos de uso
@@ -397,6 +417,9 @@ Se ve en [`app/app.go`](../app/app.go): algunos casos de uso se construyen pasá
 | `Asignaciones` (HU-12, HU-13) | `Criterios` (HU-07) | El progreso de los criterios: si se puede asignar y si se puede completar |
 | `Criterios` (vista de la historia) | El historial de estimaciones (HU-16b), con `ConHistorial` | La página de la historia muestra su historial |
 | `Cuentas` (TEC-05) | El repositorio de integrantes | Vincula la cuenta con el integrante que tiene su email |
+| `Poker` (HU-17, HU-18, HU-22) | Los repositorios de historias e integrantes; `ConVotos` y `ConAcordar` le suman los de HU-18 y HU-22 | Cada historia de la épica agrega su repositorio sin tocar el de las otras |
+| `RevelarPoker` (HU-19) | `Poker` (la sesión y los participantes) | Revisa si votaron todos y revela la ronda |
+| `Graficos` (HU-36) | `Reportes` (HU-37, HU-38) y `Defectos` (HU-34) | Los gráficos dan lo mismo que los reportes porque salen de ellos |
 
 ### 7.3 Reglas del dominio que usan varias historias
 
@@ -404,7 +427,7 @@ Se ve en [`app/app.go`](../app/app.go): algunos casos de uso se construyen pasá
 |---|---|---|
 | `Historia.CambiarEstado` (la tabla de transiciones) | `backlog/estados.go` | HU-08 (pantalla), HU-12 (a En sprint), HU-13 (a Hecho), HU-14 (de vuelta a Pendiente) |
 | `Progreso` de los criterios | `backlog/criterios.go` | HU-07, HU-08, HU-12 (sin criterios no se asigna), HU-13 (sin todos cumplidos no se completa) |
-| `Historia.Estimar` | `backlog/estimar.go` | HU-16 y, en el Sprint 4, el valor acordado del Planning Poker |
+| `Historia.Estimar` | `backlog/estimar.go` | HU-16 y HU-22 (el valor acordado del Planning Poker pasa por la misma regla) |
 | `sprint.Activo` | `sprint/activo.go` | HU-04 (sprint activo), HU-13 (solo se completa en el activo), HU-14 (solo se cierra el activo) |
 | `domain.HoyEnArgentina` | `domain/fecha.go` | Toda regla con "hoy": estado, activo, completar, cerrar, horas no futuras, nombre del PDF |
 | `member.ValidarFormatoEmail` | `member/member.go` | HU-03 y el registro de cuentas (TEC-05) |
@@ -532,23 +555,23 @@ El umbral de cobertura del CI (TEC-06).
 | Local | Memoria (o un PostgreSQL propio con `DATABASE_URL`) | No | Desarrollo y demo sin internet |
 | Preview de Vercel | Memoria | No | Cada PR, para revisar la pantalla |
 | Producción | PostgreSQL de Supabase | Sí, registro cerrado | https://seguimiento-medicion.vercel.app |
-| CI (GitHub Actions) | PostgreSQL propio del job | No | Cada PR: gofmt, vet, lint, tests, BDD, umbral |
+| CI (GitHub Actions) | PostgreSQL propio del job | No | Cada PR: gofmt, vet, lint, tests, BDD, umbral ("Calidad") y `govulncheck` ("Vulnerabilidades"). Los dos son obligatorios para mergear |
 
 Las migraciones de producción las aplica Juan Pablo con `go run ./cmd/migrar up` y la URL del *session pooler*
 ([`deploy.md`](deploy.md)).
 
 ---
 
-## 11. Lo que falta (Sprint 4)
+## 11. Lo que quedó afuera
 
-| Qué | Dónde va a entrar | De qué depende |
+El código se congeló el jueves 29/10 y la presentación es el lunes 02/11. Quedaron afuera:
+
+| Qué | Por qué | Dónde entraría |
 |---|---|---|
-| Planning Poker (HU-17 a HU-22, Mariano y Carolina) | Las tablas `sesiones_poker`, `rondas_poker` y `votos` ya existen desde `0001`; el valor acordado se guarda con `Historia.Estimar` (HU-16) | Saber quién vota: `Cuentas.Quien` (TEC-05) |
-| Gráficos del panel (HU-36, Carolina) | La página del panel, con los datos que ya arma `Panel.Ver` y la velocidad por sprint | HU-30, HU-31 y HU-33 |
-| TEC-07b · retoque visual | Las plantillas de `web/templates/`; HTMX ya está cargado en el layout | — |
-| Documentación de la entrega | `arquitectura.md`, `manual-usuario.md`, este documento y el guion | Todo lo anterior |
-
-El código se congela el jueves 29/10 y la presentación es el lunes 02/11.
+| HU-20 · Detectar diferencias entre estimaciones (#28) | No estaba comprometida; el 28/10 se decidió no empezarla para cerrar el sprint | En la tabla de votos revelados de HU-19 (`VotosRevelados`), marcando el mínimo y el máximo |
+| HU-21 · Realizar nuevas rondas (#29) | Lo mismo que HU-20 | Una ronda nueva en la misma sesión: las tablas ya tienen `rondas_poker` con su número |
+| Permisos por rol en toda la app | No estaba en el backlog. Hoy solo distinguen al Agile Enabler Planning Poker y la corrección de horas de otros (HU-26) | En el dominio de cada historia, como `poker.PuedeConducir` |
+| Tiempo real en Planning Poker | Vercel no sostiene conexiones abiertas (decisión 13 de [`arquitectura.md`](arquitectura.md)) | Se reemplazó por HTMX, que consulta cada 5 segundos |
 
 ---
 
