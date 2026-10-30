@@ -115,10 +115,9 @@ Es documentación y presentación, que no se congelan con el código:
 
 | Qué | Responsable | Estado |
 |---|---|---|
-| Manual de usuario: sección 2 (proyectos, sprints y reportes) | Juan Pablo | Lista, en el PR de documentación |
-| Manual de usuario: secciones 1 (ingreso) y 3 (backlog y Planning Poker) | Mariano | Viernes 30/10 |
+| Manual de usuario: secciones 1 (ingreso), 2 (proyectos, sprints y reportes) y 3 (backlog y Planning Poker) | Juan Pablo | Listas, en el PR de documentación (#442) |
 | Informe: cobertura (entregable 10) y evidencias de TDD (entregable 8) | Mariano | Viernes 30/10 |
 | Informe de métricas con los datos del Sprint 4 | Carolina | [A CONFIRMAR] |
-| Arquitectura (entregable 12) y guion de la presentación (entregable 13) | Juan Pablo | En el PR de documentación |
+| Arquitectura (entregable 12) y guion de la presentación (entregable 13) | Juan Pablo | En el PR de documentación (#442) |
 | Proyecto de ejemplo para la demo (#440) | Juan Pablo | En revisión (Carolina) |
 | Ensayo de la presentación | Los tres | Sábado 31/10 o domingo 01/11 |

@@ -76,8 +76,8 @@ Para el cierre de la entrega (30/10 al 02/11):
 
 | Acción | Responsable | Para cuándo |
 |---|---|---|
-| El manual completo (secciones 1 y 3), la cobertura y las evidencias de TDD del informe | Mariano | Vie 30/10 |
-| El PR de documentación (manual sección 2, arquitectura y guion) y el de este cierre | Juan Pablo | Vie 30/10 |
+| La cobertura y las evidencias de TDD del informe | Mariano | Vie 30/10 |
+| El PR de documentación (#442: el manual de las secciones 1 a 3, la arquitectura, el guion y la guía) y el de este cierre | Juan Pablo | Vie 30/10 |
 | Revisar y mergear #440 (proyecto de ejemplo) | Carolina | Vie 30/10 |
 | Los datos del Sprint 4 en el informe de métricas | Carolina [A CONFIRMAR] | Sáb 31/10 |
 | Prueba completa en producción con las tres cuentas y el ensayo de la presentación, con el plan B listo | Los tres | Sáb 31/10 o dom 01/11 |
